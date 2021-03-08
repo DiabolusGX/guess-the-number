@@ -13,6 +13,7 @@ module.exports = async (client, guild) => {
         });
         await dbGuildConfig.save().catch(console.error);
         client.guildConfigPrefix.set(guild.id, "gg");
+        return dbGuildConfig;
     }
     else {
         if (!client.guildConfigPrefix.has(guild.id)) client.guildConfigPrefix.set(guild.id, guildConfigDoc.prefix);

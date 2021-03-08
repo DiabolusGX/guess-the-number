@@ -15,7 +15,7 @@ module.exports = {
         await message.channel.send('⚙️ | Calculating...').then( msg =>{
             if(msg) firstMsg = msg;
             responseTime = msg.createdTimestamp;
-        })
+        });
         responseTime = responseTime - message.createdTimestamp;
 
         const pingEmbed = new MessageEmbed()
@@ -23,7 +23,7 @@ module.exports = {
             .setTitle(`🏓 Pong!`)
             .setDescription(`Ping is : ${Math.round(message.client.ws.ping)} ms.\nResponse time : ${responseTime} ms!`)
             .setFooter(`Made with ❤️ by DiabolusGX`, `${client.user.displayAvatarURL({ format: "png", dynamic: true })}`);
-        
+
         return firstMsg.edit("", pingEmbed);
     },
 };

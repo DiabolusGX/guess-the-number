@@ -1,16 +1,20 @@
 const { MessageEmbed } = require("discord.js");
 // const logFunction = require("../../utils/logFunction");
 const guildConfigModel = require("../../database/models/guildConfig");
+const answerFound = require("../../utils/answerFound");
 
 module.exports = async (client, message) => {
 
     if (message.author.bot || message.channel.type !== "text") return;
 
+    if(!isNaN(message.content) && client.games.has(message.channel.id) && parseInt(message.content) === client.games.get(message.channel.id))
+        return answerFound(client, message);
+
     const dbPrefix = await client.guildConfigPrefix.get(message.guild.id) || process.env.PREFIX;
     const botMentioned = message.content.search(/<@!818420448131285012>/i);
     if (botMentioned >= 0) {
         const prefixEmbed = new MessageEmbed()
-            .setColor("#87339c")
+            .setColor(client.colors[0])
             .setDescription(`🥳 My prefix for **${message.guild.name}** is : **\`${dbPrefix}\`**`);
         return message.channel.send(prefixEmbed).then(msg => setTimeout(() => msg.delete(), 5000));
     }

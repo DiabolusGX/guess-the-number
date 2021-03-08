@@ -7,11 +7,12 @@ const registery = require("./utils/registery");
 
 (async () => {
     client.login(process.env.BOT_TOKEN);
+    client.games = new Map();
     client.commands = new Map();
     client.cooldowns = new Map();
     client.guildConfigPrefix = new Map();
     client.colors = ["#2f3136"];
-    client.emojis = ["<:greentick:768464483009691648>", "<:redtick:768464519638024233>"];
+    client.myEmojis = ["<:greentick:768464483009691648>", "<:redtick:768464519638024233>"];
     await registery.registerCommands(client, "../commands");
     await registery.registerEvents(client, "../events");
 })();

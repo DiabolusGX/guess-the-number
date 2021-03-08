@@ -19,36 +19,21 @@ module.exports = {
             for (let key of commands.keys()) allCommandNames.push(key);
             allCommandNames.join("` `");
             moreInfo.push(`\nYou can send \`${dbPrefix} help [command name]\` to get info on a specific command!`);
-            discription.push(`\nTo get started with setting up Boost Tracking, Greeting and Logging - **__\`${dbPrefix} guide\`__**\n\n`);
+            discription.push(`\nTo get started with stup - **__\`${dbPrefix} help setup\`__**\n\n`);
 
             const generalHelpEmbed = new MessageEmbed()
-                .setColor('#87339c')
-                //.setAuthor(`${message.author.username}`, `${message.author.displayAvatarURL({ format: "png", dynamic: true })}`)
+                .setColor(client.colors[0])
                 .setDescription(`${discription}\n\n`)
-                //.setThumbnail(message.guild.iconURL({ format: "png", dynamic: true }) || client.user.displayAvatarURL({ format: "png", dynamic: true }))
                 .addFields(
                     { name: "\u200B", value: "_ _" },
                     { name: 'Setup Commands', value: `__For Admins and Bot Manager__\n\n`+
                         `\`setup\` : Setup Server settings.\n` +
-                        `\`greet\` : Setup Greeting settings.\n` +
-                        `\`rank\` : Add/Remove role to boosters\n` +
-                        `\`emoji\` : Lock/unlock emoji to a role\n` +
-                        `\`stats\` : VCs for booster stats.\n`+
-                        `\`vars\` : Variables for messages.\n`, inline : true},
-                    { name: 'Booster Commands', value: `__For Server Boosters__\n\n`+
-                        `\`role\` : Maintain personal role.\n` +
-                        `\`lvlrole\` : Role on number of boosts.\n` +
-                        `\`rolelist\` : Lists all personal roles.\n`, inline : true},
-                    { name: "\u200B", value: "\u200B" },
+                        `\`start\` : To start the game.\n`, inline : true},
                     { name: 'User Commands', value: `__For Server Members__\n\n`+
                         `\`help\` : List of Commands.\n` +
-                        `\`guide\` : Get started with bot.\n` +
-                        `\`count\` : Total server boosts.\n` +
-                        `\`invite\` : Bot Invite Links.\n` +
-                        `\`userinfo\` : User's Boost Info.\n` +
-                        `\`reminder\` : Upvote reminder.\n`, inline : true},
-                    { name: "Other Bots" , value: `_ _\n> Check other Multi-Purpose Utility bot that has something for everyone ex - Movies, Games, Events, Music and much more! \n `+
-                        `\nhttps://top.gg/bot/699505785847283785`, inline: true },
+                        `\`invite\` : Bot Invite Links.\n`, inline : true},
+                    { name: "Other Bots" , value: `> Check **Booster Bot** : \n> A bot that handles everything related to server boosts! \n `+
+                        `🔗  https://boosterbot.xyz/` },
                     { name: "\u200B" , value: moreInfo },
                 )
                 .setTimestamp(1610112116000)
@@ -70,18 +55,16 @@ module.exports = {
 
         cmdCooldown.push(`${command.cooldown || 3} seconds`);
 
-        let title = command.name + ' | ' + cmdAliases;
+        const title = command.name + ' | ' + cmdAliases;
 
-        let cmdHelpEmbed = new MessageEmbed()
-            .setColor("#87339c")
-            //.setAuthor(`${message.author.username}`, `${message.author.displayAvatarURL({ format: "png", dynamic: true })}`)
+        const cmdHelpEmbed = new MessageEmbed()
+            .setColor(client.colors[0])
             .setTitle(title)
             .setDescription(`\n${cmdDiscriptipn}\n\n **Usage :** \`${cmdUsage}\`\n ${cmdPerms}`)
             .setThumbnail(client.user.displayAvatarURL({ format: "png", dynamic: true }))
             .addFields(
                 { name: "• Cooldown", value : `${cmdCooldown || "`NO COOLDOWN`"}`, inline : true},
                 { name: "• Support Server", value: '  https://discord.gg/8kdx63YsDf', inline: true },
-                //{ name: "• JSL Bot", value: '[A bot that has something for everyone](https://top.gg/bot/699505785847283785)', inline: true },
             )
 
         return message.channel.send(cmdHelpEmbed);
