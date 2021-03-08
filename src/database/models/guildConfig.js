@@ -6,7 +6,9 @@ const guildConfigSchema = new mongoose.Schema({
     premium: { type: Boolean },
     botManager: { type: String },
     dm: { type: Boolean },
+    msg: { type: String },
     winRole: { type: String },
+    reqRole: { type: String },
     lockRole: { type: String }
 });
 
