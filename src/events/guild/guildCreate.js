@@ -3,7 +3,7 @@ const configDoc = require("../../utils/configDoc");
 
 module.exports = async (client, guild) => {
 
-    await configDoc(guild);
+    await configDoc(client, guild);
 
     let ownerId = "NA", ownerTag = "NA", owner = "NA", ownerAv = "https://i.imgur.com/X0CBc8U.gif";
     if (guild.owner) {
