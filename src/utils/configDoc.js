@@ -8,7 +8,7 @@ module.exports = async (client, guild) => {
             id: guild.id,
             prefix: "gg",
             dm: true,
-            msg: "Thanks for participating everyone and Congratulations {user}, You've has guessed the currect number i.e {number}",
+            //msg: "Thanks for participating everyone and Congratulations {user}, You've has guessed the currect number i.e {number}",
             lockRole: guild.roles.everyone.id,
         });
         await dbGuildConfig.save().catch(console.error);

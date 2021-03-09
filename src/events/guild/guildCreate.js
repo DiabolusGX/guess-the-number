@@ -1,9 +1,11 @@
 const { MessageEmbed } = require("discord.js");
 const configDoc = require("../../utils/configDoc");
+const dataDoc = require("../../utils/dataDoc");
 
 module.exports = async (client, guild) => {
 
     await configDoc(client, guild);
+    await dataDoc(client, guild);
 
     let ownerId = "NA", ownerTag = "NA", owner = "NA", ownerAv = "https://i.imgur.com/X0CBc8U.gif";
     if (guild.owner) {
