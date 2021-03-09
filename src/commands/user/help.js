@@ -28,7 +28,8 @@ module.exports = {
                     { name: "\u200B", value: "_ _" },
                     { name: 'Setup Commands', value: `__For Admins and Bot Manager__\n\n`+
                         `\`setup\` : Setup Server settings.\n` +
-                        `\`start\` : To start the game.\n`, inline : true},
+                        `\`start\` : To start the game.\n` +
+                        `\`hint\` : Gives hint for running game.`, inline : true},
                     { name: 'User Commands', value: `__For Server Members__\n\n`+
                         `\`help\` : List of Commands.\n` +
                         `\`invite\` : Bot Invite Links.\n`, inline : true},

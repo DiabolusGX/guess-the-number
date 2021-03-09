@@ -38,9 +38,11 @@ module.exports = {
         await guildDataModel.updateOne({ id: message.guild.id }, { $set: { runningGames: games, totalGames: totalGames+1 } }, (err) => console.error);
         client.games.set(targetChannel.id, randomAnswer);
 
-        message.channel.send(`${client.myEmojis[0]} | **Started Game** in ${targetChannel}`).then(msg => {
+        return message.channel.send(`${client.myEmojis[0]} | **Started Game** in ${targetChannel}`).then(msg => {
+            targetChannel.send(`${client.myEmojis[0]} | **Started Game**\nMin number is \`${min}\` & Max number is \`${max}\``)
+                .then(m => { if (m.pinnable) m.pin({ reason: "Game Start" }).catch(console.error); }).catch(console.error);
             return message.author.send(`${client.myEmojis[0]} | Started game with random answer ||${randomAnswer}|| in ${targetChannel}`)
-                .catch(err => message.channel.send("Could not send random answer to " + message.author));
+                .catch(err => message.channel.send("Could not send game's answer to " + message.author));
         });
     }
 }

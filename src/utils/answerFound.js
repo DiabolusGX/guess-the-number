@@ -27,9 +27,9 @@ module.exports = async (client, message) => {
     });
 
     const users = guildData.users;
-    if(users.has(message.author.id)) {
+    if (users.has(message.author.id)) {
         const { wins, points } = users.get(message.author.id);
-        users.set(message.author.id, { wins:  wins+1, points: points+1 });
+        users.set(message.author.id, { wins: wins + 1, points: points + 1 });
     }
     else users.set(message.author.id, { wins: 1, points: points });
     await guildDataModel.updateOne({ id: message.guild.id }, { $set: { runningGames: games, users: users } }, (err) => console.error);
@@ -40,11 +40,15 @@ module.exports = async (client, message) => {
         message.author.send(`${client.myEmojis[0]} | **Congratulations** 🎉\nYou guessed the correct number ||${answer}|| in ${message.channel} and won **${points} Points!**`);
     }
     message.channel.send(`${client.myEmojis[0]} | **Congratulations** ${message.author} 🎉\nYou guessed the correct number ||${answer}|| and won **${points} Points!**`)
-        .then(msg => msg.pin({ reason: "win message" }).catch(console.error))
-        .catch(console.error)
-
-    const role = await find.getRole(message, guildConfig.lockRole);
-    return message.channel.updateOverwrite(role, { SEND_MESSAGES: false })
-        .then(channel => channel.edit({ name: channel.name + " 🔒" }))
+        .then(msg => {
+            if (msg.pinnable) msg.pin({ reason: "win message" }).catch(console.error);
+        })
         .catch(console.error);
+
+    if (guildConfig.lockRole) {
+        const role = await find.getRole(message, guildConfig.lockRole);
+        return message.channel.updateOverwrite(role, { SEND_MESSAGES: false })
+            .then(channel => channel.edit({ name: channel.name + " 🔒" }))
+            .catch(console.error);
+    }
 }

@@ -189,7 +189,9 @@ module.exports = {
                 desc = "Updated Lock Role : **Disabled** required role.\ni.e Channel will not be locked.";
             }
             else {
-                lockRole = await find.getRole(message, argsJoin);
+                if (argsJoin.toLowerCase() === "everyone") lockRole = message.guild.roles.everyone;
+                else lockRole = await find.getRole(message, argsJoin);
+                if(!lockRole) return message.channel.send(`${client.myEmojis[1]} | **No Role Found** matching with \`${argsJoin}\``);
                 guildConfigModel.updateOne({ id: message.guild.id }, { $set: { lockRole: lockRole.id } }, (err) => console.error);
                 desc = `Updated Lock Role : **${lockRole.toString()}** \n\n >>> Bot will lock channel for this given role.`;
             }
