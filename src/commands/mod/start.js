@@ -42,7 +42,7 @@ module.exports = {
 
         if (guildConfig.lockRole) {
             const role = await find.getRole(message, guildConfig.lockRole);
-            message.channel.updateOverwrite(role, { SEND_MESSAGES: true })
+            targetChannel.updateOverwrite(role, { SEND_MESSAGES: true })
                 .then(channel => {
                     if (channel.name.endsWith("🔒")) channel.edit({ name: channel.name.slice(0, -1) });
                 })
