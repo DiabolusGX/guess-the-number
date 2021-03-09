@@ -1,8 +1,9 @@
 # Guess The Number
 
-Hi! Booster Bot can manage, track & log the server boosts events for you in your server.
-From sending thankyou/greet message to assigning auto roles on server boost.. .
-To allowing boosters to maintain their own personal role (only name and color)
+Hello there!
+Guess The Number will be a simple and fune number game where you have to guess number b/w given minimum and maximum for some reward that game organizer can set.
+Bot can also provide hints (only if asked by game organizer) but that'll lead to less game win points.
+Good Luck and Have Fun!
 
 
 # Getting Started
