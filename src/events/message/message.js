@@ -7,8 +7,13 @@ module.exports = async (client, message) => {
 
     if (message.author.bot || message.channel.type !== "text") return;
 
-    if(!isNaN(message.content) && client.games.has(message.channel.id) && parseInt(message.content) === client.games.get(message.channel.id))
-        return answerFound(client, message);
+    if(!isNaN(message.content) && client.games.has(message.channel.id)) {
+        if(parseInt(message.content) === client.games.get(message.channel.id).answer) return answerFound(client, message);
+        else {
+            const { answer, guesses } = client.games.get(message.channel.id);
+            client.games.set(message.channel.id, { answer: answer, guesses: guesses+1 });
+        }
+    }
 
     const dbPrefix = await client.guildConfigPrefix.get(message.guild.id) || process.env.PREFIX;
     const botMentioned = message.content.search(/<@!818420448131285012>/i);

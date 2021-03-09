@@ -31,9 +31,9 @@ Setup command will let you add/edit/remove bot settings like :
 
 To **start game** admin or bot-manager need to enter just 1 command :
 `gg start <min> <max> [channel]` - Bot will start game in mentioned channel (current channel, if not mentioned) with a random number between `min` & `max` value provided.
-- Bot will DM the answer to the game organizer (who runs the command)
+- Bot will DM the answer to the game organizer (who runs the command).
 - Bot will pin the game start and game end message, lock the channel after game ends for given role and add "🔒" emoji to channel name.
-- Make sure to remove pins and "🔒" from channel before sarting next game to avoid confusion.
+- Bot will un-pin all messages sent by bot except for game-end/winning message and remove "🔒" emoji (Sometimes it can hit rate limits).
 
 To **give hint** if you feel game is too difficult you can use :
 `gg hint <first | last | number> [channel]`

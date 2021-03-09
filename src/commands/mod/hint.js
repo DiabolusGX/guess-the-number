@@ -26,7 +26,7 @@ module.exports = {
         else targetChannel = message.channel;
 
         if (!client.games.has(targetChannel.id)) return message.channel.send(`${client.myEmojis[1]} | **No game going on in** ${targetChannel}`);
-        const answer = client.games.get(targetChannel.id);
+        const answer = client.games.get(targetChannel.id).answer;
 
         let hint;
         if (args[0] === "first") {
