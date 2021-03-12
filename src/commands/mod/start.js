@@ -19,8 +19,7 @@ module.exports = {
         if (!args[0] || !args[1] || isNaN(args[0]) || isNaN(args[1]) || parseInt(args[0]) > parseInt(args[1]))
             return message.channel.send(`${client.myEmojis[1]} | **Minimum and Maximum value missing!**\n` +
                 `Min & Max value are important to start Guess The Number Game like : \n` +
-                `- \`${dbPrefix} start 69 420\` will start game in current channel with random number b/w 69 and 420.\n` +
-                `- \`${dbPrefix} start 100 1000 #channel\` will start game in mentioned channel with random number b/w 100 and 10000.\n`);
+                `- \`${dbPrefix} start 69 420 #channel\` will start game in mentioned channel with random number b/w 69 and 420.\n`);
 
         const min = parseInt(args[0]);
         const max = parseInt(args[1]);
@@ -29,7 +28,7 @@ module.exports = {
         if (args[2] || message.mentions.channels.first()) {
             targetChannel = await find.getChannel(message, args[2]);
         }
-        else targetChannel = message.channel;
+        else return message.channel.send(`${client.myEmojis[1]} | **Please mention a channel where you want to start the game!**\n`);
         if (client.games.has(targetChannel.id)) return message.channel.send(`${client.myEmojis[1]} | There is already a game going on in ${targetChannel}`);
 
         const randomAnswer = Math.floor(Math.random() * (max - min) + min);
