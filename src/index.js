@@ -6,7 +6,6 @@ const client = new Client();
 const registery = require("./utils/registery");
 
 (async () => {
-    client.login(process.env.BOT_TOKEN);
     client.games = new Map();
     client.commands = new Map();
     client.cooldowns = new Map();
@@ -15,6 +14,7 @@ const registery = require("./utils/registery");
     client.myEmojis = ["<:greentick:768464483009691648>", "<:redtick:768464519638024233>"];
     await registery.registerCommands(client, "../commands");
     await registery.registerEvents(client, "../events");
+    client.login(process.env.BOT_TOKEN);
 })();
 
 // dbl.webhook.on("ready", webhook => {

@@ -23,7 +23,6 @@ module.exports = {
         if (!client.games.has(targetChannel.id)) return message.channel.send(`${client.myEmojis[1]} | There is NO game going on in ${targetChannel}`);
 
         const games = dataDoc.runningGames;
-        const { answer, points } = games.get(message.channel.id);
         games.delete(message.channel.id);
         client.games.delete(targetChannel.id);
         await guildDataModel.updateOne({ id: message.guild.id }, { $set: { runningGames: games } }, (err) => console.error);
