@@ -24,6 +24,7 @@ module.exports = {
             targetChannel = await find.getChannel(message, args[2]);
         }
         else targetChannel = message.channel;
+        if(!targetChannel) return message.reply(`${client.myEmojis[1]} | **Please mention valid channel**`);
 
         if (!client.games.has(targetChannel.id)) return message.channel.send(`${client.myEmojis[1]} | **No game going on in** ${targetChannel}`);
         const answer = client.games.get(targetChannel.id).answer;
