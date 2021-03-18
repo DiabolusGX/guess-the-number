@@ -15,7 +15,7 @@ module.exports = async (client, message) => {
     const { answer, points } = games.get(message.channel.id);
     games.delete(message.channel.id);
 
-    let replyMsg = guildConfig.msg;
+    /*let replyMsg = guildConfig.msg;
 
     const varMap = new Map();
     varMap.set("{user}", message.author);
@@ -25,7 +25,7 @@ module.exports = async (client, message) => {
         while (replyMsg.includes(key)) {
             replyMsg = replyMsg.replace(key, value);
         }
-    });
+    });*/
 
     const users = guildData.users;
     if (users.has(message.author.id)) {
