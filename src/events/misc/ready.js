@@ -4,9 +4,10 @@ const dataDoc = require("../../utils/dataDoc");
 
 const activities_list = [
     "your guesses || gg help",
-    "birthday wishesh to ${dev} || Join server to wish (gg invite)",
-    "join DEV Studios & wish ${dev} happy birthday (gg invite)",
-    "HAPPY BIRTHDAY ${dev}"
+    "birthday wishes for ${dev} || Join server to wish || gg invite for link",
+    "join DEV Studios & wish ${dev} happy birthday || gg invite for link",
+    "HAPPY BIRTHDAY ${dev}",
+    "wishes for ${dev} on his birthday || gg invite for server link"
 ];
 
 module.exports = async (client) => {
