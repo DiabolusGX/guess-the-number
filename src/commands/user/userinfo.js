@@ -29,8 +29,8 @@ module.exports = {
             .setColor(client.colors[0])
             .setAuthor(message.member.nickname||message.author.username, message.author.displayAvatarURL({ format: "png", dynamic: true }))
             .setDescription(`${target} **${target.user.tag}** (\`${target.user.id}\`)\n\n`+
-                `Total Wins : **${userData.wins}** 🎉\n`+
-                `Total Points : **${userData.points}** ⚖️`)
+                `Total Wins : **${userData.wins}**  🎉\n`+
+                `Total Points : **${userData.points}**   ⚖️`)
             .setThumbnail( target.user.displayAvatarURL({ format: "png", dynamic: true, size: 1024 }) )
             .setFooter("Stats are maintained after user wins any game!")
         
