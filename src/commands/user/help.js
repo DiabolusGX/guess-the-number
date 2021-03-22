@@ -29,9 +29,12 @@ module.exports = {
                     { name: 'Setup Commands', value: `__For Admins and Bot Manager__\n\n`+
                         `\`setup\` : Setup Server settings.\n` +
                         `\`start\` : To start the game.\n` +
-                        `\`hint\` : Gives hint for running game.`, inline : true},
+                        `\`hint\` : Gives hint for running game.\n`+
+                        `\`end\` : End ongoing game.\n`, inline : true},
                     { name: 'User Commands', value: `__For Server Members__\n\n`+
                         `\`help\` : List of Commands.\n` +
+                        `\`info\` : User games & points info.\n` +
+                        `\`lb\` : Leader Board based on points.\n` +
                         `\`invite\` : Bot Invite Links.\n`, inline : true},
                     { name: "Other Bots" , value: `> Check **Booster Bot** : \n> A bot that handles everything related to server boosts! \n `+
                         `🔗  https://boosterbot.xyz/` },

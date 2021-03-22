@@ -6,7 +6,7 @@ module.exports = {
 
     name: "end",
     aliases: ["stop"],
-    description: `Ends the current going on game in specified channel.`,
+    description: "Ends the currently ongoing game in mentioned channel",
     category: "mod",
     guildOnly: true,
     usage: "<channel>",
