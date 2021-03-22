@@ -49,11 +49,12 @@ To **end game** admin or bot-manager need to enter just 1 command :
 
 ## Wins
 
-When someone wins bot will add points to thet users and add a role (If enabled by admins)
-How many points bot will add?
+When someone wins bot will add points to thet users and add a role (If enabled by admins).
+
+**How many points bot will add?**
 - 1/10 th of the difference between `max` and `min` number in game.
 
-What are points gonna do?
+**What are points gonna do?**
 - For now, points will help you climb leaderboard (`gg lb`) and It'll show your points and number of games won in your `gg info` command. Other things like purchasable roles using points are planned.
 
 ## User Commands
