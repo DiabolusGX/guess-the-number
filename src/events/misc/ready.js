@@ -3,7 +3,7 @@ const configDoc = require("../../utils/configDoc");
 const dataDoc = require("../../utils/dataDoc");
 
 module.exports = async (client) => {
-    await database();
+    await database().then(() => console.log("connected to mongodb."));
     client.guilds.cache.forEach(async guild => {
         await configDoc(client, guild);
         const data = await dataDoc(client, guild);
