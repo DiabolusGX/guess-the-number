@@ -50,6 +50,8 @@ module.exports = {
         let reward = "";
         if (guildConfig.winRole) {
             const awardRole = await find.getRole(message, guildConfig.winRole);
+            if(!awardRole) return message.channel.send(`${client.myEmojis[1]} | **Error while trying to find reward role.**\n`+
+                `Please remove or edit reward role by : \`${dbPrefix} setup win-role @role\``);
             reward = `and **${awardRole.name}** role`;
         }
 
