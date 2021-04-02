@@ -17,6 +17,11 @@ const registery = require("./utils/registery");
     client.login(process.env.BOT_TOKEN);
 })();
 
+// Warning handling err catch
+process.on("unhandledRejection", error => {
+    console.error("Unhandled promise rejection:", error);
+});
+
 // dbl.webhook.on("ready", webhook => {
 //     const webhookReadyEvent = require("./webhook/ready");
 //     return webhookReadyEvent(webhook, client, dbl);
