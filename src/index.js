@@ -2,7 +2,7 @@ require("dotenv").config();
 const { Client } = require("discord.js");
 // const DBL = require("dblapi.js");
 // const dbl = new DBL(process.env.DBL_TOKEN, { webhookPort: 8081, webhookAuth: "king.Dbl@07" });
-const client = new Client();
+const client = new Client({ intents: ["GUILDS", "GUILD_MEMBERS", "GUILD_MESSAGES"] });
 const registery = require("./utils/registery");
 
 (async () => {
