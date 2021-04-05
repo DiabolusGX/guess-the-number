@@ -29,11 +29,12 @@ module.exports = {
             .setColor(client.colors[0])
             .setAuthor(message.member.nickname||message.author.username, message.author.displayAvatarURL({ format: "png", dynamic: true }))
             .setDescription(`${target} **${target.user.tag}** (\`${target.user.id}\`)\n\n`+
-                `Total Wins : **${userData.wins}**  🎉\n`+
-                `Total Points : **${userData.points}**   ⚖️`)
+                `Total Wins : **${userData.wins}**⁣ 🎉\n`+
+                `Total Points : **${userData.points}**⁣ ⚖️\n\n`+
+                `[Please vote the bot! It helps a lot](https://top.gg/bot/818420448131285012/vote)`)
             .setThumbnail( target.user.displayAvatarURL({ format: "png", dynamic: true, size: 1024 }) )
-            .setFooter("Stats are maintained after user wins any game!")
-        
+            //.setFooter("Stats are maintained after user wins any game!")
+
         return message.channel.send(userInfoEmbed);
     },
 };

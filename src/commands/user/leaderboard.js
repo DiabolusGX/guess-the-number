@@ -18,6 +18,9 @@ module.exports = {
             value.user = key;
             tempData.push(value);
         });
+
+        if(!tempData.length) return message.channel.send(`${client.myEmojis[1]} | **No one won any game yet!**`)
+
         tempData.sort((a, b) => b.points - a.points);
         tempData.forEach(data => {
             winners.push(`<@${data.user}> [**${data.wins}x**] with **${data.points}** Points\n`);
@@ -40,9 +43,8 @@ module.exports = {
             userEmbeds[i] = new MessageEmbed()
                 .setColor(client.colors[0])
                 .setAuthor(`${message.guild.name} has ${winners.length} Winnners`, client.user.displayAvatarURL)
-                .setDescription(`\n${userDesc[i].substring(1)}\n`)
-                .setTimestamp()
-                .setFooter(`Total Winners - ${winners.length}`);
+                .setDescription(`\n${userDesc[i].substring(1)}`+
+                    `[Please vote the bot! It helps a lot](https://top.gg/bot/818420448131285012/vote)`)
         }
         return paginationEmbed(message, userEmbeds, emojiList, 30000);
     },

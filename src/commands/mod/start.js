@@ -57,7 +57,8 @@ module.exports = {
 
         return message.channel.send(`${client.myEmojis[0]} | **Started Game** in ${targetChannel}`).then(msg => {
             targetChannel.send(`${client.myEmojis[0]} | **Started Game**\nMin number is \`${min}\` & Max number is \`${max}\`\n`+
-                `You'll get **${points} Points** ${reward} for guessing the correct number.`)
+                `You'll get **${points} Points** ${reward} for guessing the correct number.\n`+
+                `Please vote the bot! It helps a lot <https://top.gg/bot/818420448131285012/vote>`)
                 .then(m => { if (m.pinnable) m.pin({ reason: "Game Start" }).catch(console.error); }).catch(console.error);
             return message.author.send(`${client.myEmojis[0]} | Started game with random answer ||${randomAnswer}|| in ${targetChannel}`)
                 .catch(err => message.channel.send("Could not send game's answer to " + message.author));

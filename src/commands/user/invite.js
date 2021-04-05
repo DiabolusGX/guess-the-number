@@ -15,7 +15,8 @@ module.exports = {
             .setColor(client.colors[0])
             .setAuthor("Bot Invite Links", "https://cdn.discordapp.com/attachments/797404067432890378/797404132037361684/partying-face.png")
             .setDescription(`\n**Bot invite** : \n[Default Invite](${defaultInvite})\n[Admin Invite](${adminInvite}) (recommended)` +
-                `\n\n__Support Server__ : \nhttps://discord.gg/8kdx63YsDf\n`)
+                `\n\n__Vote Link__ : \nhttps://top.gg/bot/818420448131285012/vote\n`+
+                `\n__Support Server__ : \nhttps://discord.gg/8kdx63YsDf\n`)
             .setFooter("Checkout Booster Bot - Everything for server boosts", "https://cdn.discordapp.com/attachments/699571659635556372/782257966933344256/622857534742593536.gif")
         return message.channel.send(inviteEmbed);
     },

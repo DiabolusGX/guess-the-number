@@ -15,18 +15,6 @@ module.exports = async (client, message) => {
     const { answer, points } = games.get(message.channel.id);
     games.delete(message.channel.id);
 
-    /*let replyMsg = guildConfig.msg;
-
-    const varMap = new Map();
-    varMap.set("{user}", message.author);
-    varMap.set("{answer}", answer);
-    varMap.set("{points}", points);
-    varMap.forEach((value, key) => {
-        while (replyMsg.includes(key)) {
-            replyMsg = replyMsg.replace(key, value);
-        }
-    });*/
-
     const users = guildData.users;
     if (users.has(message.author.id)) {
         const { wins, points } = users.get(message.author.id);
@@ -43,10 +31,12 @@ module.exports = async (client, message) => {
     }
 
     if (guildConfig.dm) {
-        message.author.send(`${client.myEmojis[0]} | **Congratulations** 🎉\nYou guessed the correct number ||${answer}|| in ${message.channel} and won **${points} Points!**`);
+        message.author.send(`${client.myEmojis[0]} | **Congratulations** 🎉\nYou guessed the correct number ||${answer}|| in ${message.channel} and won **${points} Points!**\n`+
+            `Please vote the bot! It helps a lot <https://top.gg/bot/818420448131285012/vote>`);
     }
     message.channel.send(`${client.myEmojis[0]} | **Congratulations** ${message.author} 🎉\nYou guessed the correct number ||${answer}|| after total of **${guesses}** guesses!\n`+
-        `Also, you received **${points} Points!** ${reward}`).then(msg => {
+        `Also, you received **${points} Points!** ${reward}\n`+
+        `Please vote the bot! It helps a lot <https://top.gg/bot/818420448131285012/vote>`).then(msg => {
             if (msg.pinnable) msg.pin({ reason: "win message" }).catch(console.error);
         }).catch(console.error);
 
