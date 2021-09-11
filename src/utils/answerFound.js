@@ -26,7 +26,7 @@ module.exports = async (client, message) => {
     let reward = "";
     if (guildConfig.winRole) {
         const awardRole = await find.getRole(message, guildConfig.winRole);
-        reward = `and **${awardRole.name}** role.`;
+        reward = `and **${awardRole}** role.`;
         message.member.roles.add(guildConfig.winRole, "Auto Role number guess").catch(console.error);
     }
 
