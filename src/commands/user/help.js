@@ -33,6 +33,7 @@ module.exports = {
                         `\`end\` : End ongoing game.\n`, inline : true},
                     { name: 'User Commands', value: `__For Server Members__\n\n`+
                         `\`help\` : List of Commands.\n` +
+                        `\`game\` : Running game info.\n` +
                         `\`info\` : User games & points info.\n` +
                         `\`lb\` : Leader Board based on points.\n` +
                         `\`invite\` : Bot Invite Links.\n`, inline : true},

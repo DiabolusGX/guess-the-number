@@ -4,11 +4,10 @@ const guildDataModel = require("../../database/models/guildData");
 module.exports = {
 
     name: "userinfo",
-    aliases: ["info"],
+    aliases: ["info", "ui"],
     description: "Shows user's win games, points and other basic info.",
 
     async run(client, message, args) {
-        const dbPrefix = client.guildConfigPrefix.get(message.guild.id);
 
         let target;
         if(!args[0]) target = message.member;
