@@ -8,6 +8,7 @@ module.exports = {
 
     async run(client, message, args) {
 
+        if (message.channel.id !== "890305681100533780") return;
         const authorId = message.author.id;
         const totalSpammers = Object.keys(scoresData).length;
         let desc = "", rank = "", first = "", second = "", third = "", totalPings = 0;
