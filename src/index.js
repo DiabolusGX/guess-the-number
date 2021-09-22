@@ -4,6 +4,7 @@ const client = new Client({
     messageCacheMaxSize: 10,
     messageCacheLifetime: 10,
     messageSweepInterval: 60,
+    partials: ["MESSAGE", "REACTION"],
     intents: ["GUILDS", "GUILD_MEMBERS", "GUILD_MESSAGES"],
     allowedMentions: { parse: ["users"], repliedUser: true }
 });
@@ -18,7 +19,7 @@ const registery = require("./utils/registery");
     client.myEmojis = ["<:greentick:768464483009691648>", "<:redtick:768464519638024233>"];
     await registery.registerCommands(client, "../commands");
     await registery.registerEvents(client, "../events");
-    client.login(process.env.BOT_TOKEN);
+    client.login(process.env.DGX_TOKEN);
 })();
 
 // Warning handling err catch
