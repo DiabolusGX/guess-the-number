@@ -5,7 +5,7 @@ const client = new Client({
     messageCacheLifetime: 10,
     messageSweepInterval: 60,
     partials: ["MESSAGE", "REACTION"],
-    intents: ["GUILDS", "GUILD_MEMBERS", "GUILD_MESSAGES"],
+    intents: ["GUILDS", "GUILD_MEMBERS", "GUILD_MESSAGES", "GUILD_MESSAGE_REACTIONS"],
     allowedMentions: { parse: ["users"], repliedUser: true }
 });
 const registery = require("./utils/registery");
