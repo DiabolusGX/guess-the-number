@@ -1,18 +1,30 @@
 const { MessageEmbed } = require("discord.js");
-// const logFunction = require("../../utils/logFunction");
 const guildConfigModel = require("../../database/models/guildConfig");
 const answerFound = require("../../utils/answerFound");
+
+const fs = require("fs");
+const scoresData = require("../../../scores.json");
 
 module.exports = async (client, message) => {
 
     if (message.author.bot || message.channel.type !== "text") return;
 
-    if(!isNaN(message.content) && client.games.has(message.channel.id)) {
-        if(parseInt(message.content) === client.games.get(message.channel.id).answer) return answerFound(client, message);
+    if (!isNaN(message.content) && client.games.has(message.channel.id)) {
+        if (parseInt(message.content) === client.games.get(message.channel.id).answer) return answerFound(client, message);
         else {
             const { answer, guesses } = client.games.get(message.channel.id);
-            client.games.set(message.channel.id, { answer: answer, guesses: guesses+1 });
+            client.games.set(message.channel.id, { answer: answer, guesses: guesses + 1 });
         }
+    }
+
+    // event joey ping!!!
+    if (message.channel.id === "890305681100533780" && message.mentions.users.has("790972573927735318")) {
+        const authorId = message.author.id;
+        const count = scoresData.hasOwnProperty(`${authorId}`) ? scoresData[`${authorId}`] : 0;
+        scoresData[`${authorId}`] = count + 1;
+        fs.writeFile("./scores.json", JSON.stringify(scoresData, null, 4), err => {
+            if (err) console.log(err);
+        });
     }
 
     const dbPrefix = await client.guildConfigPrefix.get(message.guild.id) || process.env.PREFIX;
@@ -80,10 +92,8 @@ module.exports = async (client, message) => {
     setTimeout(() => timestamps.delete(message.author.id), cooldownAmount);
 
     try {
-        //logFunction.cmdLogFn(client, message, command);
         await command.run(client, message, args);
     } catch (error) {
-        //errLogFn(client, message, error);
         return console.error(message.content, message.guild.id, message.guild.name, error);
     }
 }
