@@ -19,7 +19,7 @@ const registery = require("./utils/registery");
     client.myEmojis = ["<:greentick:768464483009691648>", "<:redtick:768464519638024233>"];
     await registery.registerCommands(client, "../commands");
     await registery.registerEvents(client, "../events");
-    client.login(process.env.DGX_TOKEN);
+    client.login(process.env.BOT_TOKEN);
 })();
 
 // Warning handling err catch
