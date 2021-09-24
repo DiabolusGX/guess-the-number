@@ -36,6 +36,6 @@ module.exports = {
             .setDescription(desc)
             .setFooter("Top spammer will get 200 points in Fun Week by Diabolus ❤️")
 
-        return message.channel.send(`<@499146588451766273> 🔔`, scoreEmbed);
+        return message.channel.send(`<@${message.author.id}> 🔔`, scoreEmbed);
     },
 };
