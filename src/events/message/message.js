@@ -18,7 +18,7 @@ module.exports = async (client, message) => {
     }
 
     // event joey ping!!!
-    if (message.channel.id === "890305681100533780" && message.mentions.users.has(message.author.id)) {
+    if (message.channel.id === "890305681100533780" && message.mentions.users.has("662763613685022779")) {
         const authorId = message.author.id;
         const count = scoresData.hasOwnProperty(`${authorId}`) ? scoresData[`${authorId}`] : 0;
         scoresData[`${authorId}`] = count + 1;
