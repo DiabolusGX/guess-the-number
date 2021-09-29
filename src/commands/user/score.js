@@ -8,7 +8,7 @@ module.exports = {
 
     async run(client, message, args) {
 
-        if (message.guild.id !== "755315381396176967") return;
+        if (message.author.id !== "454611998051794954") return;
         const authorId = message.author.id;
         const totalSpammers = Object.keys(scoresData).length;
         let desc = "", rank = "", first = "", second = "", third = "", totalPings = 0;
@@ -36,6 +36,6 @@ module.exports = {
             .setDescription(desc)
             .setFooter("Top spammer will get 200 points in Fun Week by Diabolus ❤️")
 
-        return message.channel.send(`<@662763613685022779> 🔔`, scoreEmbed);
+        return message.channel.send(`Ping Scores 🔔`, scoreEmbed);
     },
 };

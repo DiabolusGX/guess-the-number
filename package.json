@@ -14,6 +14,7 @@
   "author": "Ankit Malik",
   "license": "MIT",
   "dependencies": {
+    "axios": "^0.21.4",
     "discord.js": "github:discordjs/discord.js#3af8179878c093985c8a94ee2fd7e99d45243bda",
     "dotenv": "^8.2.0",
     "mongoose": "^5.11.15"

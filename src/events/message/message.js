@@ -17,16 +17,6 @@ module.exports = async (client, message) => {
         }
     }
 
-    // event joey ping!!!
-    if (message.channel.id === "890305681100533780" && message.mentions.users.has("662763613685022779")) {
-        const authorId = message.author.id;
-        const count = scoresData.hasOwnProperty(`${authorId}`) ? scoresData[`${authorId}`] : 0;
-        scoresData[`${authorId}`] = count + 1;
-        fs.writeFile("./scores.json", JSON.stringify(scoresData, null, 4), err => {
-            if (err) console.log(err);
-        });
-    }
-
     const dbPrefix = await client.guildConfigPrefix.get(message.guild.id) || process.env.PREFIX;
     const botMentioned = message.content.search(/<@!818420448131285012>/i);
     if (botMentioned >= 0) {
