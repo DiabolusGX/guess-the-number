@@ -79,6 +79,9 @@ module.exports = {
      * @returns {Promise<array>} array of games
      */
     getGamesBetweenDates: async (guildID, startDate, endDate) => {
+        if (isNaN(Date.parse(startDate)) || isNaN(Date.parse(endDate))) {
+            return false;
+        }
         try {
             return Game.find({
                 guildID,

@@ -27,14 +27,16 @@ module.exports = {
                 .addFields(
                     { name: "\u200B", value: "_ _" },
                     {
-                        name: 'Setup Commands', value: `__For Admins and Bot Manager__\n\n` +
+                        name: 'Setup Commands',
+                        value: `__For Admins and Bot Manager__\n\n` +
                             `\`setup\` : Setup Server settings.\n` +
                             `\`start\` : To start the game.\n` +
                             `\`hint\` : Gives hint for running game.\n` +
                             `\`end\` : End ongoing game.\n`, inline: true
                     },
                     {
-                        name: 'User Commands', value: `__For Server Members__\n\n` +
+                        name: 'User Commands',
+                        value: `__For Server Members__\n\n` +
                             `\`help\` : List of Commands.\n` +
                             `\`game\` : Running game info.\n` +
                             `\`info\` : User games & points info.\n` +
@@ -42,14 +44,15 @@ module.exports = {
                             `\`invite\` : Bot Invite Links.\n`, inline: true
                     },
                     {
-                        name: "Other Bots", value: `> Check **Booster Bot** : \n> A bot that handles everything related to server boosts! \n ` +
+                        name: "Other Bots",
+                        value: `> Check **Booster Bot** : \n> A bot that handles everything related to server boosts! \n ` +
                             `🔗  https://boosterbot.xyz/`
                     },
-                    { name: "\u200B", value: moreInfo },
+                    { name: "\u200B", value: moreInfo.toString() },
                 )
                 .setTimestamp(1610112116000)
                 .setFooter({
-                    text : 'Made With ❤️ By DiabolusGX',
+                    text: "Made With ❤️ By DiabolusGX",
                     iconURL: client.user.displayAvatarURL({ format: "png", dynamic: true })
                 });
             return message.channel.send({ embeds: [generalHelpEmbed] });

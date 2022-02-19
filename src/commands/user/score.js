@@ -34,7 +34,7 @@ module.exports = {
             .setColor(client.colors[0])
             .setAuthor({
                 name: `We have ${totalSpammers} Spammers`,
-                iconURL: client.user.displayAvatarURL
+                iconURL: client.user.displayAvatarURL({ format: "png", dynamic: true })
             })
             .setDescription(desc)
             .setFooter({
