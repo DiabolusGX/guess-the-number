@@ -23,12 +23,12 @@ module.exports = {
             const nextDay = new Date(startDate.getTime() + 86400000);
             const endDate = new Date(args[1] || nextDay) || nextDay;
             // compare with min and max dates
-            const minDate = new Date("2022-02-20");
-            const maxDate = new Date();
+            const minDate = new Date("2022-02-14");
+            const maxDate = new Date(Date.now() + 86400000);
             if (startDate < minDate || startDate > maxDate || endDate < minDate || endDate > maxDate) {
                 return message.channel.send({
                     content: `${client.myEmojis[1]} | **Invalid date**.\n` +
-                        `Please use a date between <t:${minDate.getTime() / 1000}> and <t:${maxDate.getTime().toString().slice(0, -3)}>`
+                        `Please use a date between <t:${minDate.getTime().toString().slice(0, -3)}> and <t:${maxDate.getTime().toString().slice(0, -3)}>`
                 });
             }
             winners = await getSpecificDatesLeaderboard(message.guild.id, startDate, endDate);
