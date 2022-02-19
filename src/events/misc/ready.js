@@ -7,7 +7,17 @@ module.exports = async (client) => {
     client.guilds.cache.forEach(async guild => {
         await configDoc(client, guild);
         const data = await dataDoc(client, guild);
-        if (data.runningGames) data.runningGames.forEach((value, key) => client.games.set(key, { answer: value.answer, guesses: 0 }));
+        if (data.runningGames) {
+            data.runningGames.forEach((value, key) => {
+                client.games.set(key,
+                    {
+                        gameID: value.gameID ?? 0,
+                        answer: value.answer,
+                        guesses: 0
+                    }
+                )
+            });
+        }
     });
 
     client.user.setActivity("your guesses || gg help", { type: "LISTENING" });

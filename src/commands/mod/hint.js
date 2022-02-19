@@ -15,18 +15,22 @@ module.exports = {
     async run(client, message, args) {
         const dbPrefix = client.guildConfigPrefix.get(message.guild.id);
 
-        if (!args[0]) return message.channel.send(`${client.myEmojis[1]} | **No option provided!**\n` +
-            `Please select valid option from - \`first\`, \`last\` or give a \`number\` to compare to.\n` +
-            `Check \`${dbPrefix} help hint\` for more info.`);
+        if (!args[0]) return message.channel.send({
+            content: `${client.myEmojis[1]} | **No option provided!**\n` +
+                `Please select valid option from - \`first\`, \`last\` or give a \`number\` to compare to.\n` +
+                `Check \`${dbPrefix} help hint\` for more info.`
+        });
 
         let targetChannel;
         if (args[1] || message.mentions.channels.first()) {
             targetChannel = await find.getChannel(message, args[2]);
         }
         else targetChannel = message.channel;
-        if(!targetChannel) return message.reply(`${client.myEmojis[1]} | **Please mention valid channel**`);
+        if (!targetChannel) return message.reply(`${client.myEmojis[1]} | **Please mention valid channel**`);
 
-        if (!client.games.has(targetChannel.id)) return message.channel.send(`${client.myEmojis[1]} | **No game going on in** ${targetChannel}`);
+        if (!client.games.has(targetChannel.id)) return message.channel.send({
+            content: `${client.myEmojis[1]} | **No game going on in** ${targetChannel}`
+        });
         const answer = client.games.get(targetChannel.id).answer;
 
         let hint;
@@ -46,7 +50,9 @@ module.exports = {
             `Please select valid option from - \`first\`, \`last\` or give a \`number\` to compare to.\n` +
             `Check \`${dbPrefix} help hint\` for more info.`);
 
-        return targetChannel.send(`${client.myEmojis[0]} | ${hint}. GL HF!!!`).then(msg => {
+        return targetChannel.send({
+            content: `${client.myEmojis[0]} | ${hint}. GL HF!!!`
+        }).then(msg => {
             if (msg.pinnable) msg.pin({ reason: "Game Hint" }).catch(console.error);
             return message.reply(`${client.myEmojis[0]} | Sent Hint in ${targetChannel} and pinned it!`).then(m => {
                 setTimeout(() => { m.delete(); }, 5000);

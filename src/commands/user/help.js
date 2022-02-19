@@ -2,13 +2,13 @@ const { MessageEmbed } = require("discord.js");
 
 module.exports = {
 
-    name : "help",
+    name: "help",
     aliases: ["commands"],
-    description : "Shows all available commands.",
+    description: "Shows all available commands.",
     category: "user",
     guildOnly: false,
-    
-    async run(client, message, args){
+
+    async run(client, message, args) {
 
         const dbPrefix = client.guildConfigPrefix.get(message.guild.id);
 
@@ -26,37 +26,46 @@ module.exports = {
                 .setDescription(`${discription}\n\n`)
                 .addFields(
                     { name: "\u200B", value: "_ _" },
-                    { name: 'Setup Commands', value: `__For Admins and Bot Manager__\n\n`+
-                        `\`setup\` : Setup Server settings.\n` +
-                        `\`start\` : To start the game.\n` +
-                        `\`hint\` : Gives hint for running game.\n`+
-                        `\`end\` : End ongoing game.\n`, inline : true},
-                    { name: 'User Commands', value: `__For Server Members__\n\n`+
-                        `\`help\` : List of Commands.\n` +
-                        `\`game\` : Running game info.\n` +
-                        `\`info\` : User games & points info.\n` +
-                        `\`lb\` : Leader Board based on points.\n` +
-                        `\`invite\` : Bot Invite Links.\n`, inline : true},
-                    { name: "Other Bots" , value: `> Check **Booster Bot** : \n> A bot that handles everything related to server boosts! \n `+
-                        `🔗  https://boosterbot.xyz/` },
-                    { name: "\u200B" , value: moreInfo },
+                    {
+                        name: 'Setup Commands', value: `__For Admins and Bot Manager__\n\n` +
+                            `\`setup\` : Setup Server settings.\n` +
+                            `\`start\` : To start the game.\n` +
+                            `\`hint\` : Gives hint for running game.\n` +
+                            `\`end\` : End ongoing game.\n`, inline: true
+                    },
+                    {
+                        name: 'User Commands', value: `__For Server Members__\n\n` +
+                            `\`help\` : List of Commands.\n` +
+                            `\`game\` : Running game info.\n` +
+                            `\`info\` : User games & points info.\n` +
+                            `\`lb\` : Leader Board based on points.\n` +
+                            `\`invite\` : Bot Invite Links.\n`, inline: true
+                    },
+                    {
+                        name: "Other Bots", value: `> Check **Booster Bot** : \n> A bot that handles everything related to server boosts! \n ` +
+                            `🔗  https://boosterbot.xyz/`
+                    },
+                    { name: "\u200B", value: moreInfo },
                 )
                 .setTimestamp(1610112116000)
-                .setFooter('Made With ❤️ By DiabolusGX', client.user.displayAvatarURL({ format: "png", dynamic: true }));
-            return message.channel.send( generalHelpEmbed );
+                .setFooter({
+                    text : 'Made With ❤️ By DiabolusGX',
+                    iconURL: client.user.displayAvatarURL({ format: "png", dynamic: true })
+                });
+            return message.channel.send({ embeds: [generalHelpEmbed] });
         }
 
         const cmdAliases = [], cmdUsage = [], cmdCooldown = [], cmdPerms = [], cmdDiscriptipn = [];
         const name = args[0].toLowerCase();
         const command = commands.get(name);
-        
+
         if (!command) {
             return message.reply('that\'s not a valid command!');
         }
 
         if (command.aliases) cmdAliases.push(`${command.aliases.join(' | ')}`);
         if (command.description) cmdDiscriptipn.push(`${command.description}`);
-        cmdUsage.push(`\`${dbPrefix} ${command.name} ${command.usage||""}\``);
+        cmdUsage.push(`\`${dbPrefix} ${command.name} ${command.usage || ""}\``);
 
         cmdCooldown.push(`${command.cooldown || 3} seconds`);
 
@@ -68,10 +77,10 @@ module.exports = {
             .setDescription(`\n${cmdDiscriptipn}\n\n **Usage :** \`${cmdUsage}\`\n ${cmdPerms}`)
             .setThumbnail(client.user.displayAvatarURL({ format: "png", dynamic: true }))
             .addFields(
-                { name: "• Cooldown", value : `${cmdCooldown || "`NO COOLDOWN`"}`, inline : true},
+                { name: "• Cooldown", value: `${cmdCooldown || "`NO COOLDOWN`"}`, inline: true },
                 { name: "• Support Server", value: '  https://discord.gg/8kdx63YsDf', inline: true },
             )
 
-        return message.channel.send(cmdHelpEmbed);
+        return message.channel.send({ embeds: [cmdHelpEmbed] });
     },
 };

@@ -41,9 +41,12 @@ module.exports = {
 
         const gameInfoEmbed = new MessageEmbed()
             .setColor(client.colors[0])
-            .setAuthor(message.member.nickname || message.author.username, message.author.displayAvatarURL({ format: "png", dynamic: true }))
+            .setAuthor({
+                name: message.member.nickname || message.author.username,
+                iconURL: message.author.displayAvatarURL({ format: "png", dynamic: true })
+            })
             .setDescription(`${infoDesc}`)
 
-        return message.channel.send(gameInfoEmbed);
+        return message.channel.send({ embeds: [gameInfoEmbed] });
     },
 };

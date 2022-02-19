@@ -34,7 +34,10 @@ module.exports = {
 
             const configEmbed = new MessageEmbed()
                 .setColor(client.colors[0])
-                .setAuthor(`Setup Config for - ${message.guild.name}`, client.user.displayAvatarURL({ format: "png", dynamic: true }))
+                .setAuthor({
+                    name: `Setup Config for - ${message.guild.name}`,
+                    iconURL: client.user.displayAvatarURL({ format: "png", dynamic: true })
+                })
                 .setDescription(`Current __Prefix__ : **\`${guildDoc.prefix}\`**` +
                     `\n\n**__BOT Manager__** : ${botManager} \n Can edit, remove bot settings` +
                     `\n\n**__DM__** : ${dm} \nWether bot will send DM to the winner or not.` +
@@ -44,9 +47,12 @@ module.exports = {
                     `\n\n**__Lock Role__** : ${lockRole} \n Bot will lock channel after someone guesses the number for this role.` +
                     `\n\n__For more info - \`${dbPrefix} help setup\`__ \n\n`)
                 .setThumbnail(message.guild.iconURL({ format: "png", dynamic: true, size: 1024 }) || client.user.displayAvatarURL({ format: "png", dynamic: true }))
-                .setFooter(`Made with ❤️ by DiabolusGX`, client.user.displayAvatarURL({ format: "png", dynamic: true }));
+                .setFooter({
+                    text: `Made with ❤️ by DiabolusGX`,
+                    iconURL: client.user.displayAvatarURL({ format: "png", dynamic: true })
+                });
 
-            return message.channel.send(configEmbed);
+            return message.channel.send({ embeds: [configEmbed] });
         }
 
         if (args[0] === "prefix") {
@@ -59,9 +65,9 @@ module.exports = {
 
             const prefixUpdateEmbed = new MessageEmbed()
                 .setColor(client.colors[0])
-                .setAuthor(`Prefix Update`)
+                .setAuthor({ name: `Prefix Update` })
                 .setDescription(`\nChanged prefix from : \`${currPrefix}\` to : \`${args[1]}\` \n\n >>> Prefix will be required to use commands!`)
-            return message.channel.send(prefixUpdateEmbed);
+            return message.channel.send({ embeds: [prefixUpdateEmbed] });
         }
         else if (args[0] === "manager") {
             if (!args[1]) return message.channel.send(`${client.myEmojis[1]} | **Please mention a role (or use role id) to allow users with that role to edit/remove bot settings**\n` +
@@ -79,17 +85,21 @@ module.exports = {
                 }, (err) => console.error);
             }
 
-            message.channel.send("__**Note**__ : Make sure you give this role to trusted users only. They can manage bot settings.");
+            message.channel.send({
+                content: "__**Note**__ : Make sure you give this role to trusted users only. They can manage bot settings."
+            });
             const managerRoleUpdateEmbed = new MessageEmbed()
                 .setColor(client.colors[0])
-                .setAuthor(`Bot Manager Role Update`)
+                .setAuthor({ name: `Bot Manager Role Update` })
                 .setDescription(`\nChanged Manager Role to : **${botManagerRole || "disable"}** \n\n >>> User with this role can modify bot settings!\n(If \`disable\` then only Admins can edit setting)`)
-            return message.channel.send(managerRoleUpdateEmbed);
+            return message.channel.send({ embeds: [managerRoleUpdateEmbed] });
         }
         else if (args[0] === "dm") {
-            if (!args[1]) return message.channel.send(`${client.myEmojis[1]} | **Please choose from : \`ENABLE\` or \`DISABLE\` for DM**` +
-                `\n > **\`${dbPrefix} setup dm enable\`** __(default)__ will DM who guesses the number.` +
-                `\n > **\`${dbPrefix} setup dm disable\`** will only send normal message`);
+            if (!args[1]) return message.channel.send({
+                content: `${client.myEmojis[1]} | **Please choose from : \`ENABLE\` or \`DISABLE\` for DM**` +
+                    `\n > **\`${dbPrefix} setup dm enable\`** __(default)__ will DM who guesses the number.` +
+                    `\n > **\`${dbPrefix} setup dm disable\`** will only send normal message`
+            });
             let desc;
             if (args[1] === "enable") {
                 guildConfigModel.updateOne({ id: message.guild.id }, { $set: { dm: true } }, (err) => console.error);
@@ -99,15 +109,17 @@ module.exports = {
                 guildConfigModel.updateOne({ id: message.guild.id }, { $set: { dm: false } }, (err) => console.error);
                 desc = "\n**Disabled** DM!\nOnly a message will be sent when someone guesses the correct number.";
             }
-            else return message.channel.send(`${client.myEmojis[1]} | **Please choose from : \`ENABLE\` or \`DISABLE\` for DM**` +
-                `\n > **\`${dbPrefix} setup dm enable\`** __(default)__ will DM who guesses the number.` +
-                `\n > **\`${dbPrefix} setup dm disable\`** will only send normal message`);
+            else return message.channel.send({
+                content: `${client.myEmojis[1]} | **Please choose from : \`ENABLE\` or \`DISABLE\` for DM**` +
+                    `\n > **\`${dbPrefix} setup dm enable\`** __(default)__ will DM who guesses the number.` +
+                    `\n > **\`${dbPrefix} setup dm disable\`** will only send normal message`
+            });
 
             const dmUpdateEmbed = new MessageEmbed()
                 .setColor(client.colors[0])
-                .setAuthor(`Updated DM`)
+                .setAuthor({ name: `Updated DM` })
                 .setDescription(desc);
-            return message.channel.send(dmUpdateEmbed);
+            return message.channel.send({ embeds: [dmUpdateEmbed] });
         }
         // else if (args[0] === "msg" || args[0] === "message") {
         //     if (!args[1]) return message.channel.send(`**Please enter the message you want to be sent when someone guesses the number**` +
@@ -135,8 +147,10 @@ module.exports = {
         //     return message.channel.send(tip, messageUpdateEmbed);
         // }
         else if (args[0] === "win-role") {
-            if (!args[1]) return message.channel.send(`${client.myEmojis[1]} | **Please mention (or role id) the role which you want to give to winners.**\n` +
-                `> **\`${dbPrefix} setup win-role @guess-winner\`** Bot will assign this role when someone guesses the correct number.`);
+            if (!args[1]) return message.channel.send({
+                content: `${client.myEmojis[1]} | **Please mention (or role id) the role which you want to give to winners.**\n` +
+                    `> **\`${dbPrefix} setup win-role @guess-winner\`** Bot will assign this role when someone guesses the correct number.`
+            });
             let winRole, desc = "";
             const argsJoin = args.slice(1).join(" ");
             if (argsJoin.toLowerCase() === "disable") {
@@ -145,22 +159,28 @@ module.exports = {
             }
             else {
                 winRole = await find.getRole(message, argsJoin);
-                if (!winRole) return message.channel.send(`${client.myEmojis[1]} | I can't find role with NAME or ID : \`${argsJoin}\``);
-                if (winRole.position >= botRole.position) return message.channel.send(client.myEmojis[1] + "| Bot's highest role is not high enough to assign **" + winRole.name + "** role.\n" +
-                    "Please make sure bot has `MANAGE_ROLES` perms and bot's role is high enough in role hierarchy.");
+                if (!winRole) return message.channel.send({
+                    content: `${client.myEmojis[1]} | I can't find role with NAME or ID : \`${argsJoin}\``
+                });
+                if (winRole.position >= botRole.position) return message.channel.send({
+                    content: client.myEmojis[1] + "| Bot's highest role is not high enough to assign **" + winRole.name + "** role.\n" +
+                        "Please make sure bot has `MANAGE_ROLES` perms and bot's role is high enough in role hierarchy."
+                });
                 guildConfigModel.updateOne({ id: message.guild.id }, { $set: { winRole: winRole.id } }, (err) => console.error);
                 desc = `Updated Win Role : **${winRole.toString()}** \n\n >>> Bot will assign this role when someone guesses the number`;
             }
 
             const winRoleUpdateEmbed = new MessageEmbed()
                 .setColor(client.colors[0])
-                .setAuthor(`WIN Role Update`)
+                .setAuthor({ name: `WIN Role Update` })
                 .setDescription(`\n${desc}`)
-            return message.channel.send(winRoleUpdateEmbed);
+            return message.channel.send({ embeds: [winRoleUpdateEmbed] });
         }
         else if (args[0] === "req-role") {
-            if (!args[1]) return message.channel.send(`${client.myEmojis[1]} | **Please mention (or role id) the role which is required to guess the number.**\n` +
-                `> **\`${dbPrefix} setup req-role @guessers\`** Bot will accept guesses only from users in this role.`);
+            if (!args[1]) return message.channel.send({
+                content: `${client.myEmojis[1]} | **Please mention (or role id) the role which is required to guess the number.**\n` +
+                    `> **\`${dbPrefix} setup req-role @guessers\`** Bot will accept guesses only from users in this role.`
+            });
             let reqRole, desc = "";
             const argsJoin = args.slice(1).join(" ");
             if (argsJoin.toLowerCase() === "disable") {
@@ -175,13 +195,15 @@ module.exports = {
 
             const reqRoleUpdateEmbed = new MessageEmbed()
                 .setColor(client.colors[0])
-                .setAuthor(`Required Role Update`)
+                .setAuthor({ name: `Required Role Update` })
                 .setDescription(`\n${desc}`)
-            return message.channel.send(reqRoleUpdateEmbed);
+            return message.channel.send({ embeds: [reqRoleUpdateEmbed] });
         }
         else if (args[0] === "lock-role") {
-            if (!args[1]) return message.channel.send(`${client.myEmojis[1]} | **Please mention (or role id) the role that bot will lock channel for.**\n` +
-                `> **\`${dbPrefix} setup req-role @everyone\`** Bot will lock channel for everyone after someone guesses the number.`);
+            if (!args[1]) return message.channel.send({
+                content: `${client.myEmojis[1]} | **Please mention (or role id) the role that bot will lock channel for.**\n` +
+                    `> **\`${dbPrefix} setup req-role @everyone\`** Bot will lock channel for everyone after someone guesses the number.`
+            });
             let lockRole, desc = "";
             const argsJoin = args.slice(1).join(" ");
             if (argsJoin.toLowerCase() === "disable") {
@@ -191,18 +213,22 @@ module.exports = {
             else {
                 if (argsJoin.toLowerCase() === "everyone") lockRole = message.guild.roles.everyone;
                 else lockRole = await find.getRole(message, argsJoin);
-                if(!lockRole) return message.channel.send(`${client.myEmojis[1]} | **No Role Found** matching with \`${argsJoin}\``);
+                if (!lockRole) return message.channel.send({
+                    content: `${client.myEmojis[1]} | **No Role Found** matching with \`${argsJoin}\``
+                });
                 guildConfigModel.updateOne({ id: message.guild.id }, { $set: { lockRole: lockRole.id } }, (err) => console.error);
                 desc = `Updated Lock Role : **${lockRole.toString()}** \n\n >>> Bot will lock channel for this given role.`;
             }
 
             const reqRoleUpdateEmbed = new MessageEmbed()
                 .setColor(client.colors[0])
-                .setAuthor(`LOCK Role Update`)
+                .setAuthor({ name: `LOCK Role Update` })
                 .setDescription(`\n${desc}`)
-            return message.channel.send(reqRoleUpdateEmbed);
+            return message.channel.send({ embeds: [reqRoleUpdateEmbed] });
         }
 
-        else return message.channel.send(client.myEmojis[1] + " | **No vaid option.**\nCheck options from command usage and try again!\n> `" + dbPrefix + " setup < prefix | manager | dm | msg | win-role | req-role >`.");
+        else return message.channel.send({
+            content: client.myEmojis[1] + " | **No vaid option.**\nCheck options from command usage and try again!\n> `" + dbPrefix + " setup < prefix | manager | dm | msg | win-role | req-role >`."
+        });
     }
 }

@@ -1,11 +1,22 @@
 require("dotenv").config();
-const { Client } = require("discord.js");
+const { Client, Intents, Options } = require("discord.js");
 const client = new Client({
-    messageCacheMaxSize: 10,
-    messageCacheLifetime: 10,
-    messageSweepInterval: 60,
+    shards: "auto",
     partials: ["MESSAGE", "REACTION"],
-    intents: ["GUILDS", "GUILD_MEMBERS", "GUILD_MESSAGES", "GUILD_MESSAGE_REACTIONS"],
+    makeCache: Options.cacheWithLimits({
+        ThreadManager: 0,
+        MessageManager: 0,
+        PresenceManager: 0,
+        VoiceStateManager: 0,
+        GuildEmojiManager: 0,
+        GuildInviteManager: 0,
+    }),
+    intents: [
+        Intents.FLAGS.GUILDS,
+        Intents.FLAGS.GUILD_MEMBERS,
+        Intents.FLAGS.GUILD_MESSAGES,
+        Intents.FLAGS.GUILD_MESSAGE_REACTIONS,
+    ],
     allowedMentions: { parse: ["users"], repliedUser: true }
 });
 const registery = require("./utils/registery");

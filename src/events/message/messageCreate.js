@@ -2,18 +2,17 @@ const { MessageEmbed } = require("discord.js");
 const guildConfigModel = require("../../database/models/guildConfig");
 const answerFound = require("../../utils/answerFound");
 
-const fs = require("fs");
-const scoresData = require("../../../scores.json");
-
 module.exports = async (client, message) => {
 
-    if (message.author.bot || message.channel.type !== "text") return;
+    if (message.author.bot || !message.channel || !message.guild || !message.guild.id || !message.channel.isText()) return;
 
     if (!isNaN(message.content) && client.games.has(message.channel.id)) {
-        if (parseInt(message.content) === client.games.get(message.channel.id).answer) return answerFound(client, message);
+        if (parseInt(message.content) === client.games.get(message.channel.id).answer) {
+            return answerFound(client, message);
+        }
         else {
-            const { answer, guesses } = client.games.get(message.channel.id);
-            client.games.set(message.channel.id, { answer: answer, guesses: guesses + 1 });
+            const { gameID, answer, guesses } = client.games.get(message.channel.id);
+            client.games.set(message.channel.id, { gameID, answer, guesses: guesses + 1 });
         }
     }
 
@@ -23,7 +22,7 @@ module.exports = async (client, message) => {
         const prefixEmbed = new MessageEmbed()
             .setColor(client.colors[0])
             .setDescription(`🥳 My prefix for **${message.guild.name}** is : **\`${dbPrefix}\`**`);
-        return message.channel.send(prefixEmbed).then(msg => setTimeout(() => msg.delete(), 5000));
+        return message.channel.send({ embeds: [prefixEmbed] }).then(msg => setTimeout(() => msg.delete(), 5000));
     }
 
     if (!message.content.startsWith(dbPrefix)) return;
@@ -46,13 +45,13 @@ module.exports = async (client, message) => {
         }
     }
 
-    if (command.guildOnly && message.channel.type !== "text") return;
+    if (command.guildOnly && !message.channel.isText()) return;
     if (command.args && !args.length) {
         let reply = `You didn't provide any arguments, ${message.author}!`;
         if (command.usage) {
             reply += `\nThe proper usage would be: \`${dbPrefix}${command.name} ${command.usage}\``;
         }
-        return message.channel.send(reply).then(msg => setTimeout(() => msg.delete(), 5000));
+        return message.channel.send({ content: reply }).then(msg => setTimeout(() => msg.delete(), 5000));
     }
     const cooldowns = client.cooldowns;
     if (!cooldowns.has(command.name)) cooldowns.set(command.name, new Map());

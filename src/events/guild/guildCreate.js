@@ -8,13 +8,16 @@ module.exports = async (client, guild) => {
     await dataDoc(client, guild);
 
     let ownerId = "NA", ownerTag = "NA", owner = "NA", ownerAv = "https://i.imgur.com/X0CBc8U.gif";
-    if (guild.owner) {
-        owner = guild.owner.user; ownerId = guild.owner.id; ownerTag = guild.owner.user.tag; ownerAv = guild.owner.user.displayAvatarURL({ format: "png", dynamic: true, size: 1024 });
+    if (guild.ownerId) {
+        ownerId = guild.ownerId;
+        owner = await guild.members.fetch(ownerId).catch(() => console.error("err while fetching owner"));
+        ownerTag = owner?.user?.tag;
+        ownerAv = owner?.user.displayAvatarURL({ format: "png", dynamic: true, size: 1024 });
     }
 
     const guildCreateEmbed = new MessageEmbed()
         .setColor("#00ff00")
-        .setAuthor(`${ownerTag}`, ownerAv)
+        .setAuthor({ name: ownerTag, iconURL: ownerAv })
         .setTitle(`Guild Created`)
         .setDescription(`**${guild.name}** (${guild.id}) by : ${owner}, ${ownerTag} (${ownerId})`)
         .setThumbnail(guild.iconURL({ format: "png", dynamic: true, size: 1024 }) || ownerAv)
@@ -28,9 +31,7 @@ module.exports = async (client, guild) => {
                     `\n**Channels** : ${client.channels.cache.size} \n**Users :** ${client.users.cache.size}`, inline: true
             },
         )
-        .setTimestamp()
-        .setFooter(`Guild Created | ${client.user.username}`, `${client.user.displayAvatarURL({ format: "png", dynamic: true })}`);
 
     const joinLeaveChannel = await client.channels.cache.get("818439901044801567");
-    return joinLeaveChannel.send(guildCreateEmbed).catch(console.error);
+    return joinLeaveChannel.send({ embeds: [guildCreateEmbed] }).catch(console.error);
 }

@@ -1,5 +1,5 @@
-const guildConfigModel = require("../../database/models/guildConfig");
 const guildDataModel = require("../../database/models/guildData");
+const GameDocument = require("../../database/documents/game");
 const find = require("../../utils/find");
 
 module.exports = {
@@ -17,21 +17,30 @@ module.exports = {
 
         let targetChannel;
         if (args[0] || message.mentions.channels.first()) {
-            targetChannel = await find.getChannel(message, args[2]);
+            targetChannel = await find.getChannel(message, args[0]);
         }
-        else return message.channel.send(`${client.myEmojis[1]} | **Please mention a channel where you want to END the game!**\n`);
-        if (!client.games.has(targetChannel.id)) return message.channel.send(`${client.myEmojis[1]} | There is NO game going on in ${targetChannel}`);
+        else return message.channel.send({
+            content: `${client.myEmojis[1]} | **Please mention a channel where you want to END the game!**\n`
+        });
+        if (!client.games.has(targetChannel.id)) return message.channel.send({
+            content: `${client.myEmojis[1]} | There is NO game going on in ${targetChannel}`
+        });
 
+        // clear cache game
+        const { gameID, guesses } = client.games.get(message.channel.id);
+        client.games.delete(targetChannel.id);
+
+        // update DB
         const games = dataDoc.runningGames;
         games.delete(message.channel.id);
-        client.games.delete(targetChannel.id);
         await guildDataModel.updateOne({ id: message.guild.id }, { $set: { runningGames: games } }, (err) => console.error);
+        await GameDocument.disableGame(gameID, guesses);
 
         await message.channel.messages.fetchPinned()
             .then(messages => {
                 messages.forEach(m => {
-                    if(m.author.id === "818420448131285012" && !m.content.startsWith(`${client.myEmojis[0]} | **Congratulations**`))
-                    m.unpin({ reason: "game ended" }).catch(console.error);
+                    if (m.author.id === client.user.id && !m.content.startsWith(`${client.myEmojis[0]} | **Congratulations**`))
+                        m.unpin({ reason: "game ended" }).catch(console.error);
                 })
             })
             .catch(console.error);

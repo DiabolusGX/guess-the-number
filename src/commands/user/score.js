@@ -32,10 +32,18 @@ module.exports = {
 
         const scoreEmbed = new MessageEmbed()
             .setColor(client.colors[0])
-            .setAuthor(`We have ${totalSpammers} Spammers`, client.user.displayAvatarURL)
+            .setAuthor({
+                name: `We have ${totalSpammers} Spammers`,
+                iconURL: client.user.displayAvatarURL
+            })
             .setDescription(desc)
-            .setFooter("Top spammer will get 200 points in Fun Week by Diabolus ❤️")
+            .setFooter({
+                text: "Top spammer will get 200 points in Fun Week by Diabolus ❤️"
+            })
 
-        return message.channel.send(`Ping Scores 🔔`, scoreEmbed);
+        return message.channel.send({
+            content: `Ping Scores 🔔`,
+            embeds: [scoreEmbed]
+        });
     },
 };
