@@ -60,7 +60,7 @@ module.exports = async (client, message) => {
         const role = await find.getRole(message, guildConfig.lockRole);
         message.channel.permissionOverwrites.edit(
             role,
-            { SEND_MESSAGES: true },
+            { SEND_MESSAGES: false },
             { reason: "Game ended, locking channel for lock role", type: 0 }
         )
             .then(channel => {

@@ -7,8 +7,12 @@ module.exports = {
 
     name: "leaderboard",
     aliases: ["lb", "top"],
-    description: "Shows points leaderboard and win games of server.",
-    usage: "[daily | all]",
+    description: "Shows points leaderboard and win games of server." +
+        "`gg lb` : It'll show all time leaderboard.\n" +
+        "`gg lb daily` : It'll show today's leaderboard, if there are any winners.\n" +
+        "`bb lb 2022-02-14` : Shows given date's leaderboard, if there were any winners." +
+        "`gg lb 2022-02-14 2022-02-20` : Shows leaderboard b/w given dates, if there were any winners.\n",
+    usage: "[daily | all | start-date] [end-date]",
 
     async run(client, message, args) {
         const dbPrefix = client.guildConfigPrefix.get(message.guild.id);
