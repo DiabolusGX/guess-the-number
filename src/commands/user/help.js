@@ -41,6 +41,7 @@ module.exports = {
                             `\`game\` : Running game info.\n` +
                             `\`info\` : User games & points info.\n` +
                             `\`lb\` : Leader Board based on points.\n` +
+                            `\`premium\` : Gives serevr & user info.\n` +
                             `\`invite\` : Bot Invite Links.\n`, inline: true
                     },
                     {

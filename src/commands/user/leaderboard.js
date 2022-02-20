@@ -18,7 +18,17 @@ module.exports = {
         const dbPrefix = client.guildConfigPrefix.get(message.guild.id);
 
         let winners = [], title = "";
-        if (args[0] === "daily") {
+        if (args[0] === "bot" && message.author.id === "454611998051794954") {
+            const startDate = new Date(args[1]);
+            const endDate = new Date(args[2]);
+            if (isNaN(Date.parse(startDate)) || isNaN(Date.parse(endDate))) {
+                return message.channel.send({ content: "Invalid date format." });
+            }
+            const games = await GameDocument.getBotLeaderboard(startDate, endDate);
+            winners = getWinnersDataFromGames(games);
+            title = "Bot Leaderboard";
+        }
+        else if (args[0] === "daily") {
             winners = await getDailyLeaderboard(message.guild.id);
             title = "Today's Leaderboard";
         } else if (args[0] && !isNaN(Date.parse(args[0]))) {

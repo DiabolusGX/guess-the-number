@@ -121,4 +121,33 @@ module.exports = {
             return false;
         }
     },
+
+    /**
+     * Get bot's all finished events between 2 given dates.
+     * @param {Date} startDate start date
+     * @param {Date} endDate end date
+     * @returns {Promise<array>} array of games
+     */
+    getBotLeaderboard: async (startDate, endDate) => {
+        if (isNaN(Date.parse(startDate)) || isNaN(Date.parse(endDate))) {
+            return false;
+        }
+        try {
+            return Game.find({
+                finished: true,
+                finishedAt: {
+                    $gte: new Date(startDate),
+                    $lte: new Date(endDate)
+                }
+            }).sort({
+                points: -1
+            }).select({
+                _id: 0,
+                points: 1,
+                wonBy: 1
+            });
+        } catch (error) {
+            console.error(error);
+        }
+    },
 };
