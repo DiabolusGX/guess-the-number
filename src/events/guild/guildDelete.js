@@ -5,9 +5,7 @@ module.exports = async (client, guild) => {
 
     if (!guild.available) return;
 
-    guildConfigModel.deleteOne({ id: guild.id }, (err) => console.error).then(() => {
-        console.log(`Deleted GUILD CONFIG for : "${guild.name}" owned by : "${ownerTag}"`);
-    }).catch(console.error);
+    guildConfigModel.deleteOne({ id: guild.id }, (err) => console.error);
 
     const guildDeleteEmbed = new MessageEmbed()
         .setColor("#ff0000")
