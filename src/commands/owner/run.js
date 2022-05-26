@@ -2,7 +2,7 @@ const axios = require("axios");
 
 module.exports = {
 
-    name: "eval",
+    name: "run",
     aliases: [],
     description: "Evaluate code / any equation.",
     category: "owner",
