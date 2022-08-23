@@ -26,7 +26,7 @@ module.exports = async (client, message) => {
         const userData = users.get(message.author.id);
         const wins = userData.wins;
         const userPoints = userData.points;
-        users.set(message.author.id, { wins: wins + 1, points: userPoints + 1 });
+        users.set(message.author.id, { wins: wins + 1, points: userPoints + points });
     }
     else users.set(message.author.id, { wins: 1, points: points });
 
