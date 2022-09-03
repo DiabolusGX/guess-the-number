@@ -228,7 +228,7 @@ module.exports = {
         }
 
         else return message.channel.send({
-            content: client.myEmojis[1] + " | **No vaid option.**\nCheck options from command usage and try again!\n> `" + dbPrefix + " setup < prefix | manager | dm | msg | win-role | req-role >`."
+            content: client.myEmojis[1] + " | **No valid option.**\nCheck options from command usage and try again!\n> `" + dbPrefix + " setup < prefix | manager | dm | msg | win-role | req-role >`."
         });
     }
 }
