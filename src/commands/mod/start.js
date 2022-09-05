@@ -39,9 +39,11 @@ module.exports = {
         if (args[2] || message.mentions.channels.first()) {
             targetChannel = await find.getChannel(message, args[2]);
         }
-        else return message.channel.send({
-            content: `${client.myEmojis[1]} | **Please mention a channel where you want to start the game!**\n`
-        });
+        if (!targetChannel) {
+            return message.channel.send({
+                content: `${client.myEmojis[1]} | **Please mention a channel where you want to start the game!**\n`
+            });
+        }
         if (client.games.has(targetChannel.id)) return message.channel.send({
             content: `${client.myEmojis[1]} | There is already a game going on in ${targetChannel}`
         });
