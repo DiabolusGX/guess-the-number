@@ -5,7 +5,7 @@ Guess The Number will be a simple and fune number game where you have to guess n
 Bot can also provide hints (only if asked by game organizer) but that'll lead to less game win points.
 Good Luck and Have Fun!
 
-### My Other Bots : [Booster Bot](https://boosterbot.xyz/) `|` [JSL](https://github.com/DiabolusGX/JSL) `|`
+### My Other Bots : [Booster Bot](https://boosterbot.xyz/)
 
 # Getting Started
 
