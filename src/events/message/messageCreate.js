@@ -1,3 +1,5 @@
+const path = require("path");
+require("dotenv").config({ path: path.join(__dirname, "/../../../.env") });
 const { MessageEmbed } = require("discord.js");
 const guildConfigModel = require("../../database/models/guildConfig");
 const answerFound = require("../../utils/answerFound");
