@@ -27,7 +27,8 @@ module.exports = {
         });
 
         // clear cache game
-        const { gameID, guesses } = client.games.get(message.channel.id);
+        const gameData = client.games.get(message.channel.id);
+        const { gameID, guesses } = gameData;
         client.games.delete(targetChannel.id);
 
         // update DB
