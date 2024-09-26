@@ -13,6 +13,7 @@ module.exports = {
             role = message.mentions.roles.first();
         }
         else role = message.guild.roles.cache.find(r => r.name.toLowerCase() === name.toLowerCase()) || message.guild.roles.cache.get(name);
+        if (role?.guild?.id !== message.guild.id) return null;
         return role;
     },
 
@@ -24,12 +25,9 @@ module.exports = {
         let channel;
         if (message.mentions.channels.first()) {
             channel = message.mentions.channels.first();
-        }
-        if (!channel) channel = message.guild.channels.cache.find(c => c.id === name) ||
-            message.guild.channels.cache.get(name);
-        if (!channel) channel = message.guild.channels.cache.find(c => c.name.toLowerCase() === name.toLowerCase()) ||
-            message.guild.channels.cache.get(name);
+        } else channel = message.guild.channels.cache.find((c) => c.name === name) || message.guild.channels.cache.get(name);
 
+        if (channel?.guild?.id !== message.guild.id) return null;
         if (channel?.type !== "GUILD_TEXT" && channel?.type !== "GUILD_NEWS") return null;
         else return channel;
     },
