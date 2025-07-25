@@ -1,0 +1,42 @@
+# Sample configuration for Guess The Number Go Bot
+deployment:
+  mode: "local"
+
+bot:
+  token: ""
+  dev_guilds: [""] # List of guild IDs for dev commands
+  sync_commands: false
+  sharding:
+    enabled: false        # Set to true to enable sharding
+    shard_count: 0       # 0 = auto-detect based on guild count
+    auto_scale: true     # Whether to auto-scale shards
+    gateway_url: ""      # Custom gateway URL if needed
+
+mongo:
+  host: ""
+  username: ""
+  password: ""
+  database: ""
+  params: "retryWrites=true&w=majority"
+  max_pool_size: 10
+  min_pool_size: 1
+
+redis:
+  host: "localhost"
+  port: "6379"
+  password: ""
+  db: 0
+  pool_size: 10
+
+logging:
+  level: "debug"
+
+sentry:
+  enabled: false
+  dsn: ""
+  environment: "development"
+  sample_rate: 1.0
+
+metrics:
+  enabled: true
+  listen_addr: ":8080"
