@@ -17,8 +17,12 @@ const (
 	ErrCodeAlreadyExists    ErrorCode = "already_exists"
 	ErrCodePermissionDenied ErrorCode = "permission_denied"
 	ErrCodeDatabase         ErrorCode = "database_error"
-	ErrCodeSystemError      ErrorCode = "system_error"
+	ErrCodeInternalError    ErrorCode = "internal_error"
 )
+
+func (e ErrorCode) String() string {
+	return string(e)
+}
 
 // AppError represents a structured application error
 type AppError struct {
@@ -73,6 +77,12 @@ func (e *AppError) Mark(code ErrorCode) *AppError {
 	return e
 }
 
+// WithMessage sets the error code and message
+func (e *AppError) WithMessage(message string) *AppError {
+	e.Message = message
+	return e
+}
+
 // NewErrorWithContext creates a new AppError with context
 func NewErrorWithContext(ctx context.Context, code ErrorCode, err error) *AppError {
 	ierr := &AppError{
@@ -82,7 +92,7 @@ func NewErrorWithContext(ctx context.Context, code ErrorCode, err error) *AppErr
 	}
 
 	_, file, line, _ := runtime.Caller(1)
-	logger.GetLoggerWithContext(ctx).Warnf(
+	logger.GetLoggerFromContext(ctx).Warnf(
 		"[%s] [%s:%d] error: %w",
 		code,
 		file,
@@ -101,7 +111,7 @@ func NewWarningWithContext(ctx context.Context, code ErrorCode, message string) 
 	}
 
 	_, file, line, _ := runtime.Caller(1)
-	logger.GetLoggerWithContext(ctx).Warnf(
+	logger.GetLoggerFromContext(ctx).Warnf(
 		"[%s] [%s:%d] warning: %s",
 		code,
 		file,

@@ -74,7 +74,73 @@ func (r *GuildDataRepository) Replace(ctx context.Context, data *domain.GuildDat
 	return updatedData, nil
 }
 
-func (r *GuildDataRepository) UpdateUserStats(ctx context.Context, guildID, userID string, points, wins int) error {
+func (r *GuildDataRepository) UpdateGameAndUserStats(ctx context.Context, guildID, channelID, userID string, points, wins int64) error {
+	span := StartRepositorySpan(ctx, guildDataCollection, "update_game_and_user_stats", map[string]any{
+		"guildID":   guildID,
+		"channelID": channelID,
+		"userID":    userID,
+		"points":    points,
+		"wins":      wins,
+	})
+	defer FinishSpan(span)
+
+	incr := bson.M{
+		"totalGames": 1,
+	}
+
+	if userID != "" {
+		incr[fmt.Sprintf("users.%s.points", userID)] = points
+		incr[fmt.Sprintf("users.%s.wins", userID)] = wins
+	}
+
+	filter := bson.M{"id": guildID}
+	update := bson.M{
+		"$inc": incr,
+		"$unset": bson.M{
+			fmt.Sprintf("runningGames.%s", channelID): "",
+		},
+	}
+	_, err := r.collection.UpdateOne(ctx, filter, update)
+	if err != nil {
+		ierr.NewErrorWithContext(ctx, ierr.ErrCodeDatabase, fmt.Errorf("failed to update game and user stats: %w", err))
+		SetSpanError(span, err)
+		return err
+	}
+
+	SetSpanSuccess(span)
+	return nil
+}
+
+// NOTE: merged UpdateGameStats & UpdateUserStats into UpdateGameAndUserStats however, we can keep them here for now
+func (r *GuildDataRepository) UpdateGameStats(ctx context.Context, guildID, channelID string) error {
+	span := StartRepositorySpan(ctx, guildDataCollection, "update_game_stats", map[string]any{
+		"guildID":   guildID,
+		"channelID": channelID,
+	})
+	defer FinishSpan(span)
+
+	filter := bson.M{"id": guildID}
+	update := bson.M{
+		"$inc": bson.M{
+			"totalGames": 1,
+		},
+		"$unset": bson.M{
+			fmt.Sprintf("runningGames.%s", channelID): "",
+		},
+	}
+	_, err := r.collection.UpdateOne(ctx, filter, update)
+	if err != nil {
+		ierr.NewErrorWithContext(ctx, ierr.ErrCodeDatabase, fmt.Errorf("failed to update game stats: %w", err))
+		SetSpanError(span, err)
+		return err
+	}
+
+	SetSpanSuccess(span)
+	return nil
+}
+
+// NOTE: merged UpdateGameStats & UpdateUserStats into UpdateGameAndUserStats however, we can keep them here for now
+func (r *GuildDataRepository) UpdateUserStats(ctx context.Context, guildID, userID string, points, wins int64) error {
 	span := StartRepositorySpan(ctx, guildDataCollection, "update_user_stats", map[string]any{
 		"guildID": guildID,
 		"userID":  userID,

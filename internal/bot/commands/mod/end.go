@@ -3,59 +3,110 @@ package mod
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/diabolusgx/guess-the-number-go/internal/bot/commands"
 	"github.com/diabolusgx/guess-the-number-go/internal/bot/utils"
 	"github.com/diabolusgx/guess-the-number-go/internal/service"
+	"github.com/diabolusgx/guess-the-number-go/internal/types"
 	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/events"
 )
 
-type EndCommand struct {
+type FinishCommand struct {
 	name        string
-	definition  discord.ApplicationCommandCreate
 	gameService service.GameService
 }
 
-func NewEndCommand(params commands.CommandParams) *EndCommand {
-	return &EndCommand{
-		name: "end",
-		definition: discord.SlashCommandCreate{
-			Name:        "end",
-			Description: "Ends the current game in a channel",
-			Options: []discord.ApplicationCommandOption{
-				discord.ApplicationCommandOptionChannel{
-					Name:        "channel",
-					Description: "The channel to end the game in",
-					Required:    true,
-				},
-			},
-		},
+func NewFinishCommand(params commands.CommandParams) *FinishCommand {
+	return &FinishCommand{
+		name:        "finish-game",
 		gameService: params.GameService,
 	}
 }
 
-func (c *EndCommand) Name() string {
+func (c *FinishCommand) Name() string {
 	return c.name
 }
 
-func (c *EndCommand) Definition() discord.ApplicationCommandCreate {
-	return c.definition
+func (c *FinishCommand) Definition() discord.ApplicationCommandCreate {
+	return discord.SlashCommandCreate{
+		Name:        c.name,
+		Description: "Finishs the running game in a channel",
+		Options: []discord.ApplicationCommandOption{
+			discord.ApplicationCommandOptionChannel{
+				Name:        "channel",
+				Description: "The channel to finish the game in",
+				Required:    true,
+			},
+		},
+	}
 }
 
-func (c *EndCommand) Handler(event *events.ApplicationCommandInteractionCreate) error {
+func (c *FinishCommand) Handler(ctx context.Context, event *events.ApplicationCommandInteractionCreate, data *commands.Data) error {
 	channel := event.SlashCommandInteractionData().Channel("channel")
-	game, err := c.gameService.GetGameByChannelID(context.Background(), channel.ID.String())
+
+	game, err := c.gameService.GetGameInfo(ctx, &types.GetGameInfoRequest{
+		ChannelID: channel.ID.String(),
+	})
+	if err != nil || game == nil {
+		err = utils.EventReply(event, utils.MessageRequest{
+			Content:     fmt.Sprintf("No game found in <#%s>", channel.ID.String()),
+			Emoji:       utils.EmojiError,
+			IsEphemeral: true,
+		})
+		if err != nil {
+			utils.HandleError(ctx, event, err)
+			return nil
+		}
+		return nil
+	}
+
+	_, err = c.gameService.FinishGame(ctx, &types.FinishGameRequest{
+		ChannelID: game.Game.ChannelID,
+	})
 	if err != nil {
-		return err
-	}
-	if game == nil {
-		return utils.SendEmbed(event.Client().Rest(), event.Channel().ID(), "No Game", "There is no game running in this channel", 0xFF0000)
+		utils.HandleError(ctx, event, err)
+		return nil
 	}
 
-	if err := c.gameService.FinishGame(context.Background(), game); err != nil {
-		return utils.SendEmbed(event.Client().Rest(), event.Channel().ID(), "Error", fmt.Sprintf("failed to end game: %s", err.Error()), 0xFF0000)
+	var response strings.Builder
+	response.WriteString(fmt.Sprintf("Game finished in <#%s>\n\n", channel.ID.String()))
+
+	// TODO: add some game stats
+	_, err = utils.SendMessage(event.Client().Rest(), utils.MessageRequest{
+		ChannelID: channel.ID,
+		Content:   fmt.Sprintf("Game has beed ended by <@%s>", event.User().ID.String()),
+		Emoji:     utils.EmojiSuccess,
+	})
+	var gameFinishedMessageStatus string
+	if err != nil {
+		response.WriteString(fmt.Sprintf("> *Failed to send 'Game Finished' message in <#%s> please verify permissions.*", channel.ID.String()))
+		gameFinishedMessageStatus = fmt.Sprintf("❌ Failed to send end message: %s", err.Error())
+	} else {
+		gameFinishedMessageStatus = "✅ End message sent successfully"
 	}
 
-	return utils.SendEmbed(event.Client().Rest(), event.Channel().ID(), "Game Ended", "The game has been ended.", 0x00FF00)
+	// Log the game finish to the log channel
+	if data.GuildConfig != nil && data.GuildConfig.LogChannel != "" {
+		var logContent strings.Builder
+		logContent.WriteString(fmt.Sprintf("**Channel:** <#%s>\n", channel.ID.String()))
+		logContent.WriteString(fmt.Sprintf("**Answer:** %d\n", game.Game.Answer))
+		logContent.WriteString(fmt.Sprintf("**Force Ended by:** <@%s>\n\n", event.User().ID.String()))
+
+		// Add status information
+		logContent.WriteString("**Status Report:**\n")
+		logContent.WriteString(gameFinishedMessageStatus)
+
+		utils.LogToChannel(event.Client().Rest(), data.GuildConfig.LogChannel,
+			"🔴 Game Force Ended",
+			logContent.String(),
+			"Game Activity")
+	}
+
+	return utils.EventReply(event, utils.MessageRequest{
+		Content:     response.String(),
+		Emoji:       utils.EmojiSuccess,
+		IsEphemeral: true,
+	})
 }

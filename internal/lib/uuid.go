@@ -18,7 +18,7 @@ const (
 // NewULID generates a new ULID
 func NewULID(prefix ULIDPrefix) string {
 	entropy := ulid.Monotonic(rand.New(rand.NewSource(time.Now().UnixNano())), 0)
-	return fmt.Sprintf("%s-%s", prefix, ulid.MustNew(ulid.Timestamp(time.Now()), entropy).String())
+	return fmt.Sprintf("%s_%s", prefix, ulid.MustNew(ulid.Timestamp(time.Now()), entropy).String())
 }
 
 // NewRequestID generates a new request ID using ULID

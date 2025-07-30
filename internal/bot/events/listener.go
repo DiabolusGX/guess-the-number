@@ -1,9 +1,12 @@
 package events
 
 import (
+	"context"
+
 	"github.com/diabolusgx/guess-the-number-go/internal/config"
 	"github.com/diabolusgx/guess-the-number-go/internal/service"
 	"github.com/diabolusgx/guess-the-number-go/pkg/logger"
+	"github.com/diabolusgx/guess-the-number-go/pkg/metrics"
 	"github.com/disgoorg/disgo/bot"
 	disgoEvents "github.com/disgoorg/disgo/events"
 	"go.uber.org/fx"
@@ -12,16 +15,18 @@ import (
 type EventListenerParams struct {
 	fx.In
 
-	Client                 bot.Client
-	Config                 *config.Configuration
-	Logger                 *logger.Logger
+	Client  bot.Client
+	Config  *config.Configuration
+	Logger  *logger.Logger
+	Metrics *metrics.Metrics
+
 	GameService            service.GameService
 	GuildManagementService service.GuildManagementService
 }
 
 type Listener interface {
 	EventName() EventListenerName
-	OnEvent(event bot.Event)
+	OnEvent(ctx context.Context, event bot.Event)
 }
 
 type EventListenerName string

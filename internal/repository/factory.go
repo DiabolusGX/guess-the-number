@@ -6,6 +6,7 @@ import (
 	"github.com/diabolusgx/guess-the-number-go/internal/repository/mongo"
 	"github.com/diabolusgx/guess-the-number-go/pkg/logger"
 	mongoPkg "github.com/diabolusgx/guess-the-number-go/pkg/mongo"
+	"github.com/redis/go-redis/v9"
 	"go.uber.org/fx"
 )
 
@@ -15,11 +16,12 @@ type RepositoryParams struct {
 
 	Logger      *logger.Logger
 	MongoClient mongoPkg.BaseClient
+	RedisClient *redis.Client
 	Config      *config.Configuration
 }
 
 func NewGameRepository(p RepositoryParams) domain.GameRepository {
-	return mongo.NewGameRepository(p.Logger, p.MongoClient)
+	return mongo.NewGameRepository(p.Logger, p.MongoClient, p.RedisClient)
 }
 
 func NewGuildConfigRepository(p RepositoryParams) domain.GuildConfigRepository {

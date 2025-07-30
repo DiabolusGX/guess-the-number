@@ -49,28 +49,28 @@ func (r *GuildConfigRepository) Get(ctx context.Context, id string) (*domain.Gui
 	return &cfg, nil
 }
 
-func (r *GuildConfigRepository) Replace(ctx context.Context, cfg *domain.GuildConfig) (*domain.GuildConfig, error) {
+func (r *GuildConfigRepository) Replace(ctx context.Context, cfg *domain.GuildConfig) error {
 	span := StartRepositorySpan(ctx, guildConfigCollection, "replace", map[string]any{
 		"guildID": cfg.ID,
 	})
 	defer FinishSpan(span)
 
 	filter := bson.M{"id": cfg.ID}
-	var updatedCfg *domain.GuildConfig
 
+	var updatedCfg domain.GuildConfig
 	err := r.collection.FindOneAndReplace(ctx, filter, cfg).Decode(&updatedCfg)
 	if err != nil {
 		if err == ErrNoDocuments {
 			ierr.NewErrorWithContext(ctx, ierr.ErrCodeNotFound, fmt.Errorf("guild config not found"))
 			SetSpanError(span, err)
-			return nil, nil
+			return err
 		}
 		SetSpanError(span, err)
-		return nil, ierr.NewErrorWithContext(ctx, ierr.ErrCodeDatabase, fmt.Errorf("update guild config failed, err: %w", err))
+		return ierr.NewErrorWithContext(ctx, ierr.ErrCodeDatabase, fmt.Errorf("update guild config failed, err: %w", err))
 	}
 
 	SetSpanSuccess(span)
-	return updatedCfg, nil
+	return nil
 }
 
 func (r *GuildConfigRepository) Create(ctx context.Context, cfg *domain.GuildConfig) error {

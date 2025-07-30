@@ -3,8 +3,6 @@ package bot
 import (
 	"context"
 	"fmt"
-	"log/slog"
-	"strconv"
 	"strings"
 	"time"
 
@@ -12,9 +10,11 @@ import (
 	"github.com/diabolusgx/guess-the-number-go/internal/bot/events"
 	"github.com/diabolusgx/guess-the-number-go/internal/bot/utils"
 	"github.com/diabolusgx/guess-the-number-go/internal/config"
+	"github.com/diabolusgx/guess-the-number-go/internal/lib"
 	"github.com/diabolusgx/guess-the-number-go/internal/service"
 	"github.com/diabolusgx/guess-the-number-go/pkg/errors"
 	"github.com/diabolusgx/guess-the-number-go/pkg/logger"
+	"github.com/diabolusgx/guess-the-number-go/pkg/metrics"
 	"github.com/disgoorg/disgo/bot"
 	"github.com/disgoorg/disgo/discord"
 	disgoEvents "github.com/disgoorg/disgo/events"
@@ -26,9 +26,11 @@ import (
 type BotHandlerParams struct {
 	fx.In
 
-	Client                 bot.Client
-	Config                 *config.Configuration
-	Logger                 *logger.Logger
+	Client  bot.Client
+	Config  *config.Configuration
+	Logger  *logger.Logger
+	Metrics *metrics.Metrics
+
 	GameService            service.GameService
 	GuildManagementService service.GuildManagementService
 }
@@ -42,9 +44,10 @@ type BotHandler interface {
 }
 
 type handler struct {
-	client bot.Client
-	logger *logger.Logger
-	config *config.Configuration
+	client  bot.Client
+	logger  *logger.Logger
+	config  *config.Configuration
+	metrics *metrics.Metrics
 
 	commands  map[string]commands.Command
 	listeners map[events.EventListenerName]events.Listener
@@ -56,9 +59,10 @@ type handler struct {
 
 func NewBotHandler(params BotHandlerParams) BotHandler {
 	return &handler{
-		client: params.Client,
-		logger: params.Logger,
-		config: params.Config,
+		client:  params.Client,
+		logger:  params.Logger,
+		config:  params.Config,
+		metrics: params.Metrics,
 
 		commands:  make(map[string]commands.Command),
 		listeners: make(map[events.EventListenerName]events.Listener),
@@ -76,121 +80,104 @@ func (h *handler) AddEventListener(listener events.Listener) {
 	h.listeners[listener.EventName()] = listener
 }
 
+// isModCommand checks if a command name is a mod command
+func isModCommand(commandName string) bool {
+	modCommands := []string{"start", "setup", "hint", "end"}
+	for _, cmd := range modCommands {
+		if cmd == commandName {
+			return true
+		}
+	}
+	return false
+}
+
 func (h *handler) OnEvent(event bot.Event) {
 	if event == nil {
 		return
 	}
 
+	ctx := context.Background()
+	ctx = context.WithValue(ctx, lib.CtxRequestID, lib.NewRequestID())
+
+	// Track event metrics
+	eventName := string(events.GetEventListenerName(event))
+	h.metrics.Operations.WithLabelValues("event", eventName, "N/A").Inc()
+
+	// panic recovery
+	defer func() {
+		if r := recover(); r != nil {
+			h.logger.FromContext(ctx).Errorw("panic in event listener", "err", r)
+		}
+	}()
+
 	if listener, ok := h.listeners[events.GetEventListenerName(event)]; ok {
-		listener.OnEvent(event)
+		listener.OnEvent(ctx, event)
 	}
 
 	switch e := event.(type) {
 	case *disgoEvents.ApplicationCommandInteractionCreate:
-		h.OnApplicationCommandInteraction(e)
-	}
-}
-
-func (h *handler) OnApplicationCommandInteraction(event *disgoEvents.ApplicationCommandInteractionCreate) {
-	if command, ok := h.commands[event.Data.CommandName()]; ok {
-		if err := command.Handler(event); err != nil {
-			h.ErrorHandler(event, err)
+		// acknowledge the discord interaction
+		err := e.DeferCreateMessage(true)
+		if err != nil {
+			h.logger.FromContext(ctx).Errorw("error acknowledging discord interaction", "err", err)
 		}
+
+		h.OnApplicationCommandInteraction(ctx, e)
 	}
 }
 
-func (h *handler) OnMessageCreate(event *disgoEvents.MessageCreate) {
-	logger := h.logger.With(
-		slog.String("guild_id", event.GuildID.String()),
-		slog.String("channel_id", event.ChannelID.String()),
-		slog.String("user_id", event.Message.Author.ID.String()),
-	)
+func (h *handler) OnApplicationCommandInteraction(ctx context.Context, event *disgoEvents.ApplicationCommandInteractionCreate) {
+	ctx = context.WithValue(ctx, lib.CtxChannelID, event.Channel().ID().String())
+	ctx = context.WithValue(ctx, lib.CtxGuildID, event.GuildID().String())
+	ctx = context.WithValue(ctx, lib.CtxUserID, event.User().ID.String())
 
-	if event.Message.Author.Bot {
+	commandName := event.Data.CommandName()
+	var commandSuccess = "true"
+
+	// Track command metrics (will be updated based on success/failure)
+	defer func() {
+		h.metrics.Operations.WithLabelValues("command", commandName, commandSuccess).Inc()
+	}()
+
+	appPermissions := event.AppPermissions()
+	res := utils.CheckBotPermissions(appPermissions, discord.PermissionViewChannel, discord.PermissionSendMessages)
+	if !res.HasAllPermissions {
+		h.logger.FromContext(ctx).Infow("missing permissions", "missing_permissions", strings.Join(res.MissingPermissions, ", "))
+		commandSuccess = "false"
 		return
 	}
 
-	if len(event.Message.Mentions) > 0 {
-		if event.Message.Mentions[0].ID == h.client.ApplicationID() {
-			cfg, err := h.GuildManagement.GetGuildConfig(context.Background(), event.GuildID.String())
-			if err != nil {
-				logger.Error("failed to get guild config", "err", err)
-				return
-			}
-			_ = utils.SendEmbed(h.client.Rest(), event.ChannelID, "Prefix", fmt.Sprintf("My prefix is `%s`", cfg.Prefix), 0x00FF00)
+	guildConfig, err := h.GuildManagement.GetGuildConfig(ctx, event.GuildID().String())
+	if err != nil {
+		h.ErrorHandler(ctx, event, err)
+		commandSuccess = "false"
+		return
+	}
+
+	// Check permissions for mod commands
+	if isModCommand(commandName) {
+		if !utils.CheckUserModPermissions(event, guildConfig.BotManager) {
+			content := "❌ **Access Denied**\nYou need to be an Administrator or have the Bot Manager role to use this command."
+			_, _ = event.Client().Rest().UpdateInteractionResponse(event.ApplicationID(), event.Token(), discord.MessageUpdate{
+				Content: &content,
+			})
+			commandSuccess = "false"
+			h.logger.FromContext(ctx).Infow("user lacks permissions for mod command", "command", commandName, "user_id", event.User().ID.String())
 			return
 		}
 	}
 
-	cfg, err := h.GuildManagement.GetGuildConfig(context.Background(), event.GuildID.String())
-	if err != nil {
-		logger.Error("failed to get guild config", "err", err)
-		return
+	commonData := &commands.Data{
+		GuildConfig: guildConfig,
 	}
 
-	if !strings.HasPrefix(event.Message.Content, cfg.Prefix) {
-		return
-	}
-
-	guess, err := strconv.ParseInt(strings.TrimPrefix(event.Message.Content, cfg.Prefix), 10, 64)
-	if err != nil {
-		return
-	}
-
-	correct, game, err := h.Game.CheckAnswer(context.Background(), event.ChannelID.String(), event.Message.Author.ID.String(), guess)
-	if err != nil {
-		logger.Error("failed to check answer", "err", err)
-		return
-	}
-
-	if correct {
-		if err := h.GuildManagement.UpdateUserStats(context.Background(), event.GuildID.String(), event.Message.Author.ID.String(), int(game.Points), 1); err != nil {
-			logger.Error("failed to update user stats", "err", err)
+	if command, ok := h.commands[commandName]; ok {
+		if err := command.Handler(ctx, event, commonData); err != nil {
+			h.ErrorHandler(ctx, event, err)
+			commandSuccess = "false"
 		}
-
-		cfg, err := h.GuildManagement.GetGuildConfig(context.Background(), event.GuildID.String())
-		if err != nil {
-			logger.Error("failed to get guild config", "err", err)
-		}
-
-		if cfg.WinRole != "" {
-			roleID, err := snowflake.Parse(cfg.WinRole)
-			if err != nil {
-				logger.Error("failed to parse win role", "err", err)
-			}
-			if err := h.client.Rest().AddMemberRole(*event.GuildID, event.Message.Author.ID, roleID); err != nil {
-				logger.Error("failed to add win role", "err", err)
-			}
-		}
-
-		err = utils.SendEmbed(h.client.Rest(), event.ChannelID, "Congratulations!", fmt.Sprintf("Congratulations <@%s>! You guessed the number %d and won %d points!", event.Message.Author.ID, game.Answer, game.Points), 0x00FF00)
-		if err != nil {
-			logger.Error("failed to send message", "err", err)
-		}
-	}
-}
-
-func (h *handler) OnGuildJoin(event *disgoEvents.GuildJoin) {
-	logger := h.logger.With(slog.String("guild_id", event.Guild.ID.String()))
-	if err := h.GuildManagement.CreateGuild(context.Background(), event.Guild.ID.String()); err != nil {
-		logger.Error("failed to create guild", "err", err)
-	}
-}
-
-func (h *handler) OnGuildLeave(event *disgoEvents.GuildLeave) {
-	logger := h.logger.With(slog.String("guild_id", event.GuildID.String()))
-	if err := h.GuildManagement.DeleteGuild(context.Background(), event.GuildID.String()); err != nil {
-		logger.Error("failed to delete guild", "err", err)
-	}
-}
-
-func (h *handler) OnGuildMemberLeave(event *disgoEvents.GuildMemberLeave) {
-	logger := h.logger.With(
-		slog.String("guild_id", event.GuildID.String()),
-		slog.String("user_id", event.User.ID.String()),
-	)
-	if err := h.GuildManagement.DeleteUser(context.Background(), event.GuildID.String(), event.User.ID.String()); err != nil {
-		logger.Error("failed to delete user", "err", err)
+	} else {
+		commandSuccess = "false"
 	}
 }
 
@@ -216,21 +203,22 @@ func (h *handler) SyncCommands() error {
 	return nil
 }
 
-func (h *handler) ErrorHandler(event *disgoEvents.ApplicationCommandInteractionCreate, err error) {
+func (h *handler) ErrorHandler(ctx context.Context, event *disgoEvents.ApplicationCommandInteractionCreate, err error) {
 	appErr, ok := err.(*errors.AppError)
 	if !ok {
-		appErr = errors.WithError(err).Mark(errors.ErrCodeSystemError)
+		appErr = errors.WithError(err).Mark(errors.ErrCodeInternalError)
 	}
 
-	h.logger.Error("error handling command", "err", appErr)
+	h.metrics.Operations.WithLabelValues("command", event.Data.CommandName(), "false").Inc()
+
+	h.logger.FromContext(ctx).Errorw("error handling command", "err", appErr.Error())
 
 	message := "An unexpected error occurred. Please try again later."
 	if appErr.Code == errors.ErrCodeValidation {
 		message = appErr.Message
 	}
 
-	_ = event.CreateMessage(discord.MessageCreate{
-		Content: message,
-		Flags:   discord.MessageFlagEphemeral,
+	_, _ = event.Client().Rest().UpdateInteractionResponse(event.ApplicationID(), event.Token(), discord.MessageUpdate{
+		Content: &message,
 	})
 }

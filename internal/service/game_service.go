@@ -2,126 +2,243 @@ package service
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	"math/rand"
-	"time"
+	"strconv"
 
 	"github.com/diabolusgx/guess-the-number-go/internal/domain"
 	"github.com/diabolusgx/guess-the-number-go/internal/lib"
+	"github.com/diabolusgx/guess-the-number-go/internal/repository"
+	"github.com/diabolusgx/guess-the-number-go/internal/types"
 	ierr "github.com/diabolusgx/guess-the-number-go/pkg/errors"
+	"github.com/diabolusgx/guess-the-number-go/pkg/metrics"
+	"github.com/go-playground/validator/v10"
 )
 
 type GameService interface {
-	CreateGame(ctx context.Context, guildID, channelID, createdBy string, lowerBound, upperBound int64) (*domain.Game, error)
-	GetGameByChannelID(ctx context.Context, channelID string) (*domain.Game, error)
-	IncrementGuesses(ctx context.Context, channelID string) (int64, error)
-	FinishGame(ctx context.Context, game *domain.Game) error
-	GetDailyLeaderboard(ctx context.Context, guildID string) ([]domain.Game, error)
-	GetAllTimeLeaderboard(ctx context.Context, guildID string) ([]domain.Game, error)
-	GetWeeklyLeaderboard(ctx context.Context, guildID string) ([]domain.Game, error)
-	CheckAnswer(ctx context.Context, channelID, userID string, guess int64) (bool, *domain.Game, error)
+	CreateGame(ctx context.Context, req *types.CreateGameRequest) (*types.CreateGameResponse, error)
+	HandleAttempt(ctx context.Context, req *types.HandleAttemptRequest) (*types.HandleAttemptResponse, error)
+	FinishGame(ctx context.Context, req *types.FinishGameRequest) (*types.FinishGameResponse, error)
+	GetHint(ctx context.Context, req *types.GetHintRequest) (*types.GetHintResponse, error)
+	GetGameInfo(ctx context.Context, req *types.GetGameInfoRequest) (*types.GetGameInfoResponse, error)
 }
 
 type gameService struct {
-	ServiceParams
+	metrics            *metrics.Metrics
+	gameRepo           domain.GameRepository
+	guildDataRepo      domain.GuildDataRepository
+	transactionManager repository.TransactionManager
+	runningGames       map[string]*domain.Game
 }
 
 func NewGameService(params ServiceParams) GameService {
 	return &gameService{
-		ServiceParams: params,
+		metrics:            params.Metrics,
+		gameRepo:           params.GameRepo,
+		guildDataRepo:      params.GuildDataRepo,
+		transactionManager: params.TransactionManager,
+
+		runningGames: make(map[string]*domain.Game),
 	}
 }
 
-func (s *gameService) CreateGame(ctx context.Context, guildID, channelID, createdBy string, lowerBound, upperBound int64) (*domain.Game, error) {
+func (s *gameService) CreateGame(ctx context.Context, req *types.CreateGameRequest) (*types.CreateGameResponse, error) {
 	// Validate inputs
-	if guildID == "" || channelID == "" || createdBy == "" || lowerBound >= upperBound {
-		return nil, ierr.NewErrorWithContext(ctx, ierr.ErrCodeValidation, errors.New("invalid inputs"))
+	if err := validator.New().Struct(req); err != nil {
+		return nil, ierr.NewErrorWithContext(ctx, ierr.ErrCodeValidation, err).WithMessage("Make sure Min and Max values are set properly")
+	}
+	if req.LowerBound >= req.UpperBound {
+		return nil, ierr.New(ierr.ErrCodeValidation, "Make sure Min is less than Max value")
 	}
 
-	answer := rand.Int63n(upperBound-lowerBound+1) + lowerBound
-	points := (upperBound - lowerBound) / 10
+	// check if game is already running in this channel
+	runningGame, err := s.getRunningInChannel(ctx, req.ChannelID)
+	if err != nil {
+		return nil, err
+	}
+	if runningGame != nil && !runningGame.Finished {
+		return nil, ierr.New(ierr.ErrCodeAlreadyExists, "game already running in this channel")
+	}
+
+	answer := rand.Int63n(req.UpperBound-req.LowerBound+1) + req.LowerBound
+	points := (req.UpperBound - req.LowerBound) / 10
 
 	game := &domain.Game{
-		ID:        lib.NewULID(lib.ULIDGameIDPrefix),
-		GuildID:   guildID,
-		ChannelID: channelID,
-		CreatedBy: createdBy,
-		Answer:    answer,
-		Points:    points,
+		ID:                lib.NewULID(lib.ULIDGameIDPrefix),
+		GuildID:           req.GuildID,
+		ChannelID:         req.ChannelID,
+		CreatedBy:         req.CreatedBy,
+		Answer:            answer,
+		Points:            points,
+		AutoReactionHints: req.AutoReactionHints,
 	}
 
-	err := s.ServiceParams.GameRepo.Create(ctx, game)
+	err = s.gameRepo.Create(ctx, game)
 	if err != nil {
 		return nil, err
 	}
 
-	s.ServiceParams.Metrics.GamesCreated.Inc()
-	s.ServiceParams.Metrics.GamesRunning.Inc()
+	s.runningGames[req.ChannelID] = game
 
-	return game, nil
+	s.metrics.GamesCreated.Inc()
+	s.metrics.GamesRunning.Inc()
+
+	return &types.CreateGameResponse{
+		Game: game,
+	}, nil
 }
 
-func (s *gameService) GetGameByChannelID(ctx context.Context, channelID string) (*domain.Game, error) {
-	return s.ServiceParams.GameRepo.GetGameByChannelID(ctx, channelID)
-}
-
-func (s *gameService) DisableGame(ctx context.Context, gameID string, guesses int) error {
-	return s.ServiceParams.GameRepo.DisableGame(ctx, gameID, guesses)
-}
-
-func (s *gameService) GetDailyLeaderboard(ctx context.Context, guildID string) ([]domain.Game, error) {
-	return s.ServiceParams.GameRepo.GetDailyLeaderboard(ctx, guildID)
-}
-
-func (s *gameService) GetAllTimeLeaderboard(ctx context.Context, guildID string) ([]domain.Game, error) {
-	return s.ServiceParams.GameRepo.GetAllTimeLeaderboard(ctx, guildID)
-}
-
-func (s *gameService) GetWeeklyLeaderboard(ctx context.Context, guildID string) ([]domain.Game, error) {
-	now := time.Now()
-	startOfWeek := now.AddDate(0, 0, -int(now.Weekday()))
-	endOfWeek := startOfWeek.AddDate(0, 0, 7)
-	return s.ServiceParams.GameRepo.GetGamesBetweenDates(ctx, guildID, startOfWeek, endOfWeek)
-}
-
-func (s *gameService) IncrementGuesses(ctx context.Context, channelID string) (int64, error) {
-	return 0, nil
-}
-
-func (s *gameService) FinishGame(ctx context.Context, game *domain.Game) error {
-	if err := s.ServiceParams.GameRepo.Finish(ctx, game.ID, game.WonBy, int(game.Points), int(game.Guesses)); err != nil {
-		return err
+func (s *gameService) FinishGame(ctx context.Context, req *types.FinishGameRequest) (*types.FinishGameResponse, error) {
+	if err := validator.New().Struct(req); err != nil {
+		return nil, ierr.NewErrorWithContext(ctx, ierr.ErrCodeValidation, err).WithMessage("Make sure ChannelID and MessageID are set properly")
 	}
-	s.ServiceParams.Metrics.GamesRunning.Dec()
-	return nil
-}
 
-func (s *gameService) CheckAnswer(ctx context.Context, channelID, userID string, guess int64) (bool, *domain.Game, error) {
-	game, err := s.ServiceParams.GameRepo.GetGameByChannelID(ctx, channelID)
+	game, err := s.getRunningInChannel(ctx, req.ChannelID)
 	if err != nil {
-		return false, nil, err
+		return nil, err
 	}
 	if game == nil {
-		return false, nil, nil
+		return nil, ierr.New(ierr.ErrCodeNotFound, "game not found")
 	}
 
-	if guess == game.Answer {
-		game.WonBy = userID
-		guesses, err := s.ServiceParams.GameRepo.IncrementGuesses(ctx, channelID)
+	_, txnErr := s.transactionManager.WithTransaction(ctx, func(ctx context.Context) (any, error) {
+		if err := s.gameRepo.Finish(ctx, game.ID, req.MessageID, req.WonBy, req.Guesses); err != nil {
+			return nil, err
+		}
+
+		err := s.guildDataRepo.UpdateGameAndUserStats(ctx, game.GuildID, game.ChannelID, req.WonBy, game.Points, 1)
 		if err != nil {
-			return false, nil, err
+			return nil, err
 		}
-		game.Guesses = guesses
-		if err := s.FinishGame(ctx, game); err != nil {
-			return false, nil, err
-		}
-		s.ServiceParams.Metrics.Guesses.WithLabelValues("true").Inc()
-		return true, game, nil
+
+		return nil, nil
+	})
+	if txnErr != nil {
+		return nil, txnErr
 	}
 
-	if _, err := s.ServiceParams.GameRepo.IncrementGuesses(ctx, channelID); err != nil {
-		return false, nil, err
+	delete(s.runningGames, req.ChannelID)
+	s.metrics.GamesRunning.Dec()
+
+	return &types.FinishGameResponse{
+		Game: game,
+	}, nil
+}
+
+func (s *gameService) HandleAttempt(ctx context.Context, req *types.HandleAttemptRequest) (*types.HandleAttemptResponse, error) {
+	if err := validator.New().Struct(req); err != nil {
+		return nil, ierr.NewErrorWithContext(ctx, ierr.ErrCodeValidation, err).WithMessage("invalid inputs")
 	}
-	s.ServiceParams.Metrics.Guesses.WithLabelValues("false").Inc()
-	return false, nil, nil
+
+	game, err := s.getRunningInChannel(ctx, req.ChannelID)
+	if err != nil {
+		return nil, err
+	}
+	if game == nil {
+		return nil, ierr.New(ierr.ErrCodeNotFound, "game not found")
+	}
+
+	guesses, err := s.gameRepo.IncrementGuesses(ctx, game.ID, game.ChannelID)
+	if err != nil {
+		return nil, err
+	}
+	game.Guesses = guesses
+
+	if req.Guess == game.Answer {
+		game.WonBy = req.UserID
+		game.WinMessageID = req.MessageID
+
+		_, err = s.FinishGame(ctx, &types.FinishGameRequest{
+			ChannelID: game.ChannelID,
+			Guesses:   guesses,
+			MessageID: req.MessageID,
+			WonBy:     req.UserID,
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		return &types.HandleAttemptResponse{
+			Correct: true,
+			Game:    game,
+		}, nil
+	}
+
+	return &types.HandleAttemptResponse{
+		Correct: false,
+		Game:    game,
+	}, nil
+}
+
+func (s *gameService) GetHint(ctx context.Context, req *types.GetHintRequest) (*types.GetHintResponse, error) {
+	if err := validator.New().Struct(req); err != nil {
+		return nil, ierr.NewErrorWithContext(ctx, ierr.ErrCodeValidation, err).WithMessage("invalid inputs")
+	}
+
+	game, err := s.getRunningInChannel(ctx, req.ChannelID)
+	if err != nil {
+		return nil, err
+	}
+	if game == nil {
+		return nil, ierr.New(ierr.ErrCodeNotFound, fmt.Sprintf("There is no running game in <#%s>", req.ChannelID))
+	}
+
+	var hint string
+
+	switch req.HintType {
+	case types.HintTypeNumber:
+		if game.Answer < req.CompareTo {
+			hint = "lower"
+		} else {
+			hint = "higher"
+		}
+	case types.HintTypeFirstDigit:
+		ans := strconv.FormatInt(game.Answer, 10)
+		hint = string(ans[0])
+	case types.HintTypeLastDigit:
+		ans := strconv.FormatInt(game.Answer, 10)
+		hint = string(ans[len(ans)-1])
+	default:
+		return nil, ierr.New(ierr.ErrCodeValidation, "invalid hint type")
+	}
+
+	return &types.GetHintResponse{
+		Hint: hint,
+	}, nil
+}
+
+func (s *gameService) GetGameInfo(ctx context.Context, req *types.GetGameInfoRequest) (*types.GetGameInfoResponse, error) {
+	if err := validator.New().Struct(req); err != nil {
+		return nil, ierr.NewErrorWithContext(ctx, ierr.ErrCodeValidation, err).WithMessage("invalid inputs")
+	}
+
+	game, err := s.getRunningInChannel(ctx, req.ChannelID)
+	if err != nil {
+		return nil, err
+	}
+	if game == nil {
+		return nil, ierr.New(ierr.ErrCodeNotFound, "game not found")
+	}
+
+	return &types.GetGameInfoResponse{
+		Game: game,
+	}, nil
+}
+
+func (s *gameService) getRunningInChannel(ctx context.Context, channelID string) (*domain.Game, error) {
+	game, ok := s.runningGames[channelID]
+	if ok && !game.Finished {
+		return game, nil
+	}
+
+	dbGame, err := s.gameRepo.GetRunningInChannel(ctx, channelID)
+	if err != nil {
+		return nil, err
+	}
+
+	if dbGame == nil || dbGame.Finished {
+		return nil, nil
+	}
+
+	return dbGame, nil
 }

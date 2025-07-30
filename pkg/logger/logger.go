@@ -55,8 +55,8 @@ func GetLogger() *Logger {
 	return L
 }
 
-func GetLoggerWithContext(ctx context.Context) *Logger {
-	return GetLogger().WithContext(ctx)
+func GetLoggerFromContext(ctx context.Context) *Logger {
+	return GetLogger().FromContext(ctx)
 }
 
 // Helper methods to make logging more convenient
@@ -80,12 +80,13 @@ func (l *Logger) Fatalf(template string, args ...any) {
 	l.SugaredLogger.Fatalf(template, args...)
 }
 
-func (l *Logger) WithContext(ctx context.Context) *Logger {
+func (l *Logger) FromContext(ctx context.Context) *Logger {
 	return &Logger{
 		SugaredLogger: l.SugaredLogger.With(
 			"request_id", lib.GetRequestID(ctx),
 			"user_id", lib.GetUserID(ctx),
 			"guild_id", lib.GetGuildID(ctx),
+			"channel_id", lib.GetChannelID(ctx),
 		),
 	}
 }

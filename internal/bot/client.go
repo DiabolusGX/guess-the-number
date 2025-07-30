@@ -7,6 +7,7 @@ import (
 	"github.com/disgoorg/disgo"
 	"github.com/disgoorg/disgo/bot"
 	"github.com/disgoorg/disgo/cache"
+	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/gateway"
 	"github.com/disgoorg/paginator"
 	"go.uber.org/fx"
@@ -16,6 +17,7 @@ import (
 	"github.com/diabolusgx/guess-the-number-go/internal/bot/commands/user"
 	"github.com/diabolusgx/guess-the-number-go/internal/bot/events"
 	"github.com/diabolusgx/guess-the-number-go/internal/bot/events/message"
+	"github.com/diabolusgx/guess-the-number-go/internal/bot/events/misc"
 	"github.com/diabolusgx/guess-the-number-go/internal/config"
 	"github.com/diabolusgx/guess-the-number-go/pkg/logger"
 )
@@ -23,14 +25,9 @@ import (
 func NewClient(cfg *config.Configuration) (bot.Client, error) {
 	var gatewayOpts []gateway.ConfigOpt
 
-	// Configure sharding if enabled
-	if cfg.Bot.Sharding.Enabled && cfg.Bot.Sharding.ShardCount > 0 {
-		// Use specified shard count for sharding
-		gatewayOpts = append(gatewayOpts, gateway.WithShardCount(cfg.Bot.Sharding.ShardCount))
-	}
-
 	// Add intents to gateway options
 	gatewayOpts = append(gatewayOpts, gateway.WithIntents(
+		gateway.IntentDirectMessages,
 		gateway.IntentGuilds,
 		gateway.IntentGuildMembers,
 		gateway.IntentGuildMessages,
@@ -40,9 +37,13 @@ func NewClient(cfg *config.Configuration) (bot.Client, error) {
 
 	client, err := disgo.New(
 		cfg.Bot.Token,
-		// TODO: revisit cache config
 		bot.WithCacheConfigOpts(
-			cache.WithCaches(cache.FlagGuilds),
+			cache.WithCaches(cache.FlagGuilds|cache.FlagChannels|cache.FlagRoles|cache.FlagMembers),
+			cache.WithMemberCachePolicy(func(entity discord.Member) bool {
+				// cache all bots for now, ideally should only cache "self" member.
+				// kept for easy testing across bots.
+				return entity.User.Bot
+			}),
 		),
 		bot.WithGatewayConfigOpts(gatewayOpts...),
 		bot.WithLogger(slog.Default()),
@@ -68,7 +69,7 @@ var Module = fx.Module(
 		handler.AddCommand(mod.NewSetupCommand(commandParams))
 		handler.AddCommand(mod.NewStartCommand(commandParams))
 		handler.AddCommand(mod.NewHintCommand(commandParams))
-		handler.AddCommand(mod.NewEndCommand(commandParams))
+		handler.AddCommand(mod.NewFinishCommand(commandParams))
 
 		// User commands
 		handler.AddCommand(user.NewGameInfoCommand(commandParams))
@@ -78,36 +79,9 @@ var Module = fx.Module(
 
 		// Event listeners
 		handler.AddEventListener(message.NewMessageCreateListener(eventParams))
+		handler.AddEventListener(misc.NewReadyEventListener(eventParams))
 	}),
 )
-
-func NewBotProviderOptions() []fx.Option {
-	return []fx.Option{
-		fx.Provide(
-			NewClient,
-			NewBotHandler,
-		),
-
-		fx.Invoke(
-			func(client bot.Client, handler BotHandler, commandParams commands.CommandParams, eventParams events.EventListenerParams) {
-				// Mod commands
-				handler.AddCommand(mod.NewSetupCommand(commandParams))
-				handler.AddCommand(mod.NewStartCommand(commandParams))
-				handler.AddCommand(mod.NewHintCommand(commandParams))
-				handler.AddCommand(mod.NewEndCommand(commandParams))
-
-				// User commands
-				handler.AddCommand(user.NewGameInfoCommand(commandParams))
-				handler.AddCommand(user.NewPingCommand(commandParams))
-				handler.AddCommand(user.NewUserinfoCommand(commandParams))
-				handler.AddCommand(user.NewInviteCommand(commandParams))
-
-				// Event listeners
-				handler.AddEventListener(message.NewMessageCreateListener(eventParams))
-			},
-		),
-	}
-}
 
 func Start(lc fx.Lifecycle, client bot.Client, logger *logger.Logger, cfg *config.Configuration, handler BotHandler) {
 	lc.Append(fx.Hook{
@@ -117,8 +91,6 @@ func Start(lc fx.Lifecycle, client bot.Client, logger *logger.Logger, cfg *confi
 				"mode", cfg.Deployment.Mode,
 				"log_level", cfg.Logging.Level,
 				"sentry_enabled", cfg.Sentry.Enabled,
-				"sharding_enabled", cfg.Bot.Sharding.Enabled,
-				"shard_count", cfg.Bot.Sharding.ShardCount,
 			)
 
 			err := handler.SyncCommands()

@@ -26,17 +26,9 @@ type DeploymentConfig struct {
 }
 
 type BotConfig struct {
-	Token        string         `mapstructure:"token" validate:"required"`
-	DevGuilds    []string       `mapstructure:"dev_guilds"`
-	SyncCommands bool           `mapstructure:"sync_commands" default:"true"`
-	Sharding     ShardingConfig `mapstructure:"sharding" validate:"required"`
-}
-
-type ShardingConfig struct {
-	Enabled    bool   `mapstructure:"enabled" default:"false"`
-	ShardCount int    `mapstructure:"shard_count" default:"0"` // 0 = auto-detect
-	AutoScale  bool   `mapstructure:"auto_scale" default:"true"`
-	GatewayUrl string `mapstructure:"gateway_url"`
+	Token        string   `mapstructure:"token" validate:"required"`
+	DevGuilds    []string `mapstructure:"dev_guilds"`
+	SyncCommands bool     `mapstructure:"sync_commands" default:"true"`
 }
 
 type MongoConfig struct {

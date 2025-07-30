@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/diabolusgx/guess-the-number-go/pkg/logger"
+	"github.com/redis/go-redis/v9"
 	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
@@ -16,14 +17,16 @@ import (
 )
 
 type GameRepository struct {
-	log        *logger.Logger
-	collection *mongo.Collection
+	log         *logger.Logger
+	collection  *mongo.Collection
+	redisClient *redis.Client
 }
 
-func NewGameRepository(log *logger.Logger, mongoClient pkgMongo.BaseClient) *GameRepository {
+func NewGameRepository(log *logger.Logger, mongoClient pkgMongo.BaseClient, redisClient *redis.Client) *GameRepository {
 	return &GameRepository{
-		log:        log,
-		collection: mongoClient.GetCollection(gameCollection),
+		log:         log,
+		collection:  mongoClient.GetCollection(gameCollection),
+		redisClient: redisClient,
 	}
 }
 
@@ -54,24 +57,23 @@ func (r *GameRepository) Create(ctx context.Context, game *domain.Game) error {
 	return nil
 }
 
-func (r *GameRepository) Finish(ctx context.Context, gameID, wonBy string, points, guesses int) error {
+func (r *GameRepository) Finish(ctx context.Context, gameID, messageID, wonBy string, guesses int64) error {
 	span := StartRepositorySpan(ctx, gameCollection, "finish", map[string]any{
 		"gameID":  gameID,
 		"wonBy":   wonBy,
-		"points":  points,
 		"guesses": guesses,
 	})
 	defer FinishSpan(span)
 
-	filter := bson.M{"id": gameID}
+	filter := bson.M{"_id": gameID}
 	update := bson.M{
 		"$set": bson.M{
-			"wonBy":      wonBy,
-			"points":     points,
-			"guesses":    guesses,
-			"finished":   true,
-			"finishedAt": time.Now(),
-			"updatedAt":  time.Now(),
+			"wonBy":        wonBy,
+			"winMessageID": messageID,
+			"guesses":      guesses,
+			"finished":     true,
+			"finishedAt":   time.Now(),
+			"updatedAt":    time.Now(),
 		},
 	}
 	_, err := r.collection.UpdateOne(ctx, filter, update)
@@ -81,18 +83,18 @@ func (r *GameRepository) Finish(ctx context.Context, gameID, wonBy string, point
 		return err
 	}
 
-	r.log.Debugw("game finished", "gameID", gameID, "wonBy", wonBy, "points", points, "guesses", guesses)
+	r.log.Debugw("game finished", "gameID", gameID, "wonBy", wonBy, "guesses", guesses)
 	SetSpanSuccess(span)
 	return nil
 }
 
-func (r *GameRepository) GetGameByChannelID(ctx context.Context, channelID string) (*domain.Game, error) {
-	span := StartRepositorySpan(ctx, gameCollection, "get_game_by_channel_id", map[string]any{
+func (r *GameRepository) GetRunningInChannel(ctx context.Context, channelID string) (*domain.Game, error) {
+	span := StartRepositorySpan(ctx, gameCollection, "get_running_in_channel", map[string]any{
 		"channelID": channelID,
 	})
 	defer FinishSpan(span)
 
-	filter := bson.M{"channelID": channelID}
+	filter := bson.M{"channelID": channelID, "finished": false}
 
 	var game *domain.Game
 	err := r.collection.FindOne(ctx, filter).Decode(&game)
@@ -111,31 +113,22 @@ func (r *GameRepository) GetGameByChannelID(ctx context.Context, channelID strin
 	return game, nil
 }
 
-func (r *GameRepository) IncrementGuesses(ctx context.Context, channelID string) (int64, error) {
-	span := StartRepositorySpan(ctx, gameCollection, "increment_guesses", map[string]any{
+func (r *GameRepository) IncrementGuesses(ctx context.Context, gameID, channelID string) (int64, error) {
+	span := StartRepositorySpan(ctx, "redis_game_guesses", "increment_guesses", map[string]any{
+		"gameID":    gameID,
 		"channelID": channelID,
 	})
 	defer FinishSpan(span)
 
-	filter := bson.M{"channelID": channelID}
-	update := bson.M{
-		"$inc": bson.M{
-			"guesses": 1,
-		},
-	}
-	_, err := r.collection.UpdateOne(ctx, filter, update)
-	if err != nil {
-		if err == mongo.ErrNoDocuments {
-			SetSpanSuccess(span)
-			return 0, ierr.NewErrorWithContext(ctx, ierr.ErrCodeDatabase, fmt.Errorf("game not found: %w", err))
-		}
-		ierr.NewErrorWithContext(ctx, ierr.ErrCodeDatabase, fmt.Errorf("failed to increment guesses: %w", err))
-		SetSpanError(span, err)
-		return 0, err
+	out := r.redisClient.Incr(ctx, fmt.Sprintf("game_guesses:%s", channelID))
+	if out.Err() != nil {
+		ierr.NewErrorWithContext(ctx, ierr.ErrCodeDatabase, fmt.Errorf("failed to increment guesses: %w", out.Err()))
+		SetSpanError(span, out.Err())
+		return 0, out.Err()
 	}
 
 	SetSpanSuccess(span)
-	return 0, nil
+	return out.Val(), nil
 }
 
 func (r *GameRepository) GetDailyLeaderboard(ctx context.Context, guildID string) ([]domain.Game, error) {
@@ -199,66 +192,6 @@ func (r *GameRepository) GetGamesBetweenDates(ctx context.Context, guildID strin
 	err = cursor.All(ctx, &games)
 	if err != nil {
 		ierr.NewErrorWithContext(ctx, ierr.ErrCodeDatabase, fmt.Errorf("failed to get games between dates: %w", err))
-		SetSpanError(span, err)
-		return nil, err
-	}
-
-	SetSpanSuccess(span)
-	return games, nil
-}
-
-func (r *GameRepository) DisableGame(ctx context.Context, gameID string, guesses int) error {
-	span := StartRepositorySpan(ctx, gameCollection, "disable_game", map[string]any{
-		"gameID":  gameID,
-		"guesses": guesses,
-	})
-	defer FinishSpan(span)
-
-	filter := bson.M{"id": gameID}
-	update := bson.M{
-		"$set": bson.M{
-			"guesses":  guesses,
-			"disabled": true,
-		},
-	}
-	_, err := r.collection.UpdateOne(ctx, filter, update)
-	if err != nil {
-		ierr.NewErrorWithContext(ctx, ierr.ErrCodeDatabase, fmt.Errorf("failed to disable game: %w", err))
-		SetSpanError(span, err)
-		return err
-	}
-
-	SetSpanSuccess(span)
-	return nil
-}
-
-func (r *GameRepository) GetBotLeaderboard(ctx context.Context, startDate, endDate time.Time) ([]domain.Game, error) {
-	span := StartRepositorySpan(ctx, gameCollection, "get_bot_leaderboard", map[string]any{
-		"startDate": startDate,
-		"endDate":   endDate,
-	})
-	defer FinishSpan(span)
-
-	filter := bson.M{
-		"finished": true,
-		"finishedAt": bson.M{
-			"$gte": startDate,
-			"$lte": endDate,
-		},
-	}
-	opts := options.Find().SetSort(bson.M{"points": -1})
-	cursor, err := r.collection.Find(ctx, filter, opts)
-	if err != nil {
-		ierr.NewErrorWithContext(ctx, ierr.ErrCodeDatabase, fmt.Errorf("failed to get bot leaderboard: %w", err))
-		SetSpanError(span, err)
-		return nil, err
-	}
-	defer cursor.Close(ctx)
-
-	var games []domain.Game
-	err = cursor.All(ctx, &games)
-	if err != nil {
-		ierr.NewErrorWithContext(ctx, ierr.ErrCodeDatabase, fmt.Errorf("failed to get bot leaderboard: %w", err))
 		SetSpanError(span, err)
 		return nil, err
 	}

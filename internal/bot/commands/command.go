@@ -1,6 +1,9 @@
 package commands
 
 import (
+	"context"
+
+	"github.com/diabolusgx/guess-the-number-go/internal/domain"
 	"github.com/diabolusgx/guess-the-number-go/internal/service"
 	"github.com/diabolusgx/guess-the-number-go/pkg/logger"
 	"github.com/disgoorg/disgo/discord"
@@ -19,5 +22,9 @@ type CommandParams struct {
 type Command interface {
 	Name() string
 	Definition() discord.ApplicationCommandCreate
-	Handler(event *events.ApplicationCommandInteractionCreate) error
+	Handler(ctx context.Context, event *events.ApplicationCommandInteractionCreate, data *Data) error
+}
+
+type Data struct {
+	GuildConfig *domain.GuildConfig
 }

@@ -11,7 +11,15 @@ type Metrics struct {
 	Guesses       *prometheus.CounterVec
 	Guilds        prometheus.Gauge
 	GuildsCreated prometheus.Counter
+	Errors        *prometheus.CounterVec
+	Operations    *prometheus.CounterVec
 }
+
+const (
+	MetricLabelValueTrue  = "true"
+	MetricLabelValueFalse = "false"
+	MetricLabelValueNA    = "N/A"
+)
 
 func NewMetrics() *Metrics {
 	return &Metrics{
@@ -26,7 +34,7 @@ func NewMetrics() *Metrics {
 		Guesses: promauto.NewCounterVec(prometheus.CounterOpts{
 			Name: "gtn_guesses_total",
 			Help: "The total number of guesses",
-		}, []string{"correct"}),
+		}, []string{"correct", "error"}),
 		Guilds: promauto.NewGauge(prometheus.GaugeOpts{
 			Name: "gtn_guilds",
 			Help: "The number of guilds",
@@ -35,5 +43,13 @@ func NewMetrics() *Metrics {
 			Name: "gtn_guilds_created_total",
 			Help: "The total number of created guilds",
 		}),
+		Errors: promauto.NewCounterVec(prometheus.CounterOpts{
+			Name: "gtn_errors_total",
+			Help: "The total number of errors",
+		}, []string{"code"}),
+		Operations: promauto.NewCounterVec(prometheus.CounterOpts{
+			Name: "gtn_operations_total",
+			Help: "The total number of operations (events and commands) processed",
+		}, []string{"type", "name", "success"}),
 	}
 }
