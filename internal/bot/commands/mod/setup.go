@@ -3,13 +3,13 @@ package mod
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/diabolusgx/guess-the-number-go/internal/bot/commands"
 	"github.com/diabolusgx/guess-the-number-go/internal/bot/utils"
 	"github.com/diabolusgx/guess-the-number-go/internal/service"
 	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/events"
+	"github.com/disgoorg/omit"
 	"github.com/disgoorg/snowflake/v2"
 )
 
@@ -165,17 +165,21 @@ func (c *SetupCommand) handlePrefix(ctx context.Context, event *events.Applicati
 	// Validate prefix
 	if len(prefix) == 0 {
 		return utils.EventReply(event, utils.MessageRequest{
-			Content:     "Prefix cannot be empty.",
-			Emoji:       utils.EmojiError,
-			IsEphemeral: true,
+			UseEmbed:         true,
+			EmbedTitle:       "Invalid Prefix",
+			EmbedDescription: utils.EmojiError.String() + " Prefix cannot be empty.",
+			EmbedColor:       utils.FailureEmbedColor,
+			IsEphemeral:      true,
 		})
 	}
 
 	if len(prefix) > 10 {
 		return utils.EventReply(event, utils.MessageRequest{
-			Content:     "Prefix cannot be longer than 10 characters.",
-			Emoji:       utils.EmojiError,
-			IsEphemeral: true,
+			UseEmbed:         true,
+			EmbedTitle:       "Invalid Prefix",
+			EmbedDescription: utils.EmojiError.String() + " Prefix cannot be longer than 10 characters.",
+			EmbedColor:       utils.FailureEmbedColor,
+			IsEphemeral:      true,
 		})
 	}
 
@@ -189,9 +193,12 @@ func (c *SetupCommand) handlePrefix(ctx context.Context, event *events.Applicati
 	cfg.Prefix = prefix
 	if err := c.guildManagementService.ReplaceGuildConfig(ctx, cfg); err != nil {
 		return utils.EventReply(event, utils.MessageRequest{
-			Content:     "Failed to update prefix. Please try again later.",
-			Emoji:       utils.EmojiError,
-			IsEphemeral: true,
+			UseEmbed:         true,
+			Emoji:            utils.EmojiError,
+			EmbedTitle:       "Update Failed",
+			EmbedDescription: "Failed to update prefix. Please try again later.",
+			EmbedColor:       utils.FailureEmbedColor,
+			IsEphemeral:      true,
 		})
 	}
 
@@ -202,9 +209,17 @@ func (c *SetupCommand) handlePrefix(ctx context.Context, event *events.Applicati
 		"Configuration Change")
 
 	return utils.EventReply(event, utils.MessageRequest{
-		Content:     fmt.Sprintf("Prefix updated to `%s`", prefix),
-		Emoji:       utils.EmojiSuccess,
-		IsEphemeral: false,
+		UseEmbed:         true,
+		Emoji:            utils.EmojiSuccess,
+		EmbedTitle:       "Prefix Updated",
+		EmbedDescription: "Prefix updated successfully!",
+		EmbedColor:       utils.SuccessEmbedColor,
+		IsEphemeral:      false,
+		Fields: []discord.EmbedField{
+			{Name: "Previous", Value: "`" + oldPrefix + "`", Inline: omit.NewPtr(true).Value},
+			{Name: "New", Value: "`" + prefix + "`", Inline: omit.NewPtr(true).Value},
+			{Name: "Updated by", Value: "<@" + event.User().ID.String() + ">", Inline: omit.NewPtr(false).Value},
+		},
 	})
 }
 
@@ -214,9 +229,12 @@ func (c *SetupCommand) handleManager(ctx context.Context, event *events.Applicat
 	role, ok := event.Client().Caches().Role(*event.GuildID(), role.ID)
 	if !ok {
 		return utils.EventReply(event, utils.MessageRequest{
-			Content:     fmt.Sprintf("Given role (%s) is not there in server.", role.Mention()),
-			Emoji:       utils.EmojiError,
-			IsEphemeral: true,
+			UseEmbed:         true,
+			Emoji:            utils.EmojiError,
+			EmbedTitle:       "Invalid Role",
+			EmbedDescription: "Given role (" + role.Mention() + ") is not there in server.",
+			EmbedColor:       utils.FailureEmbedColor,
+			IsEphemeral:      true,
 		})
 	}
 
@@ -235,7 +253,14 @@ func (c *SetupCommand) handleManager(ctx context.Context, event *events.Applicat
 	cfg := data.GuildConfig
 	cfg.BotManager = role.ID.String()
 	if err := c.guildManagementService.ReplaceGuildConfig(ctx, cfg); err != nil {
-		return err
+		return utils.EventReply(event, utils.MessageRequest{
+			UseEmbed:         true,
+			Emoji:            utils.EmojiError,
+			EmbedTitle:       "Update Failed",
+			EmbedDescription: "Failed to update manager role. Please try again later.",
+			EmbedColor:       utils.FailureEmbedColor,
+			IsEphemeral:      true,
+		})
 	}
 
 	// Log the configuration change with before/after values
@@ -245,9 +270,17 @@ func (c *SetupCommand) handleManager(ctx context.Context, event *events.Applicat
 		"Configuration Change")
 
 	return utils.EventReply(event, utils.MessageRequest{
-		Content:     fmt.Sprintf("Manager role updated to %s.\n> *Make sure to assign the role to the users who are allowed to manage the bot.*", role.Mention()),
-		Emoji:       utils.EmojiSuccess,
-		IsEphemeral: true,
+		UseEmbed:         true,
+		Emoji:            utils.EmojiSuccess,
+		EmbedTitle:       "Manager Role Updated",
+		EmbedDescription: "Manager role updated successfully!\n> *Make sure to assign the role to the users who are allowed to manage the bot.*",
+		EmbedColor:       utils.SuccessEmbedColor,
+		IsEphemeral:      true,
+		Fields: []discord.EmbedField{
+			{Name: "Previous", Value: oldManagerRole, Inline: omit.NewPtr(true).Value},
+			{Name: "New", Value: role.Mention(), Inline: omit.NewPtr(true).Value},
+			{Name: "Updated by", Value: "<@" + event.User().ID.String() + ">", Inline: omit.NewPtr(false).Value},
+		},
 	})
 }
 
@@ -269,9 +302,12 @@ func (c *SetupCommand) handleDM(ctx context.Context, event *events.ApplicationCo
 	cfg.DM = enabled
 	if err := c.guildManagementService.ReplaceGuildConfig(ctx, cfg); err != nil {
 		return utils.EventReply(event, utils.MessageRequest{
-			Content:     "Failed to update DM settings. Please try again later.",
-			Emoji:       utils.EmojiError,
-			IsEphemeral: true,
+			UseEmbed:         true,
+			Emoji:            utils.EmojiError,
+			EmbedTitle:       "Update Failed",
+			EmbedDescription: "Failed to update DM settings. Please try again later.",
+			EmbedColor:       utils.FailureEmbedColor,
+			IsEphemeral:      true,
 		})
 	}
 
@@ -282,9 +318,17 @@ func (c *SetupCommand) handleDM(ctx context.Context, event *events.ApplicationCo
 		"Configuration Change")
 
 	return utils.EventReply(event, utils.MessageRequest{
-		Content:     fmt.Sprintf("DMs have been **%s**", newStatus),
-		Emoji:       utils.EmojiSuccess,
-		IsEphemeral: false,
+		UseEmbed:         true,
+		Emoji:            utils.EmojiSuccess,
+		EmbedTitle:       "DM Settings Updated",
+		EmbedDescription: "DM settings updated successfully!",
+		EmbedColor:       utils.SuccessEmbedColor,
+		IsEphemeral:      false,
+		Fields: []discord.EmbedField{
+			{Name: "Previous", Value: oldStatus, Inline: omit.NewPtr(true).Value},
+			{Name: "New", Value: newStatus, Inline: omit.NewPtr(true).Value},
+			{Name: "Updated by", Value: "<@" + event.User().ID.String() + ">", Inline: omit.NewPtr(false).Value},
+		},
 	})
 }
 
@@ -295,9 +339,12 @@ func (c *SetupCommand) handleWinRole(ctx context.Context, event *events.Applicat
 	_, ok := event.Client().Caches().Role(*event.GuildID(), role.ID)
 	if !ok {
 		return utils.EventReply(event, utils.MessageRequest{
-			Content:     fmt.Sprintf("Given role (%s) is not there in server.", role.Mention()),
-			Emoji:       utils.EmojiError,
-			IsEphemeral: true,
+			UseEmbed:         true,
+			Emoji:            utils.EmojiError,
+			EmbedTitle:       "Invalid Role",
+			EmbedDescription: "Given role (" + role.Mention() + ") is not there in server.",
+			EmbedColor:       utils.FailureEmbedColor,
+			IsEphemeral:      true,
 		})
 	}
 
@@ -317,9 +364,12 @@ func (c *SetupCommand) handleWinRole(ctx context.Context, event *events.Applicat
 	cfg.WinRole = role.ID.String()
 	if err := c.guildManagementService.ReplaceGuildConfig(ctx, cfg); err != nil {
 		return utils.EventReply(event, utils.MessageRequest{
-			Content:     "Failed to update win role. Please try again later.",
-			Emoji:       utils.EmojiError,
-			IsEphemeral: true,
+			UseEmbed:         true,
+			Emoji:            utils.EmojiError,
+			EmbedTitle:       "Update Failed",
+			EmbedDescription: "Failed to update win role. Please try again later.",
+			EmbedColor:       utils.FailureEmbedColor,
+			IsEphemeral:      true,
 		})
 	}
 
@@ -330,9 +380,17 @@ func (c *SetupCommand) handleWinRole(ctx context.Context, event *events.Applicat
 		"Configuration Change")
 
 	return utils.EventReply(event, utils.MessageRequest{
-		Content:     fmt.Sprintf("Win role updated to %s", role.Mention()),
-		Emoji:       utils.EmojiSuccess,
-		IsEphemeral: false,
+		UseEmbed:         true,
+		Emoji:            utils.EmojiSuccess,
+		EmbedTitle:       "Win Role Updated",
+		EmbedDescription: "Win role updated successfully!",
+		EmbedColor:       utils.SuccessEmbedColor,
+		IsEphemeral:      false,
+		Fields: []discord.EmbedField{
+			{Name: "Previous", Value: oldWinRole, Inline: omit.NewPtr(true).Value},
+			{Name: "New", Value: role.Mention(), Inline: omit.NewPtr(true).Value},
+			{Name: "Updated by", Value: "<@" + event.User().ID.String() + ">", Inline: omit.NewPtr(false).Value},
+		},
 	})
 }
 
@@ -343,9 +401,12 @@ func (c *SetupCommand) handleReqRole(ctx context.Context, event *events.Applicat
 	_, ok := event.Client().Caches().Role(*event.GuildID(), role.ID)
 	if !ok {
 		return utils.EventReply(event, utils.MessageRequest{
-			Content:     fmt.Sprintf("Given role (%s) is not there in server.", role.Mention()),
-			Emoji:       utils.EmojiError,
-			IsEphemeral: true,
+			UseEmbed:         true,
+			Emoji:            utils.EmojiError,
+			EmbedTitle:       "Invalid Role",
+			EmbedDescription: "Given role (" + role.Mention() + ") is not there in server.",
+			EmbedColor:       utils.FailureEmbedColor,
+			IsEphemeral:      true,
 		})
 	}
 
@@ -365,9 +426,12 @@ func (c *SetupCommand) handleReqRole(ctx context.Context, event *events.Applicat
 	cfg.ReqRole = role.ID.String()
 	if err := c.guildManagementService.ReplaceGuildConfig(ctx, cfg); err != nil {
 		return utils.EventReply(event, utils.MessageRequest{
-			Content:     "Failed to update required role. Please try again later.",
-			Emoji:       utils.EmojiError,
-			IsEphemeral: true,
+			UseEmbed:         true,
+			Emoji:            utils.EmojiError,
+			EmbedTitle:       "Update Failed",
+			EmbedDescription: "Failed to update required role. Please try again later.",
+			EmbedColor:       utils.FailureEmbedColor,
+			IsEphemeral:      true,
 		})
 	}
 
@@ -378,9 +442,17 @@ func (c *SetupCommand) handleReqRole(ctx context.Context, event *events.Applicat
 		"Configuration Change")
 
 	return utils.EventReply(event, utils.MessageRequest{
-		Content:     fmt.Sprintf("Required role updated to %s.\n> *Make sure to assign the role to the users who are allowed to play the game.*", role.Mention()),
-		Emoji:       utils.EmojiSuccess,
-		IsEphemeral: false,
+		UseEmbed:         true,
+		Emoji:            utils.EmojiSuccess,
+		EmbedTitle:       "Required Role Updated",
+		EmbedDescription: "Required role updated successfully!\n> *Make sure to assign the role to the users who are allowed to play the game.*",
+		EmbedColor:       utils.SuccessEmbedColor,
+		IsEphemeral:      false,
+		Fields: []discord.EmbedField{
+			{Name: "Previous", Value: oldReqRole, Inline: omit.NewPtr(true).Value},
+			{Name: "New", Value: role.Mention(), Inline: omit.NewPtr(true).Value},
+			{Name: "Updated by", Value: "<@" + event.User().ID.String() + ">", Inline: omit.NewPtr(false).Value},
+		},
 	})
 }
 
@@ -391,9 +463,12 @@ func (c *SetupCommand) handleLockRole(ctx context.Context, event *events.Applica
 	_, ok := event.Client().Caches().Role(*event.GuildID(), role.ID)
 	if !ok {
 		return utils.EventReply(event, utils.MessageRequest{
-			Content:     fmt.Sprintf("Given role (%s) is not there in server.", role.Mention()),
-			Emoji:       utils.EmojiError,
-			IsEphemeral: true,
+			UseEmbed:         true,
+			Emoji:            utils.EmojiError,
+			EmbedTitle:       "Invalid Role",
+			EmbedDescription: "Given role (" + role.Mention() + ") is not there in server.",
+			EmbedColor:       utils.FailureEmbedColor,
+			IsEphemeral:      true,
 		})
 	}
 
@@ -413,9 +488,12 @@ func (c *SetupCommand) handleLockRole(ctx context.Context, event *events.Applica
 	cfg.LockRole = role.ID.String()
 	if err := c.guildManagementService.ReplaceGuildConfig(ctx, cfg); err != nil {
 		return utils.EventReply(event, utils.MessageRequest{
-			Content:     "Failed to update lock role. Please try again later.",
-			Emoji:       utils.EmojiError,
-			IsEphemeral: true,
+			UseEmbed:         true,
+			Emoji:            utils.EmojiError,
+			EmbedTitle:       "Update Failed",
+			EmbedDescription: "Failed to update lock role. Please try again later.",
+			EmbedColor:       utils.FailureEmbedColor,
+			IsEphemeral:      true,
 		})
 	}
 
@@ -426,9 +504,17 @@ func (c *SetupCommand) handleLockRole(ctx context.Context, event *events.Applica
 		"Configuration Change")
 
 	return utils.EventReply(event, utils.MessageRequest{
-		Content:     fmt.Sprintf("Lock role updated to %s", role.Mention()),
-		Emoji:       utils.EmojiSuccess,
-		IsEphemeral: false,
+		UseEmbed:         true,
+		Emoji:            utils.EmojiSuccess,
+		EmbedTitle:       "Lock Role Updated",
+		EmbedDescription: "Lock role updated successfully!",
+		EmbedColor:       utils.SuccessEmbedColor,
+		IsEphemeral:      false,
+		Fields: []discord.EmbedField{
+			{Name: "Previous", Value: oldLockRole, Inline: omit.NewPtr(true).Value},
+			{Name: "New", Value: role.Mention(), Inline: omit.NewPtr(true).Value},
+			{Name: "Updated by", Value: "<@" + event.User().ID.String() + ">", Inline: omit.NewPtr(false).Value},
+		},
 	})
 }
 
@@ -439,18 +525,24 @@ func (c *SetupCommand) handleLogChannel(ctx context.Context, event *events.Appli
 	guildChannel, ok := event.Client().Caches().Channel(channel.ID)
 	if !ok {
 		return utils.EventReply(event, utils.MessageRequest{
-			Content:     fmt.Sprintf("Given channel (<#%s>) is not accessible.", channel.ID.String()),
-			Emoji:       utils.EmojiError,
-			IsEphemeral: true,
+			UseEmbed:         true,
+			Emoji:            utils.EmojiError,
+			EmbedTitle:       "Invalid Channel",
+			EmbedDescription: "Given channel (<#" + channel.ID.String() + ">) is not accessible.",
+			EmbedColor:       utils.FailureEmbedColor,
+			IsEphemeral:      true,
 		})
 	}
 
 	// Check if channel is a text channel
 	if guildChannel.Type() != discord.ChannelTypeGuildText {
 		return utils.EventReply(event, utils.MessageRequest{
-			Content:     "Log channel must be a text channel.",
-			Emoji:       utils.EmojiError,
-			IsEphemeral: true,
+			UseEmbed:         true,
+			Emoji:            utils.EmojiError,
+			EmbedTitle:       "Invalid Channel",
+			EmbedDescription: "Log channel must be a text channel.",
+			EmbedColor:       utils.FailureEmbedColor,
+			IsEphemeral:      true,
 		})
 	}
 
@@ -467,9 +559,12 @@ func (c *SetupCommand) handleLogChannel(ctx context.Context, event *events.Appli
 	if err := c.guildManagementService.ReplaceGuildConfig(ctx, cfg); err != nil {
 		// Note: Can't log this failure to the log channel since the update failed
 		return utils.EventReply(event, utils.MessageRequest{
-			Content:     "Failed to update log channel. Please try again later.",
-			Emoji:       utils.EmojiError,
-			IsEphemeral: true,
+			UseEmbed:         true,
+			Emoji:            utils.EmojiError,
+			EmbedTitle:       "Update Failed",
+			EmbedDescription: "Failed to update log channel. Please try again later.",
+			EmbedColor:       utils.FailureEmbedColor,
+			IsEphemeral:      true,
 		})
 	}
 
@@ -480,9 +575,17 @@ func (c *SetupCommand) handleLogChannel(ctx context.Context, event *events.Appli
 		"Configuration Change")
 
 	return utils.EventReply(event, utils.MessageRequest{
-		Content:     fmt.Sprintf("Log channel updated to <#%s>", channel.ID.String()),
-		Emoji:       utils.EmojiSuccess,
-		IsEphemeral: false,
+		UseEmbed:         true,
+		Emoji:            utils.EmojiSuccess,
+		EmbedTitle:       "Log Channel Updated",
+		EmbedDescription: "Log channel updated successfully!\nAll bot activities will now be logged to this channel.",
+		EmbedColor:       utils.SuccessEmbedColor,
+		IsEphemeral:      false,
+		Fields: []discord.EmbedField{
+			{Name: "Previous", Value: oldLogChannel, Inline: omit.NewPtr(true).Value},
+			{Name: "New", Value: "<#" + channel.ID.String() + ">", Inline: omit.NewPtr(true).Value},
+			{Name: "Updated by", Value: "<@" + event.User().ID.String() + ">", Inline: omit.NewPtr(false).Value},
+		},
 	})
 }
 
@@ -504,9 +607,12 @@ func (c *SetupCommand) handleAutoReactionHints(ctx context.Context, event *event
 	cfg.AutoReactionHints = enabled
 	if err := c.guildManagementService.ReplaceGuildConfig(ctx, cfg); err != nil {
 		return utils.EventReply(event, utils.MessageRequest{
-			Content:     "Failed to update auto reaction hints settings. Please try again later.",
-			Emoji:       utils.EmojiError,
-			IsEphemeral: true,
+			UseEmbed:         true,
+			Emoji:            utils.EmojiError,
+			EmbedTitle:       "Update Failed",
+			EmbedDescription: "Failed to update auto reaction hints settings. Please try again later.",
+			EmbedColor:       utils.FailureEmbedColor,
+			IsEphemeral:      true,
 		})
 	}
 
@@ -517,52 +623,63 @@ func (c *SetupCommand) handleAutoReactionHints(ctx context.Context, event *event
 		"Configuration Change")
 
 	return utils.EventReply(event, utils.MessageRequest{
-		Content:     fmt.Sprintf("Auto reaction hints have been **%s**\n> *This applies to all new games unless overridden with the /start command*", newStatus),
-		Emoji:       utils.EmojiSuccess,
-		IsEphemeral: false,
+		UseEmbed:         true,
+		EmbedTitle:       "Auto Reaction Hints Updated",
+		EmbedDescription: utils.EmojiSuccess.String() + " Auto reaction hints updated successfully!\n> *This applies to all new games unless overridden with the /start command*",
+		EmbedColor:       utils.SuccessEmbedColor,
+		IsEphemeral:      false,
+		Fields: []discord.EmbedField{
+			{Name: "Previous", Value: oldStatus, Inline: omit.NewPtr(true).Value},
+			{Name: "New", Value: newStatus, Inline: omit.NewPtr(true).Value},
+			{Name: "Updated by", Value: "<@" + event.User().ID.String() + ">", Inline: omit.NewPtr(false).Value},
+		},
 	})
 }
 
 func (c *SetupCommand) handleShow(ctx context.Context, event *events.ApplicationCommandInteractionCreate, data *commands.Data) error {
 	cfg := data.GuildConfig
-	var content strings.Builder
 
-	// Basic settings
-	content.WriteString("**📝 Basic Settings:**\n")
 	prefix := cfg.Prefix
 	if prefix == "" {
 		prefix = "gg" // Default prefix
 	}
-	content.WriteString(fmt.Sprintf("• Prefix: `%s`\n", prefix))
-	content.WriteString(fmt.Sprintf("• Premium: %s\n", formatBooleanSetting(cfg.Premium)))
-	content.WriteString(fmt.Sprintf("• DMs to Winners: %s\n", formatBooleanSetting(cfg.DM)))
-	content.WriteString(fmt.Sprintf("• Auto Reaction Hints: %s\n\n", formatBooleanSetting(cfg.AutoReactionHints)))
 
-	// Role settings
-	content.WriteString("**👥 Role Settings:**\n")
-	content.WriteString(fmt.Sprintf("• Manager Role: %s\n", formatRoleSetting(event, cfg.BotManager)))
-	content.WriteString(fmt.Sprintf("• Win Role: %s\n", formatRoleSetting(event, cfg.WinRole)))
-	content.WriteString(fmt.Sprintf("• Required Role: %s\n", formatRoleSetting(event, cfg.ReqRole)))
-	content.WriteString(fmt.Sprintf("• Lock Role: %s\n\n", formatRoleSetting(event, cfg.LockRole)))
+	// Prepare fields for each group
+	basicSettings := ""
+	basicSettings += fmt.Sprintf("• Prefix: `%s`\n", prefix)
+	basicSettings += fmt.Sprintf("• Premium: %s\n", formatBooleanSetting(cfg.Premium))
+	basicSettings += fmt.Sprintf("• DMs to Winners: %s\n", formatBooleanSetting(cfg.DM))
+	basicSettings += fmt.Sprintf("• Auto Reaction Hints: %s", formatBooleanSetting(cfg.AutoReactionHints))
 
-	// Channel settings
-	content.WriteString("**📺 Channel Settings:**\n")
-	content.WriteString(fmt.Sprintf("• Log Channel: %s", formatChannelSetting(cfg.LogChannel)))
+	roleSettings := ""
+	roleSettings += fmt.Sprintf("• Manager Role: %s\n", formatRoleSetting(event, cfg.BotManager))
+	roleSettings += fmt.Sprintf("• Win Role: %s\n", formatRoleSetting(event, cfg.WinRole))
+	roleSettings += fmt.Sprintf("• Required Role: %s\n", formatRoleSetting(event, cfg.ReqRole))
+	roleSettings += fmt.Sprintf("• Lock Role: %s", formatRoleSetting(event, cfg.LockRole))
+
+	channelSettings := fmt.Sprintf("• Log Channel: %s", formatChannelSetting(cfg.LogChannel))
 
 	return utils.EventReply(event, utils.MessageRequest{
 		UseEmbed:          true,
+		Emoji:             utils.EmojiInfo,
 		EmbedTitle:        "🔧 Server Configuration",
-		EmbedDescription:  content.String(),
+		EmbedDescription:  "Here are the current server configuration settings:",
+		EmbedColor:        utils.InfoEmbedColor,
 		WithSupportServer: true,
 		WithVote:          true,
+		Fields: []discord.EmbedField{
+			{Name: "📝 Basic Settings", Value: basicSettings, Inline: omit.NewPtr(false).Value},
+			{Name: "👥 Role Settings", Value: roleSettings, Inline: omit.NewPtr(false).Value},
+			{Name: "📺 Channel Settings", Value: channelSettings, Inline: omit.NewPtr(false).Value},
+		},
 	})
 }
 
 func formatBooleanSetting(value bool) string {
 	if value {
-		return "✅ Enabled"
+		return "**Enabled**"
 	}
-	return "❌ Disabled"
+	return "**Disabled**"
 }
 
 func formatRoleSetting(event *events.ApplicationCommandInteractionCreate, roleID string) string {
@@ -570,7 +687,7 @@ func formatRoleSetting(event *events.ApplicationCommandInteractionCreate, roleID
 		return "❌ Not configured"
 	}
 	if role, ok := event.Client().Caches().Role(*event.GuildID(), snowflake.MustParse(roleID)); ok {
-		return fmt.Sprintf("✅ %s", role.Mention())
+		return role.Mention()
 	}
 	return fmt.Sprintf("⚠️ <@&%s> (deleted)", roleID)
 }
@@ -579,5 +696,5 @@ func formatChannelSetting(channelID string) string {
 	if channelID == "" {
 		return "❌ Not configured"
 	}
-	return fmt.Sprintf("✅ <#%s>", channelID)
+	return fmt.Sprintf("<#%s>", channelID)
 }

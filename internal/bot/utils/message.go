@@ -26,14 +26,19 @@ type MessageRequest struct {
 	ChannelID   snowflake.ID
 	IsEphemeral bool
 
-	Content string
-	Emoji   Emoji
+	Emoji      Emoji
+	Content    string
+	Components []discord.ContainerComponent
 
 	UseEmbed         bool
 	EmbedTitle       string
 	EmbedDescription string
 	EmbedColor       int
 	Thumbnail        string
+
+	Fields    []discord.EmbedField
+	Timestamp *string // ISO8601 or RFC3339, optional
+	Footer    *discord.EmbedFooter
 
 	WithVote          bool
 	WithSupportServer bool
@@ -45,46 +50,39 @@ func EventReply(event *events.ApplicationCommandInteractionCreate, request Messa
 	}
 
 	// send a non-ephemeral response by deleting the ephemeral deferred response and sending a new message to the channel
-	if !request.IsEphemeral {
-		err := event.Client().Rest().DeleteInteractionResponse(event.ApplicationID(), event.Token())
-		if err != nil {
-			return err
-		}
-		_, err = SendMessage(event.Client().Rest(), request)
-		return err
-	}
+	// if !request.IsEphemeral {
+	// 	err := event.Client().Rest().DeleteInteractionResponse(event.ApplicationID(), event.Token())
+	// 	if err != nil {
+	// 		return err
+	// 	}
+	// 	_, err = SendMessage(event.Client().Rest(), request)
+	// 	return err
+	// }
 
 	var messageUpdateRequest discord.MessageUpdate
 
-	components := buildComponents(request)
+	components := make([]discord.ContainerComponent, 0, len(request.Components))
+	if len(request.Components) > 0 {
+		components = append(components, request.Components...)
+	}
+	if derivedComponents := buildComponents(request); derivedComponents != nil {
+		components = append(components, derivedComponents...)
+	}
 
 	if request.UseEmbed {
-		// Create embed and components
+		// Create embed
 		embeds := buildEmbeds(request)
-		messageUpdateRequest = discord.MessageUpdate{
-			Embeds:     &embeds,
-			Components: &components,
-		}
+		messageUpdateRequest.Embeds = &embeds
 	} else {
 		// Original content-based logic
 		content := request.Content
 		if request.Emoji != EmojiUnspecified {
 			content = fmt.Sprintf(emojiContentFormat, request.Emoji.String(), request.Content)
 		}
-
-		if request.WithVote {
-			content = fmt.Sprintf("%s\n\n> *Show your support by voting for the bot ❤️ %s*", content, voteLink)
-		}
-
-		if request.WithSupportServer {
-			content = fmt.Sprintf("%s\n\n> *Need help? Join our support server: %s*", content, supportServerLink)
-		}
-
-		messageUpdateRequest = discord.MessageUpdate{
-			Content:    &content,
-			Components: &components,
-		}
+		messageUpdateRequest.Content = &content
 	}
+
+	messageUpdateRequest.Components = &components
 
 	_, err := event.Client().Rest().UpdateInteractionResponse(event.ApplicationID(), event.Token(), messageUpdateRequest)
 	return err
@@ -93,35 +91,28 @@ func EventReply(event *events.ApplicationCommandInteractionCreate, request Messa
 func SendMessage(rest rest.Rest, request MessageRequest) (*discord.Message, error) {
 	var messageCreateRequest discord.MessageCreate
 
-	components := buildComponents(request)
+	components := make([]discord.ContainerComponent, 0, len(request.Components))
+	if len(request.Components) > 0 {
+		components = append(components, request.Components...)
+	}
+	if derivedComponents := buildComponents(request); derivedComponents != nil {
+		components = append(components, derivedComponents...)
+	}
 
 	if request.UseEmbed {
-		// Create embed and components
+		// Create embed
 		embeds := buildEmbeds(request)
-		messageCreateRequest = discord.MessageCreate{
-			Embeds:     embeds,
-			Components: components,
-		}
+		messageCreateRequest.Embeds = embeds
 	} else {
 		// Original content-based logic
 		content := request.Content
 		if request.Emoji != EmojiUnspecified {
 			content = fmt.Sprintf(emojiContentFormat, request.Emoji.String(), request.Content)
 		}
-
-		if request.WithVote {
-			content = fmt.Sprintf("%s\n\n> *Show your support by voting for the bot ❤️ https://top.gg/bot/818420448131285012/vote*", content)
-		}
-
-		if request.WithSupportServer {
-			content = fmt.Sprintf("%s\n\n> *Need help? Join our support server: %s*", content, supportServerLink)
-		}
-
-		messageCreateRequest = discord.MessageCreate{
-			Content:    content,
-			Components: components,
-		}
+		messageCreateRequest.Content = content
 	}
+
+	messageCreateRequest.Components = components
 
 	if request.IsEphemeral {
 		messageCreateRequest.Flags = discord.MessageFlagEphemeral
@@ -157,7 +148,7 @@ func LogToChannel(rest rest.Rest, logChannelID string, title, description, foote
 	embed := discord.Embed{
 		Title:       title,
 		Description: description,
-		Color:       discordBlurple,
+		Color:       DiscordBlurple,
 	}
 
 	if footer != "" {
@@ -174,7 +165,7 @@ func LogToChannel(rest rest.Rest, logChannelID string, title, description, foote
 
 // buildEmbeds creates a Discord embed from a MessageRequest
 func buildEmbeds(request MessageRequest) []discord.Embed {
-	embedColor := defaultEmbedColor
+	embedColor := DefaultEmbedColor
 	if request.EmbedColor != 0 {
 		embedColor = request.EmbedColor
 	}
@@ -199,19 +190,13 @@ func buildEmbeds(request MessageRequest) []discord.Embed {
 	}
 	embed.Description = description
 
+	if len(request.Fields) > 0 {
+		embed.Fields = request.Fields
+	}
+
 	// Prepare footer
 	var footerText string
 	var hasFooter bool
-
-	// if request.WithVote {
-	// 	footerText = "Show your support by voting for the bot ❤️"
-	// 	hasFooter = true
-	// }
-
-	// if request.WithSupportServer {
-	// 	footerText = "Need help? Join our support server!"
-	// 	hasFooter = true
-	// }
 
 	if footerText != "" {
 		embed.Footer = &discord.EmbedFooter{Text: footerText}
@@ -230,30 +215,27 @@ func buildEmbeds(request MessageRequest) []discord.Embed {
 }
 
 func buildComponents(request MessageRequest) []discord.ContainerComponent {
-	actionRow := discord.ActionRowComponent{}
+	buttons := make([]discord.InteractiveComponent, 0)
 
 	if request.WithVote {
-		actionRow.AddComponents(discord.ButtonComponent{
-			Label: "Vote",
-			URL:   voteLink,
-			Style: discord.ButtonStyleLink,
-			Emoji: &discord.ComponentEmoji{
-				ID: emojiPepeHeartID,
-			},
-		})
+		buttons = append(buttons,
+			discord.NewLinkButton("Please vote for the bot!", voteLink).WithEmoji(discord.ComponentEmoji{
+				ID:       emojiPepeHeartID,
+				Animated: false,
+			}),
+		)
 	}
 
 	if request.WithSupportServer {
-		actionRow.AddComponents(discord.ButtonComponent{
-			Label: "Support Server",
-			URL:   supportServerLink,
-			Style: discord.ButtonStyleLink,
-			Emoji: &discord.ComponentEmoji{
-				ID:       devEmojiID,
-				Animated: true,
-			},
-		})
+		buttons = append(buttons, discord.NewLinkButton("Join support server!", supportServerLink).WithEmoji(discord.ComponentEmoji{
+			ID:       emojiDevBadgeID,
+			Animated: true,
+		}))
 	}
 
-	return []discord.ContainerComponent{actionRow}
+	if len(buttons) == 0 {
+		return nil
+	}
+
+	return []discord.ContainerComponent{discord.ActionRowComponent(buttons)}
 }

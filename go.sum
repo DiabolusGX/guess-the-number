@@ -14,6 +14,8 @@ github.com/disgoorg/disgo v0.18.16 h1:Yk6pA9TaGbuM4hWfWafH0jAfmkWvZBFY7rh49DgljG
 github.com/disgoorg/disgo v0.18.16/go.mod h1:dXYVH059d6aK7mI+Nh/3svSRWedNd09P7C2VX3RqbJY=
 github.com/disgoorg/json v1.2.0 h1:6e/j4BCfSHIvucG1cd7tJPAOp1RgnnMFSqkvZUtEd1Y=
 github.com/disgoorg/json v1.2.0/go.mod h1:BHDwdde0rpQFDVsRLKhma6Y7fTbQKub/zdGO5O9NqqA=
+github.com/disgoorg/omit v1.0.0 h1:y0LkVUOyUHT8ZlnhIAeOZEA22UYykeysK8bLJ0SfT78=
+github.com/disgoorg/omit v1.0.0/go.mod h1:RTmSARkf6PWT/UckwI0bV8XgWkWQoPppaT01rYKLcFQ=
 github.com/disgoorg/paginator v0.0.0-20240725182907-1bdf780b5586 h1:GcdAmaZYq/iHmeV8iSPEeN1JHB3dgfq6EcujSsHfZFg=
 github.com/disgoorg/paginator v0.0.0-20240725182907-1bdf780b5586/go.mod h1:6dmOx00CV/GNYip5FZbe9k2mw39trmpdY6meXdCrfrw=
 github.com/disgoorg/snowflake/v2 v2.0.3 h1:3B+PpFjr7j4ad7oeJu4RlQ+nYOTadsKapJIzgvSI2Ro=
