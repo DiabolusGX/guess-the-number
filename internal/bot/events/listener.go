@@ -37,6 +37,8 @@ const (
 	GuildJoin        EventListenerName = "GuildJoin"
 	GuildLeave       EventListenerName = "GuildLeave"
 	GuildMemberLeave EventListenerName = "GuildMemberLeave"
+	GuildReady       EventListenerName = "GuildReady"
+	GuildsReady      EventListenerName = "GuildsReady"
 )
 
 func GetEventListenerName(event bot.Event) EventListenerName {
@@ -51,6 +53,10 @@ func GetEventListenerName(event bot.Event) EventListenerName {
 		return GuildMemberLeave
 	case *disgoEvents.GuildJoin:
 		return GuildJoin
+	case *disgoEvents.GuildReady:
+		return GuildReady
+	case *disgoEvents.GuildsReady:
+		return GuildsReady
 	}
 
 	return ""

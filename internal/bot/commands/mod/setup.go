@@ -126,6 +126,10 @@ func (c *SetupCommand) Definition() discord.ApplicationCommandCreate {
 				Name:        "show",
 				Description: "Show all current server configuration settings",
 			},
+			discord.ApplicationCommandOptionSubCommand{
+				Name:        "info",
+				Description: "Show all current server configuration settings",
+			},
 		},
 	}
 }
@@ -149,7 +153,7 @@ func (c *SetupCommand) Handler(ctx context.Context, event *events.ApplicationCom
 		return c.handleLogChannel(ctx, event, data)
 	case "auto-reaction-hints":
 		return c.handleAutoReactionHints(ctx, event, data)
-	case "show":
+	case "show", "info":
 		return c.handleShow(ctx, event, data)
 	}
 	return nil
@@ -523,8 +527,6 @@ func (c *SetupCommand) handleShow(ctx context.Context, event *events.Application
 	cfg := data.GuildConfig
 	var content strings.Builder
 
-	content.WriteString("🔧 **Server Configuration**\n\n")
-
 	// Basic settings
 	content.WriteString("**📝 Basic Settings:**\n")
 	prefix := cfg.Prefix
@@ -548,9 +550,11 @@ func (c *SetupCommand) handleShow(ctx context.Context, event *events.Application
 	content.WriteString(fmt.Sprintf("• Log Channel: %s", formatChannelSetting(cfg.LogChannel)))
 
 	return utils.EventReply(event, utils.MessageRequest{
-		Content:     content.String(),
-		Emoji:       utils.EmojiSuccess,
-		IsEphemeral: true,
+		UseEmbed:          true,
+		EmbedTitle:        "🔧 Server Configuration",
+		EmbedDescription:  content.String(),
+		WithSupportServer: true,
+		WithVote:          true,
 	})
 }
 

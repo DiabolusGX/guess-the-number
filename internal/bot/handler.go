@@ -117,6 +117,7 @@ func (h *handler) OnEvent(event bot.Event) {
 	switch e := event.(type) {
 	case *disgoEvents.ApplicationCommandInteractionCreate:
 		// acknowledge the discord interaction
+		// Always defer as ephemeral (safe default) - commands can choose to resend as public later
 		err := e.DeferCreateMessage(true)
 		if err != nil {
 			h.logger.FromContext(ctx).Errorw("error acknowledging discord interaction", "err", err)

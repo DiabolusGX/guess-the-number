@@ -34,5 +34,18 @@ func (h *ReadyEventListener) OnEvent(ctx context.Context, e bot.Event) {
 
 	ctx = context.WithValue(ctx, lib.CtxUserID, event.User.ID.String())
 
-	h.Logger.FromContext(ctx).Infow("Bot is ready")
+	// Log with shard information if available
+	shardID := event.ShardID()
+	if shardID >= 0 {
+		h.Logger.FromContext(ctx).Infow("Bot shard is ready",
+			"shard_id", shardID,
+			"user_id", event.User.ID.String(),
+			"username", event.User.Username,
+		)
+	} else {
+		h.Logger.FromContext(ctx).Infow("Bot is ready",
+			"user_id", event.User.ID.String(),
+			"username", event.User.Username,
+		)
+	}
 }
