@@ -112,7 +112,7 @@ func (c *StartCommand) Handler(ctx context.Context, event *events.ApplicationCom
 	// start forming ephemeral reply to user about state of everything
 	var eventReply strings.Builder
 	eventReply.WriteString("**Game Started**\n")
-	eventReply.WriteString(fmt.Sprintf("Random answer ||%d|| has been set", game.Game.Answer))
+	eventReply.WriteString("Sending the game's answer to your DM.")
 
 	// unlock target channel from lock role if it's locked
 	var lockRoleErr error

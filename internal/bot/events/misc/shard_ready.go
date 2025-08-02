@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/diabolusgx/guess-the-number-go/internal/bot/events"
-	"github.com/diabolusgx/guess-the-number-go/internal/lib"
 	"github.com/diabolusgx/guess-the-number-go/pkg/logger"
 	"github.com/disgoorg/disgo/bot"
 	disgoEvents "github.com/disgoorg/disgo/events"
@@ -31,8 +30,6 @@ func (h *GuildReadyEventListener) OnEvent(ctx context.Context, e bot.Event) {
 	if !ok {
 		return
 	}
-
-	ctx = context.WithValue(ctx, lib.CtxGuildID, event.GuildID.String())
 
 	h.Logger.FromContext(ctx).Debugw("Guild ready",
 		"guild_id", event.GuildID.String(),

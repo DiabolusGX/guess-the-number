@@ -166,8 +166,9 @@ func (c *SetupCommand) handlePrefix(ctx context.Context, event *events.Applicati
 	if len(prefix) == 0 {
 		return utils.EventReply(event, utils.MessageRequest{
 			UseEmbed:         true,
+			Emoji:            utils.EmojiError,
 			EmbedTitle:       "Invalid Prefix",
-			EmbedDescription: utils.EmojiError.String() + " Prefix cannot be empty.",
+			EmbedDescription: "Prefix cannot be empty.",
 			EmbedColor:       utils.FailureEmbedColor,
 			IsEphemeral:      true,
 		})
@@ -176,8 +177,9 @@ func (c *SetupCommand) handlePrefix(ctx context.Context, event *events.Applicati
 	if len(prefix) > 10 {
 		return utils.EventReply(event, utils.MessageRequest{
 			UseEmbed:         true,
+			Emoji:            utils.EmojiError,
 			EmbedTitle:       "Invalid Prefix",
-			EmbedDescription: utils.EmojiError.String() + " Prefix cannot be longer than 10 characters.",
+			EmbedDescription: "Prefix cannot be longer than 10 characters.",
 			EmbedColor:       utils.FailureEmbedColor,
 			IsEphemeral:      true,
 		})
@@ -212,13 +214,12 @@ func (c *SetupCommand) handlePrefix(ctx context.Context, event *events.Applicati
 		UseEmbed:         true,
 		Emoji:            utils.EmojiSuccess,
 		EmbedTitle:       "Prefix Updated",
-		EmbedDescription: "Prefix updated successfully!",
+		EmbedDescription: "Please use slash commands, prefix commands are deprecated.",
 		EmbedColor:       utils.SuccessEmbedColor,
 		IsEphemeral:      false,
 		Fields: []discord.EmbedField{
 			{Name: "Previous", Value: "`" + oldPrefix + "`", Inline: omit.NewPtr(true).Value},
 			{Name: "New", Value: "`" + prefix + "`", Inline: omit.NewPtr(true).Value},
-			{Name: "Updated by", Value: "<@" + event.User().ID.String() + ">", Inline: omit.NewPtr(false).Value},
 		},
 	})
 }
@@ -273,13 +274,12 @@ func (c *SetupCommand) handleManager(ctx context.Context, event *events.Applicat
 		UseEmbed:         true,
 		Emoji:            utils.EmojiSuccess,
 		EmbedTitle:       "Manager Role Updated",
-		EmbedDescription: "Manager role updated successfully!\n> *Make sure to assign the role to the users who are allowed to manage the bot.*",
+		EmbedDescription: "> *Make sure to assign the role to the users who are allowed to manage the bot.*",
 		EmbedColor:       utils.SuccessEmbedColor,
 		IsEphemeral:      true,
 		Fields: []discord.EmbedField{
 			{Name: "Previous", Value: oldManagerRole, Inline: omit.NewPtr(true).Value},
 			{Name: "New", Value: role.Mention(), Inline: omit.NewPtr(true).Value},
-			{Name: "Updated by", Value: "<@" + event.User().ID.String() + ">", Inline: omit.NewPtr(false).Value},
 		},
 	})
 }
@@ -321,13 +321,12 @@ func (c *SetupCommand) handleDM(ctx context.Context, event *events.ApplicationCo
 		UseEmbed:         true,
 		Emoji:            utils.EmojiSuccess,
 		EmbedTitle:       "DM Settings Updated",
-		EmbedDescription: "DM settings updated successfully!",
+		EmbedDescription: "DMs to winners will be enabled.",
 		EmbedColor:       utils.SuccessEmbedColor,
 		IsEphemeral:      false,
 		Fields: []discord.EmbedField{
 			{Name: "Previous", Value: oldStatus, Inline: omit.NewPtr(true).Value},
 			{Name: "New", Value: newStatus, Inline: omit.NewPtr(true).Value},
-			{Name: "Updated by", Value: "<@" + event.User().ID.String() + ">", Inline: omit.NewPtr(false).Value},
 		},
 	})
 }
@@ -383,13 +382,12 @@ func (c *SetupCommand) handleWinRole(ctx context.Context, event *events.Applicat
 		UseEmbed:         true,
 		Emoji:            utils.EmojiSuccess,
 		EmbedTitle:       "Win Role Updated",
-		EmbedDescription: "Win role updated successfully!",
+		EmbedDescription: "This role will be assigned to the winner of the game.",
 		EmbedColor:       utils.SuccessEmbedColor,
 		IsEphemeral:      false,
 		Fields: []discord.EmbedField{
 			{Name: "Previous", Value: oldWinRole, Inline: omit.NewPtr(true).Value},
 			{Name: "New", Value: role.Mention(), Inline: omit.NewPtr(true).Value},
-			{Name: "Updated by", Value: "<@" + event.User().ID.String() + ">", Inline: omit.NewPtr(false).Value},
 		},
 	})
 }
@@ -445,13 +443,12 @@ func (c *SetupCommand) handleReqRole(ctx context.Context, event *events.Applicat
 		UseEmbed:         true,
 		Emoji:            utils.EmojiSuccess,
 		EmbedTitle:       "Required Role Updated",
-		EmbedDescription: "Required role updated successfully!\n> *Make sure to assign the role to the users who are allowed to play the game.*",
+		EmbedDescription: "> *Make sure to assign the role to the users who are allowed to play the game.*",
 		EmbedColor:       utils.SuccessEmbedColor,
 		IsEphemeral:      false,
 		Fields: []discord.EmbedField{
 			{Name: "Previous", Value: oldReqRole, Inline: omit.NewPtr(true).Value},
 			{Name: "New", Value: role.Mention(), Inline: omit.NewPtr(true).Value},
-			{Name: "Updated by", Value: "<@" + event.User().ID.String() + ">", Inline: omit.NewPtr(false).Value},
 		},
 	})
 }
@@ -507,13 +504,12 @@ func (c *SetupCommand) handleLockRole(ctx context.Context, event *events.Applica
 		UseEmbed:         true,
 		Emoji:            utils.EmojiSuccess,
 		EmbedTitle:       "Lock Role Updated",
-		EmbedDescription: "Lock role updated successfully!",
+		EmbedDescription: "Game channel will be locked to this role.",
 		EmbedColor:       utils.SuccessEmbedColor,
 		IsEphemeral:      false,
 		Fields: []discord.EmbedField{
 			{Name: "Previous", Value: oldLockRole, Inline: omit.NewPtr(true).Value},
 			{Name: "New", Value: role.Mention(), Inline: omit.NewPtr(true).Value},
-			{Name: "Updated by", Value: "<@" + event.User().ID.String() + ">", Inline: omit.NewPtr(false).Value},
 		},
 	})
 }
@@ -578,13 +574,12 @@ func (c *SetupCommand) handleLogChannel(ctx context.Context, event *events.Appli
 		UseEmbed:         true,
 		Emoji:            utils.EmojiSuccess,
 		EmbedTitle:       "Log Channel Updated",
-		EmbedDescription: "Log channel updated successfully!\nAll bot activities will now be logged to this channel.",
+		EmbedDescription: "All bot activities will now be logged to this channel.",
 		EmbedColor:       utils.SuccessEmbedColor,
 		IsEphemeral:      false,
 		Fields: []discord.EmbedField{
 			{Name: "Previous", Value: oldLogChannel, Inline: omit.NewPtr(true).Value},
 			{Name: "New", Value: "<#" + channel.ID.String() + ">", Inline: omit.NewPtr(true).Value},
-			{Name: "Updated by", Value: "<@" + event.User().ID.String() + ">", Inline: omit.NewPtr(false).Value},
 		},
 	})
 }
@@ -624,14 +619,14 @@ func (c *SetupCommand) handleAutoReactionHints(ctx context.Context, event *event
 
 	return utils.EventReply(event, utils.MessageRequest{
 		UseEmbed:         true,
+		Emoji:            utils.EmojiSuccess,
 		EmbedTitle:       "Auto Reaction Hints Updated",
-		EmbedDescription: utils.EmojiSuccess.String() + " Auto reaction hints updated successfully!\n> *This applies to all new games unless overridden with the /start command*",
+		EmbedDescription: "> *This applies to all new games unless overridden with the /start command*",
 		EmbedColor:       utils.SuccessEmbedColor,
 		IsEphemeral:      false,
 		Fields: []discord.EmbedField{
 			{Name: "Previous", Value: oldStatus, Inline: omit.NewPtr(true).Value},
 			{Name: "New", Value: newStatus, Inline: omit.NewPtr(true).Value},
-			{Name: "Updated by", Value: "<@" + event.User().ID.String() + ">", Inline: omit.NewPtr(false).Value},
 		},
 	})
 }

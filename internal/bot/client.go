@@ -39,6 +39,7 @@ func NewClient(cfg *config.Configuration) (bot.Client, error) {
 			gateway.IntentGuildMessageReactions,
 		),
 		gateway.WithCompress(true),
+		gateway.WithPresenceOpts(gateway.WithListeningActivity("your guesses || /help", gateway.WithActivityState("Guess what?")), gateway.WithOnlineStatus(discord.OnlineStatusOnline)),
 	)
 
 	var clientOpts []bot.ConfigOpt
