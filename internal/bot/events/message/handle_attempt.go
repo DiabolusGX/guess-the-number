@@ -10,6 +10,7 @@ import (
 	"github.com/diabolusgx/guess-the-number-go/internal/bot/utils"
 	"github.com/diabolusgx/guess-the-number-go/internal/domain"
 	"github.com/diabolusgx/guess-the-number-go/internal/types"
+	ierr "github.com/diabolusgx/guess-the-number-go/pkg/errors"
 	"github.com/diabolusgx/guess-the-number-go/pkg/metrics"
 	"github.com/disgoorg/disgo/discord"
 	disgoEvents "github.com/disgoorg/disgo/events"
@@ -74,6 +75,10 @@ func (h *MessageCreateListener) handleAttempt(ctx context.Context, event *disgoE
 		Guess:     number,
 	})
 	if err != nil {
+		if appErr, ok := err.(*ierr.AppError); ok && appErr.Code == ierr.ErrCodeNotFound {
+			err = nil
+			return
+		}
 		h.Logger.FromContext(ctx).Error("failed to handle attempt in game service", "error", err.Error())
 		return
 	}
@@ -88,7 +93,7 @@ func (h *MessageCreateListener) handleAttempt(ctx context.Context, event *disgoE
 				emoji = "⬇️" // Guess is too high, answer is lower
 			}
 
-			reactionErr := h.Client.Rest().AddReaction(event.ChannelID, event.Message.ID, emoji)
+			reactionErr := event.Client().Rest().AddReaction(event.ChannelID, event.Message.ID, emoji)
 			if reactionErr != nil {
 				h.Logger.FromContext(ctx).Error("failed to add reaction hint", "error", reactionErr.Error(), "emoji", emoji)
 			}
@@ -108,9 +113,9 @@ func (h *MessageCreateListener) handleAttempt(ctx context.Context, event *disgoE
 
 	// lock channel
 	if guildConfig != nil && guildConfig.LockRole != "" {
-		lockRole, ok := h.Client.Caches().Role(*event.GuildID, snowflake.MustParse(guildConfig.LockRole))
+		lockRole, ok := event.Client().Caches().Role(*event.GuildID, snowflake.MustParse(guildConfig.LockRole))
 		if ok {
-			err = utils.LockChannel(ctx, event, channel, lockRole, "Game completed, locking channel")
+			err = utils.LockChannel(ctx, event.Client(), channel, lockRole, "Game completed, locking channel")
 			if err != nil {
 				return
 			}
@@ -122,9 +127,9 @@ func (h *MessageCreateListener) handleAttempt(ctx context.Context, event *disgoE
 	var winRole discord.Role
 	var winRoleExists bool
 	if guildConfig != nil && guildConfig.WinRole != "" {
-		winRole, winRoleExists = h.Client.Caches().Role(*event.GuildID, snowflake.MustParse(guildConfig.WinRole))
+		winRole, winRoleExists = event.Client().Caches().Role(*event.GuildID, snowflake.MustParse(guildConfig.WinRole))
 		if winRoleExists {
-			winRoleErr = h.Client.Rest().AddMemberRole(*event.GuildID, event.Message.Author.ID, winRole.ID, rest.WithReason("Game winner, awarding win role"))
+			winRoleErr = event.Client().Rest().AddMemberRole(*event.GuildID, event.Message.Author.ID, winRole.ID, rest.WithReason("Game winner, awarding win role"))
 			if winRoleErr != nil {
 				h.Logger.FromContext(ctx).Error("failed to add win role to winner", "error", winRoleErr.Error())
 				winDM.WriteString("\n\n> *Failed to add win role, please contact the admin or bot manager*")
@@ -139,7 +144,7 @@ func (h *MessageCreateListener) handleAttempt(ctx context.Context, event *disgoE
 	// send DM to winner if configured
 	var dmErr error
 	if guildConfig != nil && guildConfig.DM {
-		dmErr = utils.SendDM(h.Client.Rest(), event.Message.Author.ID, utils.MessageRequest{
+		dmErr = utils.SendDM(event.Client().Rest(), event.Message.Author.ID, utils.MessageRequest{
 			Emoji:    utils.EmojiSuccess,
 			Content:  winDM.String(),
 			WithVote: true,
@@ -150,11 +155,12 @@ func (h *MessageCreateListener) handleAttempt(ctx context.Context, event *disgoE
 	}
 
 	// send game completion message and pin it
-	winMsg, messageErr := utils.SendMessage(h.Client.Rest(), utils.MessageRequest{
-		ChannelID: event.ChannelID,
-		Emoji:     utils.EmojiSuccess,
-		Content:   winChannelMsg.String(),
-		WithVote:  true,
+	winMsg, messageErr := utils.SendMessage(event.Client().Rest(), utils.MessageRequest{
+		ChannelID:           event.ChannelID,
+		Emoji:               utils.EmojiSuccess,
+		Content:             winChannelMsg.String(),
+		WithVote:            true,
+		WithStartGameButton: true,
 	})
 	if messageErr != nil {
 		h.Logger.FromContext(ctx).Error("failed to send game completion message", "error", messageErr.Error())
@@ -256,5 +262,5 @@ func (h *MessageCreateListener) logGameCompletion(ctx context.Context, event *di
 		logContent.WriteString("📌 No old messages to unpin")
 	}
 
-	utils.LogToChannel(h.Client.Rest(), guildConfig.LogChannel, utils.LogTypeGameActivity, "🏆 Game Won", logContent.String())
+	utils.LogToChannel(event.Client().Rest(), guildConfig.LogChannel, utils.LogTypeGameActivity, "🏆 Game Won", logContent.String())
 }

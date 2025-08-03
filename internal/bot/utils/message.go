@@ -3,11 +3,19 @@ package utils
 import (
 	"fmt"
 
+	"github.com/disgoorg/disgo/bot"
 	"github.com/disgoorg/disgo/discord"
-	"github.com/disgoorg/disgo/events"
 	"github.com/disgoorg/disgo/rest"
 	"github.com/disgoorg/snowflake/v2"
 )
+
+type ReplyEvent interface {
+	ApplicationID() snowflake.ID
+	Token() string
+	Channel() discord.InteractionChannel
+	User() discord.User
+	Client() bot.Client
+}
 
 type MessageRequest struct {
 	ChannelID   snowflake.ID
@@ -27,11 +35,12 @@ type MessageRequest struct {
 	Timestamp *string // ISO8601 or RFC3339, optional
 	Footer    *discord.EmbedFooter
 
-	WithVote          bool
-	WithSupportServer bool
+	WithVote            bool
+	WithSupportServer   bool
+	WithStartGameButton bool
 }
 
-func EventReply(event *events.ApplicationCommandInteractionCreate, request MessageRequest) error {
+func EventReply(event ReplyEvent, request MessageRequest) error {
 	if request.ChannelID == 0 {
 		request.ChannelID = event.Channel().ID()
 	}
@@ -187,6 +196,13 @@ func buildEmbeds(request MessageRequest) []discord.Embed {
 
 func buildComponents(request MessageRequest) []discord.ContainerComponent {
 	buttons := make([]discord.InteractiveComponent, 0)
+
+	if request.WithStartGameButton {
+		buttons = append(buttons, discord.NewSuccessButton("Start New Game", "start_game").WithEmoji(discord.ComponentEmoji{
+			ID:       emojiGTNLogoID,
+			Animated: false,
+		}))
+	}
 
 	if request.WithVote {
 		buttons = append(buttons,

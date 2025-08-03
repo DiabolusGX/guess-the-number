@@ -3,7 +3,7 @@ package mod
 import (
 	"context"
 
-	"github.com/diabolusgx/guess-the-number-go/internal/bot/commands"
+	"github.com/diabolusgx/guess-the-number-go/internal/bot/events/commands"
 	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/events"
 )

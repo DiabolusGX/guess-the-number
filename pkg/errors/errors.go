@@ -12,12 +12,13 @@ import (
 type ErrorCode string
 
 const (
-	ErrCodeValidation       ErrorCode = "validation_error"
-	ErrCodeNotFound         ErrorCode = "not_found"
-	ErrCodeAlreadyExists    ErrorCode = "already_exists"
-	ErrCodePermissionDenied ErrorCode = "permission_denied"
-	ErrCodeDatabase         ErrorCode = "database_error"
-	ErrCodeInternalError    ErrorCode = "internal_error"
+	ErrCodeMissingPermissions ErrorCode = "missing_permissions"
+	ErrCodeValidation         ErrorCode = "validation_error"
+	ErrCodeNotFound           ErrorCode = "not_found"
+	ErrCodeAlreadyExists      ErrorCode = "already_exists"
+	ErrCodePermissionDenied   ErrorCode = "permission_denied"
+	ErrCodeDatabase           ErrorCode = "database_error"
+	ErrCodeInternalError      ErrorCode = "internal_error"
 )
 
 func (e ErrorCode) String() string {

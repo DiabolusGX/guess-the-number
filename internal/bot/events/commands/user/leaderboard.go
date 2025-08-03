@@ -6,7 +6,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/diabolusgx/guess-the-number-go/internal/bot/commands"
+	"github.com/diabolusgx/guess-the-number-go/internal/bot/events/commands"
 	"github.com/diabolusgx/guess-the-number-go/internal/bot/utils"
 	"github.com/diabolusgx/guess-the-number-go/internal/domain"
 	"github.com/diabolusgx/guess-the-number-go/internal/service"

@@ -10,13 +10,11 @@ import (
 )
 
 type ReadyEventListener struct {
-	Client bot.Client
 	Logger *logger.Logger
 }
 
 func NewReadyEventListener(params events.EventListenerParams) *ReadyEventListener {
 	return &ReadyEventListener{
-		Client: params.Client,
 		Logger: params.Logger,
 	}
 }
@@ -25,10 +23,14 @@ func (h *ReadyEventListener) EventName() events.EventListenerName {
 	return events.Ready
 }
 
-func (h *ReadyEventListener) OnEvent(ctx context.Context, e bot.Event) {
+func (h *ReadyEventListener) Aliases() []events.EventListenerName {
+	return []events.EventListenerName{}
+}
+
+func (h *ReadyEventListener) OnEvent(ctx context.Context, e bot.Event) error {
 	event, ok := e.(*disgoEvents.Ready)
 	if !ok {
-		return
+		return nil
 	}
 
 	// Log with shard information if available
@@ -45,4 +47,6 @@ func (h *ReadyEventListener) OnEvent(ctx context.Context, e bot.Event) {
 			"username", event.User.Username,
 		)
 	}
+
+	return nil
 }

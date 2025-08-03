@@ -6,10 +6,9 @@ import (
 
 	"github.com/diabolusgx/guess-the-number-go/pkg/errors"
 	"github.com/diabolusgx/guess-the-number-go/pkg/logger"
-	"github.com/disgoorg/disgo/events"
 )
 
-func HandleError(ctx context.Context, event *events.ApplicationCommandInteractionCreate, err error) {
+func HandleError(ctx context.Context, event ReplyEvent, err error) {
 	appErr, ok := err.(*errors.AppError)
 	if !ok {
 		appErr = errors.New(errors.ErrCodeInternalError, err.Error())

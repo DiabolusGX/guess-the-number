@@ -24,6 +24,7 @@ const (
 	emojiContentFormat = "%s | %s"
 	emojiPepeHeartID   = snowflake.ID(853385938930630688)
 	emojiDevBadgeID    = snowflake.ID(818007567833497611)
+	emojiGTNLogoID     = snowflake.ID(1401528921694015649)
 
 	// Admin
 	AdminChannelID = snowflake.ID(818439901044801567)

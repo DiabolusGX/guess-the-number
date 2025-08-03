@@ -26,12 +26,15 @@ type EventListenerParams struct {
 
 type Listener interface {
 	EventName() EventListenerName
-	OnEvent(ctx context.Context, event bot.Event)
+	Aliases() []EventListenerName
+	OnEvent(ctx context.Context, event bot.Event) error
 }
 
 type EventListenerName string
 
 const (
+	EventUnspecified EventListenerName = "Unspecified"
+
 	MessageCreate    EventListenerName = "MessageCreate"
 	Ready            EventListenerName = "Ready"
 	GuildJoin        EventListenerName = "GuildJoin"
@@ -39,10 +42,21 @@ const (
 	GuildMemberLeave EventListenerName = "GuildMemberLeave"
 	GuildReady       EventListenerName = "GuildReady"
 	GuildsReady      EventListenerName = "GuildsReady"
+
+	// interactions
+	ApplicationCommandInteraction EventListenerName = "ApplicationCommandInteraction"
+	ComponentInteraction          EventListenerName = "ComponentInteraction"
+	ModalSubmit                   EventListenerName = "ModalSubmit"
 )
 
 func GetEventListenerName(event bot.Event) EventListenerName {
 	switch event.(type) {
+	case *disgoEvents.ApplicationCommandInteractionCreate:
+		return ApplicationCommandInteraction
+	case *disgoEvents.ComponentInteractionCreate:
+		return ComponentInteraction
+	case *disgoEvents.ModalSubmitInteractionCreate:
+		return ModalSubmit
 	case *disgoEvents.MessageCreate:
 		return MessageCreate
 	case *disgoEvents.Ready:

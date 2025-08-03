@@ -16,14 +16,12 @@ import (
 )
 
 type GuildLeaveListener struct {
-	Client          bot.Client
 	Logger          *logger.Logger
 	GuildManagement service.GuildManagementService
 }
 
 func NewGuildLeaveListener(params events.EventListenerParams) *GuildLeaveListener {
 	return &GuildLeaveListener{
-		Client:          params.Client,
 		Logger:          params.Logger,
 		GuildManagement: params.GuildManagementService,
 	}
@@ -33,10 +31,14 @@ func (h *GuildLeaveListener) EventName() events.EventListenerName {
 	return events.GuildLeave
 }
 
-func (h *GuildLeaveListener) OnEvent(ctx context.Context, e bot.Event) {
+func (h *GuildLeaveListener) Aliases() []events.EventListenerName {
+	return []events.EventListenerName{}
+}
+
+func (h *GuildLeaveListener) OnEvent(ctx context.Context, e bot.Event) error {
 	event, ok := e.(*disgoEvents.GuildLeave)
 	if !ok {
-		return
+		return nil
 	}
 
 	ctx = context.WithValue(ctx, lib.CtxShardID, event.ShardID())
@@ -51,7 +53,7 @@ func (h *GuildLeaveListener) OnEvent(ctx context.Context, e bot.Event) {
 	}
 
 	// fetch guild owner
-	owner, err := h.Client.Rest().GetUser(event.Guild.OwnerID)
+	owner, err := event.Client().Rest().GetUser(event.Guild.OwnerID)
 	if err != nil {
 		h.Logger.FromContext(ctx).Errorw("Failed to fetch guild owner", "error", err)
 		owner = &discord.User{
@@ -85,8 +87,10 @@ func (h *GuildLeaveListener) OnEvent(ctx context.Context, e bot.Event) {
 		SetEmbeds(guildInfoEmbed).
 		Build()
 
-	_, err = h.Client.Rest().CreateMessage(utils.AdminChannelID, messageRequest)
+	_, err = event.Client().Rest().CreateMessage(utils.AdminChannelID, messageRequest)
 	if err != nil {
 		h.Logger.FromContext(ctx).Errorw("Failed to send guild info message", "error", err)
 	}
+
+	return nil
 }

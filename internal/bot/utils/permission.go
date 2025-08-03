@@ -2,9 +2,11 @@ package utils
 
 import (
 	"context"
+	"slices"
 	"strings"
 
 	"github.com/diabolusgx/guess-the-number-go/pkg/logger"
+	"github.com/disgoorg/disgo/bot"
 	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/events"
 	"github.com/disgoorg/disgo/rest"
@@ -45,10 +47,11 @@ func CheckBotPermissionsInChannel(event *events.ApplicationCommandInteractionCre
 	return CheckBotPermissions(&permission, requiredPermissions...)
 }
 
-func UnlockChannel(ctx context.Context, event *events.ApplicationCommandInteractionCreate, channel discord.GuildChannel, lockRole discord.Role, reason string) error {
-	if strings.HasSuffix(channel.Name(), "🔒") {
+func UnlockChannel(ctx context.Context, client bot.Client, channel discord.GuildChannel, lockRole discord.Role, reason string) error {
+	// TODO: skipping lock & unlock till blocking execution by rate limiting is fixed
+	if false && strings.HasSuffix(channel.Name(), "🔒") {
 		name := channel.Name()[:len(channel.Name())-1]
-		_, err := event.Client().Rest().UpdateChannel(
+		_, err := client.Rest().UpdateChannel(
 			channel.ID(),
 			discord.GuildTextChannelUpdate{Name: &name},
 			rest.WithReason(reason),
@@ -58,7 +61,7 @@ func UnlockChannel(ctx context.Context, event *events.ApplicationCommandInteract
 		}
 	}
 
-	err := event.Client().Rest().DeletePermissionOverwrite(channel.ID(), lockRole.ID, rest.WithReason(reason))
+	err := client.Rest().DeletePermissionOverwrite(channel.ID(), lockRole.ID, rest.WithReason(reason))
 	if err != nil {
 		logger.GetLoggerFromContext(ctx).Error("Failed to delete permission overwrite", "error", err)
 	}
@@ -66,10 +69,11 @@ func UnlockChannel(ctx context.Context, event *events.ApplicationCommandInteract
 	return err
 }
 
-func LockChannel(ctx context.Context, event *events.MessageCreate, channel discord.GuildChannel, lockRole discord.Role, reason string) error {
-	if !strings.HasSuffix(channel.Name(), "🔒") {
+func LockChannel(ctx context.Context, client bot.Client, channel discord.GuildChannel, lockRole discord.Role, reason string) error {
+	// TODO: skipping lock & unlock till blocking execution by rate limiting is fixed
+	if false && !strings.HasSuffix(channel.Name(), "🔒") {
 		name := channel.Name() + "🔒"
-		_, err := event.Client().Rest().UpdateChannel(
+		_, err := client.Rest().UpdateChannel(
 			channel.ID(),
 			discord.GuildTextChannelUpdate{Name: &name},
 			rest.WithReason(reason),
@@ -81,7 +85,7 @@ func LockChannel(ctx context.Context, event *events.MessageCreate, channel disco
 
 	denyPermissions := discord.PermissionSendMessages
 
-	err := event.Client().Rest().UpdatePermissionOverwrite(
+	err := client.Rest().UpdatePermissionOverwrite(
 		channel.ID(),
 		lockRole.ID,
 		discord.RolePermissionOverwriteUpdate{
@@ -113,11 +117,56 @@ func CheckUserModPermissions(event *events.ApplicationCommandInteractionCreate, 
 
 	// Check if user has Bot Manager role
 	if botManagerRoleID != "" {
-		targetRoleID := snowflake.MustParse(botManagerRoleID)
-		for _, roleId := range member.RoleIDs {
-			if roleId == targetRoleID {
-				return true
-			}
+		if slices.Contains(member.RoleIDs, snowflake.MustParse(botManagerRoleID)) {
+			return true
+		}
+	}
+
+	return false
+}
+
+// CheckUserModPermissionsComponent checks if a user has permission for mod component interactions.
+// Returns true if user is Admin OR has the Bot Manager role.
+func CheckUserModPermissionsComponent(event *events.ComponentInteractionCreate, botManagerRoleID string) bool {
+	member, err := event.Client().Rest().GetMember(*event.GuildID(), event.User().ID)
+	if err != nil {
+		return false
+	}
+
+	// Check if user has administrator permissions
+	permissions := event.Client().Caches().MemberPermissions(*member)
+	if permissions.Has(discord.PermissionAdministrator) {
+		return true
+	}
+
+	// Check if user has Bot Manager role
+	if botManagerRoleID != "" {
+		if slices.Contains(member.RoleIDs, snowflake.MustParse(botManagerRoleID)) {
+			return true
+		}
+	}
+
+	return false
+}
+
+// CheckUserModPermissionsModal checks if a user has permission for mod modal interactions.
+// Returns true if user is Admin OR has the Bot Manager role.
+func CheckUserModPermissionsModal(event *events.ModalSubmitInteractionCreate, botManagerRoleID string) bool {
+	member, err := event.Client().Rest().GetMember(*event.GuildID(), event.User().ID)
+	if err != nil {
+		return false
+	}
+
+	// Check if user has administrator permissions
+	permissions := event.Client().Caches().MemberPermissions(*member)
+	if permissions.Has(discord.PermissionAdministrator) {
+		return true
+	}
+
+	// Check if user has Bot Manager role
+	if botManagerRoleID != "" {
+		if slices.Contains(member.RoleIDs, snowflake.MustParse(botManagerRoleID)) {
+			return true
 		}
 	}
 

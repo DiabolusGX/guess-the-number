@@ -14,11 +14,14 @@ import (
 	"github.com/disgoorg/paginator"
 	"go.uber.org/fx"
 
-	"github.com/diabolusgx/guess-the-number-go/internal/bot/commands"
-	"github.com/diabolusgx/guess-the-number-go/internal/bot/commands/mod"
-	"github.com/diabolusgx/guess-the-number-go/internal/bot/commands/user"
 	"github.com/diabolusgx/guess-the-number-go/internal/bot/events"
+	"github.com/diabolusgx/guess-the-number-go/internal/bot/events/commands"
+	"github.com/diabolusgx/guess-the-number-go/internal/bot/events/commands/mod"
+	"github.com/diabolusgx/guess-the-number-go/internal/bot/events/commands/user"
 	"github.com/diabolusgx/guess-the-number-go/internal/bot/events/guild"
+	"github.com/diabolusgx/guess-the-number-go/internal/bot/events/interactions"
+	"github.com/diabolusgx/guess-the-number-go/internal/bot/events/interactions/component"
+	"github.com/diabolusgx/guess-the-number-go/internal/bot/events/interactions/modal"
 	"github.com/diabolusgx/guess-the-number-go/internal/bot/events/message"
 	"github.com/diabolusgx/guess-the-number-go/internal/bot/events/misc"
 	"github.com/diabolusgx/guess-the-number-go/internal/config"
@@ -114,26 +117,51 @@ func NewClient(cfg *config.Configuration) (bot.Client, error) {
 var Module = fx.Module(
 	"bot",
 
+	// Bot client
 	fx.Provide(
 		NewClient,
-		NewBotHandler,
 	),
 
-	fx.Invoke(func(client bot.Client, handler BotHandler, commandParams commands.CommandParams, eventParams events.EventListenerParams) {
+	// Application command handler
+	fx.Provide(
+		commands.NewApplicationCommandHandler,
+	),
+	fx.Invoke(func(applicationCommandHandler *commands.ApplicationCommandHandler, commandParams commands.CommandParams) {
 		// Mod commands
-		handler.AddCommand(mod.NewSetupCommand(commandParams))
-		handler.AddCommand(mod.NewStartCommand(commandParams))
-		handler.AddCommand(mod.NewHintCommand(commandParams))
-		handler.AddCommand(mod.NewFinishCommand(commandParams))
-		handler.AddCommand(mod.NewEndCommand(commandParams))
+		applicationCommandHandler.AddCommand(mod.NewSetupCommand(commandParams))
+		applicationCommandHandler.AddCommand(mod.NewStartCommand(commandParams))
+		applicationCommandHandler.AddCommand(mod.NewGameCommand(commandParams))
+		applicationCommandHandler.AddCommand(mod.NewFinishCommand(commandParams))
+		applicationCommandHandler.AddCommand(mod.NewEndCommand(commandParams))
 
 		// User commands
-		handler.AddCommand(user.NewGameInfoCommand(commandParams))
-		handler.AddCommand(user.NewPingCommand(commandParams))
-		handler.AddCommand(user.NewUserinfoCommand(commandParams))
-		handler.AddCommand(user.NewInviteCommand(commandParams))
+		applicationCommandHandler.AddCommand(user.NewPingCommand(commandParams))
+		applicationCommandHandler.AddCommand(user.NewUserinfoCommand(commandParams))
+		applicationCommandHandler.AddCommand(user.NewInviteCommand(commandParams))
+	}),
 
-		// Event listeners
+	// Component interactions
+	fx.Provide(
+		interactions.NewInteractionHandler,
+	),
+	fx.Invoke(func(interactionHandler *interactions.InteractionHandler, interactionParams interactions.InteractionHandlerParams) {
+		interactionHandler.AddComponentInteraction(component.NewStartGameInteraction(interactionParams))
+		interactionHandler.AddModalInteraction(modal.NewStartGameConfigModal(interactionParams))
+	}),
+
+	// Bot handler
+	fx.Provide(
+		NewBotHandler,
+	),
+	fx.Invoke(func(
+		client bot.Client,
+		handler BotHandler,
+		eventParams events.EventListenerParams,
+		applicationCommandHandler *commands.ApplicationCommandHandler,
+		interactionHandler *interactions.InteractionHandler,
+	) {
+		handler.AddEventListener(applicationCommandHandler)
+		handler.AddEventListener(interactionHandler)
 		handler.AddEventListener(message.NewMessageCreateListener(eventParams))
 		handler.AddEventListener(misc.NewReadyEventListener(eventParams))
 		handler.AddEventListener(misc.NewGuildReadyEventListener(eventParams))

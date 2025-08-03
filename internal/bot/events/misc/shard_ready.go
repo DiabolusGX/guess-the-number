@@ -10,13 +10,11 @@ import (
 )
 
 type GuildReadyEventListener struct {
-	Client bot.Client
 	Logger *logger.Logger
 }
 
 func NewGuildReadyEventListener(params events.EventListenerParams) *GuildReadyEventListener {
 	return &GuildReadyEventListener{
-		Client: params.Client,
 		Logger: params.Logger,
 	}
 }
@@ -25,26 +23,30 @@ func (h *GuildReadyEventListener) EventName() events.EventListenerName {
 	return events.GuildReady
 }
 
-func (h *GuildReadyEventListener) OnEvent(ctx context.Context, e bot.Event) {
+func (h *GuildReadyEventListener) Aliases() []events.EventListenerName {
+	return []events.EventListenerName{}
+}
+
+func (h *GuildReadyEventListener) OnEvent(ctx context.Context, e bot.Event) error {
 	event, ok := e.(*disgoEvents.GuildReady)
 	if !ok {
-		return
+		return nil
 	}
 
 	h.Logger.FromContext(ctx).Debugw("Guild ready",
 		"guild_id", event.GuildID.String(),
 		"shard_id", event.ShardID,
 	)
+
+	return nil
 }
 
 type GuildsReadyEventListener struct {
-	Client bot.Client
 	Logger *logger.Logger
 }
 
 func NewGuildsReadyEventListener(params events.EventListenerParams) *GuildsReadyEventListener {
 	return &GuildsReadyEventListener{
-		Client: params.Client,
 		Logger: params.Logger,
 	}
 }
@@ -53,13 +55,19 @@ func (h *GuildsReadyEventListener) EventName() events.EventListenerName {
 	return events.GuildsReady
 }
 
-func (h *GuildsReadyEventListener) OnEvent(ctx context.Context, e bot.Event) {
+func (h *GuildsReadyEventListener) Aliases() []events.EventListenerName {
+	return []events.EventListenerName{}
+}
+
+func (h *GuildsReadyEventListener) OnEvent(ctx context.Context, e bot.Event) error {
 	event, ok := e.(*disgoEvents.GuildsReady)
 	if !ok {
-		return
+		return nil
 	}
 
 	h.Logger.FromContext(ctx).Infow("All guilds ready for shard",
 		"shard_id", event.ShardID,
 	)
+
+	return nil
 }

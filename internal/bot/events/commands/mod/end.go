@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/diabolusgx/guess-the-number-go/internal/bot/commands"
+	"github.com/diabolusgx/guess-the-number-go/internal/bot/events/commands"
 	"github.com/diabolusgx/guess-the-number-go/internal/bot/utils"
 	"github.com/diabolusgx/guess-the-number-go/internal/service"
 	"github.com/diabolusgx/guess-the-number-go/internal/types"
@@ -92,6 +92,7 @@ func (c *FinishCommand) Handler(ctx context.Context, event *events.ApplicationCo
 		var logContent strings.Builder
 		logContent.WriteString(fmt.Sprintf("**Channel:** <#%s>\n", channel.ID.String()))
 		logContent.WriteString(fmt.Sprintf("**Answer:** %d\n", game.Game.Answer))
+		logContent.WriteString(fmt.Sprintf("**Total Guesses:** %d\n", game.Game.Guesses))
 		logContent.WriteString(fmt.Sprintf("**Force Ended by:** <@%s>\n\n", event.User().ID.String()))
 
 		// Add status information
