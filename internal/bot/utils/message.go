@@ -9,19 +9,6 @@ import (
 	"github.com/disgoorg/snowflake/v2"
 )
 
-func SendEmbed(rest rest.Rest, channelID snowflake.ID, title, description string, color int) error {
-	_, err := rest.CreateMessage(channelID, discord.MessageCreate{
-		Embeds: []discord.Embed{
-			{
-				Title:       title,
-				Description: description,
-				Color:       color,
-			},
-		},
-	})
-	return err
-}
-
 type MessageRequest struct {
 	ChannelID   snowflake.ID
 	IsEphemeral bool
@@ -59,7 +46,10 @@ func EventReply(event *events.ApplicationCommandInteractionCreate, request Messa
 	// 	return err
 	// }
 
-	var messageUpdateRequest discord.MessageUpdate
+	messageUpdateRequest := discord.NewMessageUpdateBuilder().SetAllowedMentions(&discord.AllowedMentions{
+		Parse:       []discord.AllowedMentionType{discord.AllowedMentionTypeUsers},
+		RepliedUser: true,
+	})
 
 	components := make([]discord.ContainerComponent, 0, len(request.Components))
 	if len(request.Components) > 0 {
@@ -72,24 +62,27 @@ func EventReply(event *events.ApplicationCommandInteractionCreate, request Messa
 	if request.UseEmbed {
 		// Create embed
 		embeds := buildEmbeds(request)
-		messageUpdateRequest.Embeds = &embeds
+		messageUpdateRequest.SetEmbeds(embeds...)
 	} else {
 		// Original content-based logic
 		content := request.Content
 		if request.Emoji != EmojiUnspecified {
 			content = fmt.Sprintf(emojiContentFormat, request.Emoji.String(), request.Content)
 		}
-		messageUpdateRequest.Content = &content
+		messageUpdateRequest.SetContent(content)
 	}
 
-	messageUpdateRequest.Components = &components
+	messageUpdateRequest.SetContainerComponents(components...)
 
-	_, err := event.Client().Rest().UpdateInteractionResponse(event.ApplicationID(), event.Token(), messageUpdateRequest)
+	_, err := event.Client().Rest().UpdateInteractionResponse(event.ApplicationID(), event.Token(), messageUpdateRequest.Build())
 	return err
 }
 
 func SendMessage(rest rest.Rest, request MessageRequest) (*discord.Message, error) {
-	var messageCreateRequest discord.MessageCreate
+	messageCreateRequest := discord.NewMessageCreateBuilder().SetAllowedMentions(&discord.AllowedMentions{
+		Parse:       []discord.AllowedMentionType{discord.AllowedMentionTypeUsers},
+		RepliedUser: true,
+	})
 
 	components := make([]discord.ContainerComponent, 0, len(request.Components))
 	if len(request.Components) > 0 {
@@ -102,23 +95,23 @@ func SendMessage(rest rest.Rest, request MessageRequest) (*discord.Message, erro
 	if request.UseEmbed {
 		// Create embed
 		embeds := buildEmbeds(request)
-		messageCreateRequest.Embeds = embeds
+		messageCreateRequest.SetEmbeds(embeds...)
 	} else {
 		// Original content-based logic
 		content := request.Content
 		if request.Emoji != EmojiUnspecified {
 			content = fmt.Sprintf(emojiContentFormat, request.Emoji.String(), request.Content)
 		}
-		messageCreateRequest.Content = content
+		messageCreateRequest.SetContent(content)
 	}
 
-	messageCreateRequest.Components = components
+	messageCreateRequest.SetContainerComponents(components...)
 
 	if request.IsEphemeral {
-		messageCreateRequest.Flags = discord.MessageFlagEphemeral
+		messageCreateRequest.SetFlags(discord.MessageFlagEphemeral)
 	}
 
-	msg, err := rest.CreateMessage(request.ChannelID, messageCreateRequest)
+	msg, err := rest.CreateMessage(request.ChannelID, messageCreateRequest.Build())
 	return msg, err
 }
 
@@ -135,7 +128,7 @@ func SendDM(rest rest.Rest, userID snowflake.ID, request MessageRequest) error {
 }
 
 // LogToChannel sends a formatted message to the configured log channel
-func LogToChannel(rest rest.Rest, logChannelID string, title, description, footer string) error {
+func LogToChannel(rest rest.Rest, logChannelID string, logType LogType, title, description string) error {
 	if logChannelID == "" {
 		return nil // No log channel configured, skip logging
 	}
@@ -145,21 +138,14 @@ func LogToChannel(rest rest.Rest, logChannelID string, title, description, foote
 		return err
 	}
 
-	embed := discord.Embed{
-		Title:       title,
-		Description: description,
-		Color:       DiscordBlurple,
-	}
+	embed := discord.NewEmbedBuilder().
+		SetTitle(title).
+		SetDescription(description).
+		SetColor(InfoEmbedColor).
+		SetFooterText(logType.String()).
+		Build()
 
-	if footer != "" {
-		embed.Footer = &discord.EmbedFooter{
-			Text: footer,
-		}
-	}
-
-	_, err = rest.CreateMessage(channelID, discord.MessageCreate{
-		Embeds: []discord.Embed{embed},
-	})
+	_, err = rest.CreateMessage(channelID, discord.NewMessageCreateBuilder().SetEmbeds(embed).Build())
 	return err
 }
 
@@ -170,14 +156,13 @@ func buildEmbeds(request MessageRequest) []discord.Embed {
 		embedColor = request.EmbedColor
 	}
 
-	embed := discord.Embed{
-		Color:     embedColor,
-		Thumbnail: &discord.EmbedResource{URL: botAvatarURL},
-	}
+	embedBuilder := discord.NewEmbedBuilder().
+		SetColor(embedColor).
+		SetThumbnail(botAvatarURL)
 
 	// Set title and description
 	if request.EmbedTitle != "" {
-		embed.Title = request.EmbedTitle
+		embedBuilder.SetTitle(request.EmbedTitle)
 	}
 
 	// Handle content based on whether we have description or content
@@ -188,30 +173,16 @@ func buildEmbeds(request MessageRequest) []discord.Embed {
 			description = fmt.Sprintf(emojiContentFormat, request.Emoji.String(), description)
 		}
 	}
-	embed.Description = description
+	embedBuilder.SetDescription(description)
 
 	if len(request.Fields) > 0 {
-		embed.Fields = request.Fields
+		embedBuilder.SetFields(request.Fields...)
 	}
 
 	// Prepare footer
-	var footerText string
-	var hasFooter bool
+	embedBuilder.SetFooterText("Made with ❤️ by DiabolusGX").SetFooterIcon(botAvatarURL).SetTimestamp(botCreatedAt)
 
-	if footerText != "" {
-		embed.Footer = &discord.EmbedFooter{Text: footerText}
-		hasFooter = true
-	}
-
-	if !hasFooter {
-		embed.Footer = &discord.EmbedFooter{
-			Text:    "Made with ❤️ by DiabolusGX",
-			IconURL: botAvatarURL,
-		}
-		embed.Timestamp = &botCreatedAt
-	}
-
-	return []discord.Embed{embed}
+	return []discord.Embed{embedBuilder.Build()}
 }
 
 func buildComponents(request MessageRequest) []discord.ContainerComponent {

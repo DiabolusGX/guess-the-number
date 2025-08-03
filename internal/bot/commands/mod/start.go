@@ -206,18 +206,13 @@ func (c *StartCommand) Handler(ctx context.Context, event *events.ApplicationCom
 			logContent.WriteString("✅ DM with answer sent successfully")
 		}
 
-		utils.LogToChannel(event.Client().Rest(), data.GuildConfig.LogChannel,
-			"🎮 Game Started",
-			logContent.String(),
-			"Game Activity")
+		utils.LogToChannel(event.Client().Rest(), data.GuildConfig.LogChannel, utils.LogTypeGameActivity, "🎮 Game Started", logContent.String())
 	}
 
-	utils.EventReply(event, utils.MessageRequest{
+	return utils.EventReply(event, utils.MessageRequest{
 		ChannelID:   channel.ID,
 		Content:     eventReply.String(),
 		Emoji:       utils.EmojiSuccess,
 		IsEphemeral: true,
 	})
-
-	return nil
 }

@@ -98,10 +98,7 @@ func (c *FinishCommand) Handler(ctx context.Context, event *events.ApplicationCo
 		logContent.WriteString("**Status Report:**\n")
 		logContent.WriteString(gameFinishedMessageStatus)
 
-		utils.LogToChannel(event.Client().Rest(), data.GuildConfig.LogChannel,
-			"🔴 Game Force Ended",
-			logContent.String(),
-			"Game Activity")
+		utils.LogToChannel(event.Client().Rest(), data.GuildConfig.LogChannel, utils.LogTypeGameActivity, "🔴 Game Force Ended", logContent.String())
 	}
 
 	return utils.EventReply(event, utils.MessageRequest{

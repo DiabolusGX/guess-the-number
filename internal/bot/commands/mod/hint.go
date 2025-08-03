@@ -153,10 +153,7 @@ func (c *HintCommand) Handler(ctx context.Context, event *events.ApplicationComm
 			logContent.WriteString("✅ Hint message pinned")
 		}
 
-		utils.LogToChannel(event.Client().Rest(), data.GuildConfig.LogChannel,
-			"💡 Hint Given",
-			logContent.String(),
-			"Game Activity")
+		utils.LogToChannel(event.Client().Rest(), data.GuildConfig.LogChannel, utils.LogTypeGameActivity, "💡 Hint Given", logContent.String())
 	}
 
 	return utils.EventReply(event, utils.MessageRequest{

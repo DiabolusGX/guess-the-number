@@ -49,6 +49,7 @@ func (h *MessageCreateListener) OnEvent(ctx context.Context, e bot.Event) {
 	ctx = context.WithValue(ctx, lib.CtxChannelID, event.ChannelID.String())
 	ctx = context.WithValue(ctx, lib.CtxGuildID, event.GuildID.String())
 	ctx = context.WithValue(ctx, lib.CtxUserID, event.Message.Author.ID.String())
+	ctx = context.WithValue(ctx, lib.CtxShardID, event.ShardID())
 
 	go h.handleAttempt(ctx, event)
 }

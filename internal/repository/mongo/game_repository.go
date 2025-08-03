@@ -52,7 +52,7 @@ func (r *GameRepository) Create(ctx context.Context, game *domain.Game) error {
 		return err
 	}
 
-	r.log.Debugw("game created", "game", game)
+	r.log.FromContext(ctx).Debugw("game started")
 	SetSpanSuccess(span)
 	return nil
 }
@@ -83,7 +83,13 @@ func (r *GameRepository) Finish(ctx context.Context, gameID, messageID, wonBy st
 		return err
 	}
 
-	r.log.Debugw("game finished", "gameID", gameID, "wonBy", wonBy, "guesses", guesses)
+	// clear guess count from redis
+	out := r.redisClient.Unlink(ctx, getGameGuessesKey(gameID))
+	if out.Err() != nil {
+		r.log.FromContext(ctx).Error("failed to clear guess count from redis", "error", out.Err().Error())
+	}
+
+	r.log.FromContext(ctx).Debugw("game ended", "gameID", gameID, "wonBy", wonBy, "guesses", guesses)
 	SetSpanSuccess(span)
 	return nil
 }
@@ -101,7 +107,7 @@ func (r *GameRepository) GetRunningInChannel(ctx context.Context, channelID stri
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			SetSpanSuccess(span)
-			r.log.Debugw("game not found", "channelID", channelID)
+			r.log.FromContext(ctx).Debugw("game not found", "channelID", channelID)
 			return nil, nil
 		}
 		ierr.NewErrorWithContext(ctx, ierr.ErrCodeDatabase, fmt.Errorf("failed to get game by channel ID: %w", err))
@@ -120,7 +126,7 @@ func (r *GameRepository) IncrementGuesses(ctx context.Context, gameID, channelID
 	})
 	defer FinishSpan(span)
 
-	out := r.redisClient.Incr(ctx, fmt.Sprintf("game_guesses:%s", channelID))
+	out := r.redisClient.Incr(ctx, getGameGuessesKey(gameID))
 	if out.Err() != nil {
 		ierr.NewErrorWithContext(ctx, ierr.ErrCodeDatabase, fmt.Errorf("failed to increment guesses: %w", out.Err()))
 		SetSpanError(span, out.Err())
@@ -226,4 +232,8 @@ func (r *GameRepository) GetAllTimeLeaderboard(ctx context.Context, guildID stri
 
 	SetSpanSuccess(span)
 	return games, nil
+}
+
+func getGameGuessesKey(gameID string) string {
+	return fmt.Sprintf("gtn:%s", gameID)
 }

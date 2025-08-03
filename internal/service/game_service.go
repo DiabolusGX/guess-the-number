@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"math"
 	"math/rand"
 	"strconv"
 
@@ -11,6 +12,7 @@ import (
 	"github.com/diabolusgx/guess-the-number-go/internal/repository"
 	"github.com/diabolusgx/guess-the-number-go/internal/types"
 	ierr "github.com/diabolusgx/guess-the-number-go/pkg/errors"
+	"github.com/diabolusgx/guess-the-number-go/pkg/logger"
 	"github.com/diabolusgx/guess-the-number-go/pkg/metrics"
 	"github.com/go-playground/validator/v10"
 )
@@ -24,6 +26,7 @@ type GameService interface {
 }
 
 type gameService struct {
+	logger             *logger.Logger
 	metrics            *metrics.Metrics
 	gameRepo           domain.GameRepository
 	guildDataRepo      domain.GuildDataRepository
@@ -33,6 +36,7 @@ type gameService struct {
 
 func NewGameService(params ServiceParams) GameService {
 	return &gameService{
+		logger:             params.Logger,
 		metrics:            params.Metrics,
 		gameRepo:           params.GameRepo,
 		guildDataRepo:      params.GuildDataRepo,
@@ -57,11 +61,11 @@ func (s *gameService) CreateGame(ctx context.Context, req *types.CreateGameReque
 		return nil, err
 	}
 	if runningGame != nil && !runningGame.Finished {
-		return nil, ierr.New(ierr.ErrCodeAlreadyExists, "game already running in this channel")
+		return nil, ierr.New(ierr.ErrCodeAlreadyExists, "Game already running in this channel")
 	}
 
 	answer := rand.Int63n(req.UpperBound-req.LowerBound+1) + req.LowerBound
-	points := (req.UpperBound - req.LowerBound) / 10
+	points := int64(math.Ceil(float64(req.UpperBound-req.LowerBound) / 10))
 
 	game := &domain.Game{
 		ID:                lib.NewULID(lib.ULIDGameIDPrefix),
@@ -101,6 +105,8 @@ func (s *gameService) FinishGame(ctx context.Context, req *types.FinishGameReque
 		return nil, ierr.New(ierr.ErrCodeNotFound, "game not found")
 	}
 
+	ctx = context.WithValue(ctx, lib.CtxGameID, game.ID)
+
 	_, txnErr := s.transactionManager.WithTransaction(ctx, func(ctx context.Context) (any, error) {
 		if err := s.gameRepo.Finish(ctx, game.ID, req.MessageID, req.WonBy, req.Guesses); err != nil {
 			return nil, err
@@ -138,11 +144,15 @@ func (s *gameService) HandleAttempt(ctx context.Context, req *types.HandleAttemp
 		return nil, ierr.New(ierr.ErrCodeNotFound, "game not found")
 	}
 
+	ctx = context.WithValue(ctx, lib.CtxGameID, game.ID)
+
 	guesses, err := s.gameRepo.IncrementGuesses(ctx, game.ID, game.ChannelID)
 	if err != nil {
 		return nil, err
 	}
 	game.Guesses = guesses
+
+	s.logger.FromContext(ctx).Debugw("guesses incremented", "guesses", guesses)
 
 	if req.Guess == game.Answer {
 		game.WonBy = req.UserID
@@ -183,6 +193,8 @@ func (s *gameService) GetHint(ctx context.Context, req *types.GetHintRequest) (*
 		return nil, ierr.New(ierr.ErrCodeNotFound, fmt.Sprintf("There is no running game in <#%s>", req.ChannelID))
 	}
 
+	ctx = context.WithValue(ctx, lib.CtxGameID, game.ID)
+
 	var hint string
 
 	switch req.HintType {
@@ -201,6 +213,8 @@ func (s *gameService) GetHint(ctx context.Context, req *types.GetHintRequest) (*
 	default:
 		return nil, ierr.New(ierr.ErrCodeValidation, "invalid hint type")
 	}
+
+	s.logger.FromContext(ctx).Debugw("hint generated", "hint", hint)
 
 	return &types.GetHintResponse{
 		Hint: hint,

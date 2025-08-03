@@ -13,6 +13,10 @@ import (
 	"github.com/disgoorg/snowflake/v2"
 )
 
+const (
+	logFmt = "**Previous:** %s\n**New:** %s\n**Updated by:** %s"
+)
+
 type SetupCommand struct {
 	name                   string
 	guildManagementService service.GuildManagementService
@@ -205,10 +209,8 @@ func (c *SetupCommand) handlePrefix(ctx context.Context, event *events.Applicati
 	}
 
 	// Log the configuration change with before/after values
-	utils.LogToChannel(event.Client().Rest(), cfg.LogChannel,
-		"🔧 Prefix Updated",
-		fmt.Sprintf("**Previous:** `%s`\n**New:** `%s`\n**Updated by:** <@%s>", oldPrefix, prefix, event.User().ID.String()),
-		"Configuration Change")
+	logContent := fmt.Sprintf("**Previous:** `%s`\n**New:** `%s`\n**Updated by:** <@%s>", oldPrefix, prefix, event.User().ID.String())
+	utils.LogToChannel(event.Client().Rest(), cfg.LogChannel, utils.LogTypeConfigurationChange, "🔧 Prefix Updated", logContent)
 
 	return utils.EventReply(event, utils.MessageRequest{
 		UseEmbed:         true,
@@ -240,16 +242,7 @@ func (c *SetupCommand) handleManager(ctx context.Context, event *events.Applicat
 	}
 
 	// Store old value for logging
-	var oldManagerRole string
-	if data.GuildConfig.BotManager != "" {
-		if oldRole, exists := event.Client().Caches().Role(*event.GuildID(), snowflake.MustParse(data.GuildConfig.BotManager)); exists {
-			oldManagerRole = oldRole.Mention()
-		} else {
-			oldManagerRole = fmt.Sprintf("<@&%s> (deleted)", data.GuildConfig.BotManager)
-		}
-	} else {
-		oldManagerRole = "Not configured"
-	}
+	oldManagerRole := formatRoleSetting(event, data.GuildConfig.BotManager)
 
 	cfg := data.GuildConfig
 	cfg.BotManager = role.ID.String()
@@ -265,10 +258,8 @@ func (c *SetupCommand) handleManager(ctx context.Context, event *events.Applicat
 	}
 
 	// Log the configuration change with before/after values
-	utils.LogToChannel(event.Client().Rest(), cfg.LogChannel,
-		"🔧 Manager Role Updated",
-		fmt.Sprintf("**Previous:** %s\n**New:** %s\n**Updated by:** <@%s>", oldManagerRole, role.Mention(), event.User().ID.String()),
-		"Configuration Change")
+	logContent := fmt.Sprintf(logFmt, oldManagerRole, role.Mention(), event.User().Mention())
+	utils.LogToChannel(event.Client().Rest(), cfg.LogChannel, utils.LogTypeConfigurationChange, "🔧 Manager Role Updated", logContent)
 
 	return utils.EventReply(event, utils.MessageRequest{
 		UseEmbed:         true,
@@ -288,15 +279,8 @@ func (c *SetupCommand) handleDM(ctx context.Context, event *events.ApplicationCo
 	enabled := event.SlashCommandInteractionData().Bool("enabled")
 
 	// Store old value for logging
-	oldStatus := "disabled"
-	if data.GuildConfig.DM {
-		oldStatus = "enabled"
-	}
-
-	newStatus := "disabled"
-	if enabled {
-		newStatus = "enabled"
-	}
+	oldStatus := formatBooleanSetting(data.GuildConfig.DM)
+	newStatus := formatBooleanSetting(enabled)
 
 	cfg := data.GuildConfig
 	cfg.DM = enabled
@@ -312,10 +296,8 @@ func (c *SetupCommand) handleDM(ctx context.Context, event *events.ApplicationCo
 	}
 
 	// Log the configuration change with before/after values
-	utils.LogToChannel(event.Client().Rest(), cfg.LogChannel,
-		"🔧 DM Settings Updated",
-		fmt.Sprintf("**Previous:** %s\n**New:** %s\n**Updated by:** <@%s>", oldStatus, newStatus, event.User().ID.String()),
-		"Configuration Change")
+	logContent := fmt.Sprintf(logFmt, oldStatus, newStatus, event.User().Mention())
+	utils.LogToChannel(event.Client().Rest(), cfg.LogChannel, utils.LogTypeConfigurationChange, "🔧 DM Settings Updated", logContent)
 
 	return utils.EventReply(event, utils.MessageRequest{
 		UseEmbed:         true,
@@ -348,16 +330,7 @@ func (c *SetupCommand) handleWinRole(ctx context.Context, event *events.Applicat
 	}
 
 	// Store old value for logging
-	var oldWinRole string
-	if data.GuildConfig.WinRole != "" {
-		if oldRole, exists := event.Client().Caches().Role(*event.GuildID(), snowflake.MustParse(data.GuildConfig.WinRole)); exists {
-			oldWinRole = oldRole.Mention()
-		} else {
-			oldWinRole = fmt.Sprintf("<@&%s> (deleted)", data.GuildConfig.WinRole)
-		}
-	} else {
-		oldWinRole = "Not configured"
-	}
+	oldWinRole := formatRoleSetting(event, data.GuildConfig.WinRole)
 
 	cfg := data.GuildConfig
 	cfg.WinRole = role.ID.String()
@@ -373,10 +346,8 @@ func (c *SetupCommand) handleWinRole(ctx context.Context, event *events.Applicat
 	}
 
 	// Log the configuration change with before/after values
-	utils.LogToChannel(event.Client().Rest(), cfg.LogChannel,
-		"🔧 Win Role Updated",
-		fmt.Sprintf("**Previous:** %s\n**New:** %s\n**Updated by:** <@%s>", oldWinRole, role.Mention(), event.User().ID.String()),
-		"Configuration Change")
+	logContent := fmt.Sprintf(logFmt, oldWinRole, role.Mention(), event.User().Mention())
+	utils.LogToChannel(event.Client().Rest(), cfg.LogChannel, utils.LogTypeConfigurationChange, "🔧 Win Role Updated", logContent)
 
 	return utils.EventReply(event, utils.MessageRequest{
 		UseEmbed:         true,
@@ -409,16 +380,7 @@ func (c *SetupCommand) handleReqRole(ctx context.Context, event *events.Applicat
 	}
 
 	// Store old value for logging
-	var oldReqRole string
-	if data.GuildConfig.ReqRole != "" {
-		if oldRole, exists := event.Client().Caches().Role(*event.GuildID(), snowflake.MustParse(data.GuildConfig.ReqRole)); exists {
-			oldReqRole = oldRole.Mention()
-		} else {
-			oldReqRole = fmt.Sprintf("<@&%s> (deleted)", data.GuildConfig.ReqRole)
-		}
-	} else {
-		oldReqRole = "Not configured"
-	}
+	oldReqRole := formatRoleSetting(event, data.GuildConfig.ReqRole)
 
 	cfg := data.GuildConfig
 	cfg.ReqRole = role.ID.String()
@@ -434,10 +396,8 @@ func (c *SetupCommand) handleReqRole(ctx context.Context, event *events.Applicat
 	}
 
 	// Log the configuration change with before/after values
-	utils.LogToChannel(event.Client().Rest(), cfg.LogChannel,
-		"🔧 Required Role Updated",
-		fmt.Sprintf("**Previous:** %s\n**New:** %s\n**Updated by:** <@%s>", oldReqRole, role.Mention(), event.User().ID.String()),
-		"Configuration Change")
+	logContent := fmt.Sprintf(logFmt, oldReqRole, role.Mention(), event.User().Mention())
+	utils.LogToChannel(event.Client().Rest(), cfg.LogChannel, utils.LogTypeConfigurationChange, "🔧 Required Role Updated", logContent)
 
 	return utils.EventReply(event, utils.MessageRequest{
 		UseEmbed:         true,
@@ -470,16 +430,7 @@ func (c *SetupCommand) handleLockRole(ctx context.Context, event *events.Applica
 	}
 
 	// Store old value for logging
-	var oldLockRole string
-	if data.GuildConfig.LockRole != "" {
-		if oldRole, exists := event.Client().Caches().Role(*event.GuildID(), snowflake.MustParse(data.GuildConfig.LockRole)); exists {
-			oldLockRole = oldRole.Mention()
-		} else {
-			oldLockRole = fmt.Sprintf("<@&%s> (deleted)", data.GuildConfig.LockRole)
-		}
-	} else {
-		oldLockRole = "Not configured"
-	}
+	oldLockRole := formatRoleSetting(event, data.GuildConfig.LockRole)
 
 	cfg := data.GuildConfig
 	cfg.LockRole = role.ID.String()
@@ -495,10 +446,8 @@ func (c *SetupCommand) handleLockRole(ctx context.Context, event *events.Applica
 	}
 
 	// Log the configuration change with before/after values
-	utils.LogToChannel(event.Client().Rest(), cfg.LogChannel,
-		"🔧 Lock Role Updated",
-		fmt.Sprintf("**Previous:** %s\n**New:** %s\n**Updated by:** <@%s>", oldLockRole, role.Mention(), event.User().ID.String()),
-		"Configuration Change")
+	logContent := fmt.Sprintf(logFmt, oldLockRole, role.Mention(), event.User().Mention())
+	utils.LogToChannel(event.Client().Rest(), cfg.LogChannel, utils.LogTypeConfigurationChange, "🔧 Lock Role Updated", logContent)
 
 	return utils.EventReply(event, utils.MessageRequest{
 		UseEmbed:         true,
@@ -543,12 +492,7 @@ func (c *SetupCommand) handleLogChannel(ctx context.Context, event *events.Appli
 	}
 
 	// Store old value for logging
-	var oldLogChannel string
-	if data.GuildConfig.LogChannel != "" {
-		oldLogChannel = fmt.Sprintf("<#%s>", data.GuildConfig.LogChannel)
-	} else {
-		oldLogChannel = "Not configured"
-	}
+	oldLogChannel := formatChannelSetting(data.GuildConfig.LogChannel)
 
 	cfg := data.GuildConfig
 	cfg.LogChannel = channel.ID.String()
@@ -565,10 +509,8 @@ func (c *SetupCommand) handleLogChannel(ctx context.Context, event *events.Appli
 	}
 
 	// Log the configuration change to the new log channel with before/after values
-	utils.LogToChannel(event.Client().Rest(), cfg.LogChannel,
-		"🔧 Log Channel Updated",
-		fmt.Sprintf("**Previous:** %s\n**New:** <#%s>\n**Updated by:** <@%s>\n\nAll bot activities will now be logged to this channel.", oldLogChannel, channel.ID.String(), event.User().ID.String()),
-		"Configuration Change")
+	logContent := fmt.Sprintf(logFmt, oldLogChannel, guildChannel.Mention(), event.User().Mention())
+	utils.LogToChannel(event.Client().Rest(), cfg.LogChannel, utils.LogTypeConfigurationChange, "🔧 Log Channel Updated", logContent)
 
 	return utils.EventReply(event, utils.MessageRequest{
 		UseEmbed:         true,
@@ -588,15 +530,8 @@ func (c *SetupCommand) handleAutoReactionHints(ctx context.Context, event *event
 	enabled := event.SlashCommandInteractionData().Bool("enabled")
 
 	// Store old value for logging
-	oldStatus := "disabled"
-	if data.GuildConfig.AutoReactionHints {
-		oldStatus = "enabled"
-	}
-
-	newStatus := "disabled"
-	if enabled {
-		newStatus = "enabled"
-	}
+	oldStatus := formatBooleanSetting(data.GuildConfig.AutoReactionHints)
+	newStatus := formatBooleanSetting(enabled)
 
 	cfg := data.GuildConfig
 	cfg.AutoReactionHints = enabled
@@ -612,10 +547,8 @@ func (c *SetupCommand) handleAutoReactionHints(ctx context.Context, event *event
 	}
 
 	// Log the configuration change with before/after values
-	utils.LogToChannel(event.Client().Rest(), cfg.LogChannel,
-		"🔧 Auto Reaction Hints Updated",
-		fmt.Sprintf("**Previous:** %s\n**New:** %s\n**Updated by:** <@%s>", oldStatus, newStatus, event.User().ID.String()),
-		"Configuration Change")
+	logContent := fmt.Sprintf(logFmt, oldStatus, newStatus, event.User().Mention())
+	utils.LogToChannel(event.Client().Rest(), cfg.LogChannel, utils.LogTypeConfigurationChange, "🔧 Auto Reaction Hints Updated", logContent)
 
 	return utils.EventReply(event, utils.MessageRequest{
 		UseEmbed:         true,
@@ -641,8 +574,8 @@ func (c *SetupCommand) handleShow(ctx context.Context, event *events.Application
 
 	// Prepare fields for each group
 	basicSettings := ""
-	basicSettings += fmt.Sprintf("• Prefix: `%s`\n", prefix)
-	basicSettings += fmt.Sprintf("• Premium: %s\n", formatBooleanSetting(cfg.Premium))
+	// basicSettings += fmt.Sprintf("• Prefix: `%s`\n", prefix)
+	// basicSettings += fmt.Sprintf("• Premium: %s\n", formatBooleanSetting(cfg.Premium))
 	basicSettings += fmt.Sprintf("• DMs to Winners: %s\n", formatBooleanSetting(cfg.DM))
 	basicSettings += fmt.Sprintf("• Auto Reaction Hints: %s", formatBooleanSetting(cfg.AutoReactionHints))
 

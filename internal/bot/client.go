@@ -18,6 +18,7 @@ import (
 	"github.com/diabolusgx/guess-the-number-go/internal/bot/commands/mod"
 	"github.com/diabolusgx/guess-the-number-go/internal/bot/commands/user"
 	"github.com/diabolusgx/guess-the-number-go/internal/bot/events"
+	"github.com/diabolusgx/guess-the-number-go/internal/bot/events/guild"
 	"github.com/diabolusgx/guess-the-number-go/internal/bot/events/message"
 	"github.com/diabolusgx/guess-the-number-go/internal/bot/events/misc"
 	"github.com/diabolusgx/guess-the-number-go/internal/config"
@@ -124,6 +125,7 @@ var Module = fx.Module(
 		handler.AddCommand(mod.NewStartCommand(commandParams))
 		handler.AddCommand(mod.NewHintCommand(commandParams))
 		handler.AddCommand(mod.NewFinishCommand(commandParams))
+		handler.AddCommand(mod.NewEndCommand(commandParams))
 
 		// User commands
 		handler.AddCommand(user.NewGameInfoCommand(commandParams))
@@ -136,6 +138,8 @@ var Module = fx.Module(
 		handler.AddEventListener(misc.NewReadyEventListener(eventParams))
 		handler.AddEventListener(misc.NewGuildReadyEventListener(eventParams))
 		handler.AddEventListener(misc.NewGuildsReadyEventListener(eventParams))
+		handler.AddEventListener(guild.NewGuildJoinListener(eventParams))
+		handler.AddEventListener(guild.NewGuildLeaveListener(eventParams))
 	}),
 )
 

@@ -175,6 +175,11 @@ func (r *GuildDataRepository) Create(ctx context.Context, data *domain.GuildData
 
 	_, err := r.collection.InsertOne(ctx, data)
 	if err != nil {
+		if mongo.IsDuplicateKeyError(err) {
+			SetSpanSuccess(span)
+			return nil
+		}
+
 		ierr.NewErrorWithContext(ctx, ierr.ErrCodeDatabase, fmt.Errorf("failed to create guild data: %w", err))
 		SetSpanError(span, err)
 		return err

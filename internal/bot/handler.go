@@ -82,7 +82,7 @@ func (h *handler) AddEventListener(listener events.Listener) {
 
 // isModCommand checks if a command name is a mod command
 func isModCommand(commandName string) bool {
-	modCommands := []string{"start", "setup", "hint", "end"}
+	modCommands := []string{"start", "setup", "hint", "finish-game", "end"}
 	for _, cmd := range modCommands {
 		if cmd == commandName {
 			return true
@@ -116,6 +116,8 @@ func (h *handler) OnEvent(event bot.Event) {
 
 	switch e := event.(type) {
 	case *disgoEvents.ApplicationCommandInteractionCreate:
+		ctx = context.WithValue(ctx, lib.CtxShardID, e.ShardID())
+
 		// acknowledge the discord interaction
 		// NOTE: need to decide if we want to keep defer ephemeral or not
 		err := e.DeferCreateMessage(false)

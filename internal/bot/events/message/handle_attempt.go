@@ -3,10 +3,12 @@ package message
 import (
 	"context"
 	"fmt"
+	"slices"
 	"strconv"
 	"strings"
 
 	"github.com/diabolusgx/guess-the-number-go/internal/bot/utils"
+	"github.com/diabolusgx/guess-the-number-go/internal/domain"
 	"github.com/diabolusgx/guess-the-number-go/internal/types"
 	"github.com/diabolusgx/guess-the-number-go/pkg/metrics"
 	"github.com/disgoorg/disgo/discord"
@@ -32,11 +34,33 @@ func (h *MessageCreateListener) handleAttempt(ctx context.Context, event *disgoE
 		return
 	}
 
+	// Check if user has required role to make guesses
+	guildConfig, err := h.GuildManagement.GetGuildConfig(ctx, event.GuildID.String())
+	if err != nil {
+		h.Logger.FromContext(ctx).Error("failed to get guild config for role check", "error", err.Error())
+		return
+	}
+
+	// If a required role is set, check if user has it
+	if guildConfig != nil && guildConfig.ReqRole != "" {
+		requiredRoleID, err := snowflake.Parse(guildConfig.ReqRole)
+		if err != nil {
+			h.Logger.FromContext(ctx).Error("invalid required role ID in guild config", "roleID", guildConfig.ReqRole, "error", err.Error())
+			return
+		}
+
+		hasRequiredRole := slices.Contains(event.Message.Member.RoleIDs, requiredRoleID)
+		if !hasRequiredRole {
+			h.Logger.Debugf("user %s does not have required role %s", event.Message.Author.ID.String(), guildConfig.ReqRole)
+			return
+		}
+	}
+
 	correctGuessLabel := metrics.MetricLabelValueFalse
 
 	defer func() {
 		if err != nil {
-			h.Logger.Error("failed to handle attempt", "error", err.Error())
+			h.Logger.FromContext(ctx).Error("failed to handle attempt", "error", err.Error())
 			h.Metrics.Guesses.WithLabelValues(correctGuessLabel, metrics.MetricLabelValueTrue).Inc()
 			return
 		}
@@ -50,6 +74,7 @@ func (h *MessageCreateListener) handleAttempt(ctx context.Context, event *disgoE
 		Guess:     number,
 	})
 	if err != nil {
+		h.Logger.FromContext(ctx).Error("failed to handle attempt in game service", "error", err.Error())
 		return
 	}
 
@@ -63,26 +88,23 @@ func (h *MessageCreateListener) handleAttempt(ctx context.Context, event *disgoE
 				emoji = "⬇️" // Guess is too high, answer is lower
 			}
 
-			// Add reaction to the message (non-blocking)
-			go func() {
-				err := h.Client.Rest().AddReaction(event.ChannelID, event.Message.ID, emoji)
-				if err != nil {
-					h.Logger.Error("failed to add reaction hint", "error", err.Error(), "emoji", emoji)
-				}
-			}()
+			reactionErr := h.Client.Rest().AddReaction(event.ChannelID, event.Message.ID, emoji)
+			if reactionErr != nil {
+				h.Logger.FromContext(ctx).Error("failed to add reaction hint", "error", reactionErr.Error(), "emoji", emoji)
+			}
 		}
 		return
 	}
 
-	guildConfig, err := h.GuildManagement.GetGuildConfig(ctx, event.GuildID.String())
-	if err != nil {
-		return
-	}
-
 	// handle correct guess
-	var winDM strings.Builder
-	winDM.WriteString(fmt.Sprintf("**Congratulations 🎉**\nYou guessed the correct number **%d** at %s\n", response.Game.Answer, event.Message.JumpURL()))
-	winDM.WriteString(fmt.Sprintf("You have won **%d points**", response.Game.Points))
+	var winDM, winChannelMsg strings.Builder
+	winDM.WriteString(fmt.Sprintf("**Congratulations %s 🎉**\n", event.Message.Author.Mention()))
+	winDM.WriteString(fmt.Sprintf("You guessed the correct number **%d** after **%d** guesses at %s\n", response.Game.Answer, response.Game.Guesses, event.Message.JumpURL()))
+	winDM.WriteString(fmt.Sprintf("You have also won **%d points!**", response.Game.Points))
+
+	winChannelMsg.WriteString(fmt.Sprintf("**Congratulations %s 🎉**\n", event.Message.Author.Mention()))
+	winChannelMsg.WriteString(fmt.Sprintf("You guessed the correct number **%d** after **%d** guesses at %s\n", response.Game.Answer, response.Game.Guesses, event.Message.JumpURL()))
+	winChannelMsg.WriteString(fmt.Sprintf("You have also won **%d points!**", response.Game.Points))
 
 	// lock channel
 	if guildConfig != nil && guildConfig.LockRole != "" {
@@ -104,10 +126,12 @@ func (h *MessageCreateListener) handleAttempt(ctx context.Context, event *disgoE
 		if winRoleExists {
 			winRoleErr = h.Client.Rest().AddMemberRole(*event.GuildID, event.Message.Author.ID, winRole.ID, rest.WithReason("Game winner, awarding win role"))
 			if winRoleErr != nil {
-				h.Logger.Error("failed to add win role to winner", "error", winRoleErr.Error())
+				h.Logger.FromContext(ctx).Error("failed to add win role to winner", "error", winRoleErr.Error())
 				winDM.WriteString("\n\n> *Failed to add win role, please contact the admin or bot manager*")
+				winChannelMsg.WriteString("\n\n> *Failed to add win role, please contact the admin or bot manager*")
 			} else {
 				winDM.WriteString(fmt.Sprintf(" and **%s** role!", winRole.Name))
+				winChannelMsg.WriteString(fmt.Sprintf(" and **%s** role!", winRole.Mention()))
 			}
 		}
 	}
@@ -121,7 +145,7 @@ func (h *MessageCreateListener) handleAttempt(ctx context.Context, event *disgoE
 			WithVote: true,
 		})
 		if dmErr != nil {
-			h.Logger.Error("failed to send DM to winner", "error", dmErr.Error())
+			h.Logger.FromContext(ctx).Error("failed to send DM to winner", "error", dmErr.Error())
 		}
 	}
 
@@ -129,18 +153,18 @@ func (h *MessageCreateListener) handleAttempt(ctx context.Context, event *disgoE
 	winMsg, messageErr := utils.SendMessage(h.Client.Rest(), utils.MessageRequest{
 		ChannelID: event.ChannelID,
 		Emoji:     utils.EmojiSuccess,
-		Content:   winDM.String(),
+		Content:   winChannelMsg.String(),
 		WithVote:  true,
 	})
 	if messageErr != nil {
-		h.Logger.Error("failed to send game completion message", "error", messageErr.Error())
+		h.Logger.FromContext(ctx).Error("failed to send game completion message", "error", messageErr.Error())
 	}
 
 	var pinErr error
 	if messageErr == nil {
 		pinErr = event.Client().Rest().PinMessage(event.Message.ChannelID, winMsg.ID, rest.WithReason("Pinning game completion message"))
 		if pinErr != nil {
-			h.Logger.Error("failed to pin game completion message", "error", pinErr.Error())
+			h.Logger.FromContext(ctx).Error("failed to pin game completion message", "error", pinErr.Error())
 		}
 	}
 
@@ -149,13 +173,13 @@ func (h *MessageCreateListener) handleAttempt(ctx context.Context, event *disgoE
 	var unpinCount, unpinFailures int
 	pinnedMessages, unpinErr := event.Client().Rest().GetPinnedMessages(event.Message.ChannelID)
 	if unpinErr != nil {
-		h.Logger.Error("failed to get pinned messages", "error", unpinErr.Error())
+		h.Logger.FromContext(ctx).Error("failed to get pinned messages", "error", unpinErr.Error())
 	} else {
 		for _, pinnedMessage := range pinnedMessages {
 			if pinnedMessage.Author.ID == event.Client().ID() && !strings.HasPrefix(pinnedMessage.Content, "<:greentick:768464483009691648> | **Congratulations") {
 				err := event.Client().Rest().UnpinMessage(event.Message.ChannelID, pinnedMessage.ID, rest.WithReason("Un-pinning other messages pinned by bot"))
 				if err != nil {
-					h.Logger.Error("failed to un-pin old message after game completion", "error", err.Error())
+					h.Logger.FromContext(ctx).Error("failed to un-pin old message after game completion", "error", err.Error())
 					unpinFailures++
 				} else {
 					unpinCount++
@@ -165,70 +189,72 @@ func (h *MessageCreateListener) handleAttempt(ctx context.Context, event *disgoE
 	}
 
 	// Log the game completion to the log channel
-	if guildConfig != nil && guildConfig.LogChannel != "" {
-		var logContent strings.Builder
-		logContent.WriteString(fmt.Sprintf("**Channel:** <#%s>\n", event.ChannelID.String()))
-		logContent.WriteString(fmt.Sprintf("**Winner:** <@%s>\n", event.Message.Author.ID.String()))
-		logContent.WriteString(fmt.Sprintf("**Answer:** %d\n", response.Game.Answer))
-		logContent.WriteString(fmt.Sprintf("**Points Awarded:** %d\n\n", response.Game.Points))
+	h.logGameCompletion(ctx, event, response, guildConfig, winRole, winRoleExists, winRoleErr, dmErr, messageErr, pinErr, unpinErr, unpinCount, unpinFailures)
+}
 
-		// Add status information
-		logContent.WriteString("**Status Report:**\n")
-
-		// Win role status
-		if guildConfig.WinRole != "" {
-			if !winRoleExists {
-				logContent.WriteString("❌ Win role not found in server cache\n")
-			} else if winRoleErr != nil {
-				logContent.WriteString(fmt.Sprintf("❌ Failed to award %s role: %s\n", winRole.Mention(), winRoleErr.Error()))
-			} else {
-				logContent.WriteString(fmt.Sprintf("✅ Successfully awarded %s role\n", winRole.Mention()))
-			}
-		}
-
-		// DM status
-		if guildConfig.DM {
-			if dmErr != nil {
-				logContent.WriteString(fmt.Sprintf("❌ Failed to send DM: %s\n", dmErr.Error()))
-			} else {
-				logContent.WriteString("✅ DM sent successfully\n")
-			}
-		} else {
-			logContent.WriteString("⚪ DM disabled\n")
-		}
-
-		// Message sending status
-		if messageErr != nil {
-			logContent.WriteString(fmt.Sprintf("❌ Failed to send completion message: %s\n", messageErr.Error()))
-		} else {
-			logContent.WriteString("✅ Completion message sent\n")
-		}
-
-		// Message pinning status
-		if messageErr != nil {
-			logContent.WriteString("⚪ Cannot pin - message send failed\n")
-		} else if pinErr != nil {
-			logContent.WriteString(fmt.Sprintf("❌ Failed to pin message: %s\n", pinErr.Error()))
-		} else {
-			logContent.WriteString("✅ Message pinned successfully\n")
-		}
-
-		// Unpinning status
-		if unpinErr != nil {
-			logContent.WriteString(fmt.Sprintf("❌ Failed to get pinned messages: %s", unpinErr.Error()))
-		} else if unpinCount > 0 || unpinFailures > 0 {
-			logContent.WriteString(fmt.Sprintf("📌 Unpinned %d old messages", unpinCount))
-			if unpinFailures > 0 {
-				logContent.WriteString(fmt.Sprintf(", %d failures", unpinFailures))
-			}
-		} else {
-			logContent.WriteString("📌 No old messages to unpin")
-		}
-
-		utils.LogToChannel(h.Client.Rest(), guildConfig.LogChannel,
-			"🏆 Game Won",
-			logContent.String(),
-			"Game Activity",
-		)
+func (h *MessageCreateListener) logGameCompletion(ctx context.Context, event *disgoEvents.MessageCreate, response *types.HandleAttemptResponse, guildConfig *domain.GuildConfig, winRole discord.Role, winRoleExists bool, winRoleErr error, dmErr error, messageErr error, pinErr error, unpinErr error, unpinCount int, unpinFailures int) {
+	if guildConfig == nil || guildConfig.LogChannel == "" {
+		return
 	}
+
+	var logContent strings.Builder
+	logContent.WriteString(fmt.Sprintf("**Channel:** <#%s>\n", event.ChannelID.String()))
+	logContent.WriteString(fmt.Sprintf("**Winner:** <@%s>\n", event.Message.Author.ID.String()))
+	logContent.WriteString(fmt.Sprintf("**Answer:** %d\n", response.Game.Answer))
+	logContent.WriteString(fmt.Sprintf("**Points Awarded:** %d\n\n", response.Game.Points))
+
+	// Add status information
+	logContent.WriteString("**Status Report:**\n")
+
+	// Win role status
+	if guildConfig.WinRole != "" {
+		if !winRoleExists {
+			logContent.WriteString("❌ Win role not found in server cache\n")
+		} else if winRoleErr != nil {
+			logContent.WriteString(fmt.Sprintf("❌ Failed to award %s role: %s\n", winRole.Mention(), winRoleErr.Error()))
+		} else {
+			logContent.WriteString(fmt.Sprintf("✅ Successfully awarded %s role\n", winRole.Mention()))
+		}
+	}
+
+	// DM status
+	if guildConfig.DM {
+		if dmErr != nil {
+			logContent.WriteString(fmt.Sprintf("❌ Failed to send DM: %s\n", dmErr.Error()))
+		} else {
+			logContent.WriteString("✅ DM sent successfully\n")
+		}
+	} else {
+		logContent.WriteString("⚪ DM disabled\n")
+	}
+
+	// Message sending status
+	if messageErr != nil {
+		logContent.WriteString(fmt.Sprintf("❌ Failed to send completion message: %s\n", messageErr.Error()))
+	} else {
+		logContent.WriteString("✅ Completion message sent\n")
+	}
+
+	// Message pinning status
+	if messageErr != nil {
+		logContent.WriteString("⚪ Cannot pin - message send failed\n")
+	} else if pinErr != nil {
+		logContent.WriteString(fmt.Sprintf("❌ Failed to pin message: %s\n", pinErr.Error()))
+	} else {
+		logContent.WriteString("✅ Message pinned successfully\n")
+	}
+
+	// Unpinning status
+	if unpinErr != nil {
+		logContent.WriteString(fmt.Sprintf("❌ Failed to get pinned messages: %s", unpinErr.Error()))
+	} else if unpinCount > 0 || unpinFailures > 0 {
+		logContent.WriteString(fmt.Sprintf("📌 Unpinned %d old messages", unpinCount))
+		if unpinFailures > 0 {
+			logContent.WriteString(fmt.Sprintf(", %d failures", unpinFailures))
+		}
+	} else {
+		logContent.WriteString("📌 No old messages to unpin")
+	}
+
+	utils.LogToChannel(h.Client.Rest(), guildConfig.LogChannel, utils.LogTypeGameActivity, "🏆 Game Won", logContent.String())
 }

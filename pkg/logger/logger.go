@@ -81,13 +81,27 @@ func (l *Logger) Fatalf(template string, args ...any) {
 }
 
 func (l *Logger) FromContext(ctx context.Context) *Logger {
+	loggerArgs := []any{
+		"request_id", lib.GetRequestID(ctx),
+		"user_id", lib.GetUserID(ctx),
+		"guild_id", lib.GetGuildID(ctx),
+		"channel_id", lib.GetChannelID(ctx),
+	}
+
+	if shardID := lib.GetShardID(ctx); shardID != 0 {
+		loggerArgs = append(loggerArgs, "shard_id", shardID)
+	}
+
+	if priority := lib.GetPriority(ctx); priority != lib.PriorityDefault {
+		loggerArgs = append(loggerArgs, "priority", priority.String())
+	}
+
+	if gameID := lib.GetGameID(ctx); gameID != "" {
+		loggerArgs = append(loggerArgs, "game_id", gameID)
+	}
+
 	return &Logger{
-		SugaredLogger: l.SugaredLogger.With(
-			"request_id", lib.GetRequestID(ctx),
-			"user_id", lib.GetUserID(ctx),
-			"guild_id", lib.GetGuildID(ctx),
-			"channel_id", lib.GetChannelID(ctx),
-		),
+		SugaredLogger: l.SugaredLogger.With(loggerArgs...),
 	}
 }
 

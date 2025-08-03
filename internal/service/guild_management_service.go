@@ -13,6 +13,7 @@ type GuildManagementService interface {
 	GetGuildData(ctx context.Context, guildID string) (*domain.GuildData, error)
 	ReplaceGuildConfig(ctx context.Context, cfg *domain.GuildConfig) error
 	CreateGuild(ctx context.Context, guildID string) error
+	DeleteGuild(ctx context.Context, guildID string) error
 }
 
 type guildManagementService struct {
@@ -73,34 +74,41 @@ func (s *guildManagementService) ReplaceGuildConfig(ctx context.Context, cfg *do
 }
 
 func (s *guildManagementService) CreateGuild(ctx context.Context, guildID string) error {
-	_, txnErr := s.transactionManager.WithTransaction(ctx, func(ctx context.Context) (any, error) {
-		cfg := &domain.GuildConfig{
-			ID:     guildID,
-			Prefix: "gg",
-			DM:     true,
-		}
-		if err := s.guildConfigRepo.Create(ctx, cfg); err != nil {
-			return nil, err
-		}
-		data := &domain.GuildData{
-			ID:           guildID,
-			RunningGames: make(map[string]*domain.GameState),
-			Users:        make(map[string]*domain.UserStats),
-		}
+	cfg := &domain.GuildConfig{
+		ID:     guildID,
+		Prefix: "gg",
+		DM:     true,
+	}
+	if err := s.guildConfigRepo.Create(ctx, cfg); err != nil {
+		return err
+	}
 
-		err := s.guildDataRepo.Create(ctx, data)
-		if err != nil {
-			return nil, err
-		}
-		return nil, nil
-	})
-
-	if txnErr != nil {
-		return txnErr
+	data := &domain.GuildData{
+		ID:           guildID,
+		RunningGames: make(map[string]*domain.GameState),
+		Users:        make(map[string]*domain.UserStats),
+	}
+	if err := s.guildDataRepo.Create(ctx, data); err != nil {
+		return err
 	}
 
 	s.metrics.GuildsCreated.Inc()
 	s.metrics.Guilds.Inc()
+	return nil
+}
+
+func (s *guildManagementService) DeleteGuild(ctx context.Context, guildID string) error {
+	// NOTE: only delete guild config, not guild data
+
+	if err := s.guildConfigRepo.Delete(ctx, guildID); err != nil {
+		return err
+	}
+
+	delete(s.guildConfigs, guildID)
+
+	s.metrics.GuildsDeleted.Inc()
+	s.metrics.Guilds.Dec()
+
 	return nil
 }
 

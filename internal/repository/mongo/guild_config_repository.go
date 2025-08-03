@@ -81,6 +81,11 @@ func (r *GuildConfigRepository) Create(ctx context.Context, cfg *domain.GuildCon
 
 	_, err := r.collection.InsertOne(ctx, cfg)
 	if err != nil {
+		if mongo.IsDuplicateKeyError(err) {
+			SetSpanSuccess(span)
+			return nil
+		}
+
 		ierr.NewErrorWithContext(ctx, ierr.ErrCodeDatabase, fmt.Errorf("failed to create guild config: %w", err))
 		SetSpanError(span, err)
 		return err
