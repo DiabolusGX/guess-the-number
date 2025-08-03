@@ -3,14 +3,14 @@ deployment:
   mode: "local"
 
 bot:
-  token: ""
-  dev_guilds: [""] # List of guild IDs for dev commands
+  token: "" # Token is loaded from .env file (GTN_BOT_TOKEN)
+  dev_guilds: []
   sync_commands: false
   sharding:
-    enabled: false        # Set to true to enable sharding
-    shard_count: 0       # 0 = auto-detect based on guild count
-    auto_scale: true     # Whether to auto-scale shards
-    gateway_url: ""      # Custom gateway URL if needed
+    enabled: true # Set to true to enable sharding
+    shard_count: 0 # 0 = auto-detect optimal shard count
+    shard_ids: [] # empty = all shards, or specify like [0, 1] for specific shards
+    auto_scaling: true # Enable automatic scaling based on guild count
 
 mongo:
   host: ""
@@ -29,7 +29,7 @@ redis:
   pool_size: 10
 
 logging:
-  level: "debug"
+  level: "info"
 
 sentry:
   enabled: false

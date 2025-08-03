@@ -85,11 +85,12 @@ func NewConfig() (*Configuration, error) {
 	// Step 2: Initialize Viper
 	v.SetConfigName("config")
 	v.SetConfigType("yaml")
+	v.AddConfigPath("./internal/config")
 	v.AddConfigPath("../../internal/config")
 	v.AddConfigPath("./config")
 
 	// Step 3: Set up environment variables support
-	v.SetEnvPrefix("GTN_BOT")
+	v.SetEnvPrefix("GTN")
 	v.AutomaticEnv()
 
 	// Step 4: Environment variable key mapping
