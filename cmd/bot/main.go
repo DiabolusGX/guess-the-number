@@ -1,21 +1,26 @@
 package main
 
 import (
+	"runtime"
+
 	"go.uber.org/fx"
 
-	"github.com/diabolusgx/guess-the-number-go/internal/bot"
-	"github.com/diabolusgx/guess-the-number-go/internal/config"
-	"github.com/diabolusgx/guess-the-number-go/internal/repository"
-	"github.com/diabolusgx/guess-the-number-go/internal/service"
-	"github.com/diabolusgx/guess-the-number-go/internal/validator"
-	"github.com/diabolusgx/guess-the-number-go/pkg/logger"
-	"github.com/diabolusgx/guess-the-number-go/pkg/metrics"
-	"github.com/diabolusgx/guess-the-number-go/pkg/mongo"
-	"github.com/diabolusgx/guess-the-number-go/pkg/redis"
-	"github.com/diabolusgx/guess-the-number-go/pkg/sentry"
+	"github.com/diabolusgx/guess-the-number/internal/bot"
+	"github.com/diabolusgx/guess-the-number/internal/config"
+	"github.com/diabolusgx/guess-the-number/internal/repository"
+	"github.com/diabolusgx/guess-the-number/internal/service"
+	"github.com/diabolusgx/guess-the-number/internal/validator"
+	"github.com/diabolusgx/guess-the-number/pkg/logger"
+	"github.com/diabolusgx/guess-the-number/pkg/metrics"
+	"github.com/diabolusgx/guess-the-number/pkg/mongo"
+	"github.com/diabolusgx/guess-the-number/pkg/redis"
+	"github.com/diabolusgx/guess-the-number/pkg/sentry"
 )
 
 func main() {
+	// set GOMAXPROCS to equal to number of cores
+	runtime.GOMAXPROCS(runtime.NumCPU())
+
 	// Initialize Fx application
 	var opts []fx.Option
 
@@ -49,6 +54,8 @@ func main() {
 			repository.NewGameRepository,
 			repository.NewGuildConfigRepository,
 			repository.NewGuildDataRepository,
+			repository.NewGameStatsRepository,
+			repository.NewRedisStatsRepository,
 		),
 	)
 
@@ -58,6 +65,8 @@ func main() {
 		fx.Provide(
 			service.NewGameService,
 			service.NewGuildManagementService,
+			service.NewStatsService,
+			service.NewSyncService,
 		),
 	)
 

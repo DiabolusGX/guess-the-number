@@ -1,6 +1,8 @@
 package domain
 
-import "context"
+import (
+	"context"
+)
 
 type GuildData struct {
 	ID           string                `bson:"id"`

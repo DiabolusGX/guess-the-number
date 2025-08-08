@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/diabolusgx/guess-the-number-go/internal/bot/events/commands"
-	"github.com/diabolusgx/guess-the-number-go/internal/bot/events/commons"
-	"github.com/diabolusgx/guess-the-number-go/internal/bot/utils"
-	"github.com/diabolusgx/guess-the-number-go/internal/service"
+	"github.com/diabolusgx/guess-the-number/internal/bot/events/commands"
+	"github.com/diabolusgx/guess-the-number/internal/bot/events/commons"
+	"github.com/diabolusgx/guess-the-number/internal/bot/utils"
+	"github.com/diabolusgx/guess-the-number/internal/service"
 	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/events"
 )

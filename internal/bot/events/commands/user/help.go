@@ -4,8 +4,8 @@ import (
 	"context"
 	"strings"
 
-	"github.com/diabolusgx/guess-the-number-go/internal/bot/events/commands"
-	"github.com/diabolusgx/guess-the-number-go/internal/bot/utils"
+	"github.com/diabolusgx/guess-the-number/internal/bot/events/commands"
+	"github.com/diabolusgx/guess-the-number/internal/bot/utils"
 	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/events"
 )

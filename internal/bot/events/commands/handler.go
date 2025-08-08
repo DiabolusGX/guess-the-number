@@ -12,14 +12,14 @@ import (
 	disgoHandler "github.com/disgoorg/disgo/handler"
 	"github.com/disgoorg/snowflake/v2"
 
-	"github.com/diabolusgx/guess-the-number-go/internal/bot/events"
-	"github.com/diabolusgx/guess-the-number-go/internal/bot/utils"
-	"github.com/diabolusgx/guess-the-number-go/internal/config"
-	"github.com/diabolusgx/guess-the-number-go/internal/lib"
-	"github.com/diabolusgx/guess-the-number-go/internal/service"
-	ierr "github.com/diabolusgx/guess-the-number-go/pkg/errors"
-	"github.com/diabolusgx/guess-the-number-go/pkg/logger"
-	"github.com/diabolusgx/guess-the-number-go/pkg/metrics"
+	"github.com/diabolusgx/guess-the-number/internal/bot/events"
+	"github.com/diabolusgx/guess-the-number/internal/bot/utils"
+	"github.com/diabolusgx/guess-the-number/internal/config"
+	"github.com/diabolusgx/guess-the-number/internal/lib"
+	"github.com/diabolusgx/guess-the-number/internal/service"
+	ierr "github.com/diabolusgx/guess-the-number/pkg/errors"
+	"github.com/diabolusgx/guess-the-number/pkg/logger"
+	"github.com/diabolusgx/guess-the-number/pkg/metrics"
 )
 
 type ApplicationCommandHandler struct {
@@ -97,7 +97,7 @@ func (h *ApplicationCommandHandler) handleCommand(ctx context.Context, event *di
 	appPermissions := event.AppPermissions()
 	res := utils.CheckBotPermissions(appPermissions, discord.PermissionViewChannel, discord.PermissionSendMessages, discord.PermissionEmbedLinks)
 	if !res.HasAllPermissions {
-		h.Logger.FromContext(ctx).Infow("missing permissions", "missing_permissions", strings.Join(res.MissingPermissions, ", "))
+		h.Logger.FromContext(ctx).Infow("bot is missing permissions", "missing_permissions", strings.Join(res.MissingPermissions, ", "))
 		return ierr.New(ierr.ErrCodeMissingPermissions, "bot is missing permissions")
 	}
 
@@ -114,7 +114,7 @@ func (h *ApplicationCommandHandler) handleCommand(ctx context.Context, event *di
 			_, _ = event.Client().Rest().UpdateInteractionResponse(event.ApplicationID(), event.Token(), discord.MessageUpdate{
 				Content: &content,
 			})
-			h.Logger.FromContext(ctx).Infow("user lacks permissions for mod command", "command", commandName, "user_id", event.User().ID.String())
+			h.Logger.FromContext(ctx).Infow("user is missing permissions for mod command", "command", commandName, "user_id", event.User().ID.String())
 			return ierr.New(ierr.ErrCodeMissingPermissions, "user is missing permissions")
 		}
 	}
@@ -160,6 +160,6 @@ func (h *ApplicationCommandHandler) SyncCommands() error {
 
 // isModCommand checks if a command name is a mod command
 func isModCommand(commandName string) bool {
-	modCommands := []string{"start", "setup", "game", "finish-game", "end"}
+	modCommands := []string{"start", "setup", "finish-game", "end"}
 	return slices.Contains(modCommands, commandName)
 }

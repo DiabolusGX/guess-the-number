@@ -7,13 +7,13 @@ import (
 	"math/rand"
 	"strconv"
 
-	"github.com/diabolusgx/guess-the-number-go/internal/domain"
-	"github.com/diabolusgx/guess-the-number-go/internal/lib"
-	"github.com/diabolusgx/guess-the-number-go/internal/repository"
-	"github.com/diabolusgx/guess-the-number-go/internal/types"
-	ierr "github.com/diabolusgx/guess-the-number-go/pkg/errors"
-	"github.com/diabolusgx/guess-the-number-go/pkg/logger"
-	"github.com/diabolusgx/guess-the-number-go/pkg/metrics"
+	"github.com/diabolusgx/guess-the-number/internal/domain"
+	"github.com/diabolusgx/guess-the-number/internal/lib"
+	"github.com/diabolusgx/guess-the-number/internal/repository"
+	"github.com/diabolusgx/guess-the-number/internal/types"
+	ierr "github.com/diabolusgx/guess-the-number/pkg/errors"
+	"github.com/diabolusgx/guess-the-number/pkg/logger"
+	"github.com/diabolusgx/guess-the-number/pkg/metrics"
 	"github.com/go-playground/validator/v10"
 )
 
@@ -30,6 +30,8 @@ type gameService struct {
 	metrics            *metrics.Metrics
 	gameRepo           domain.GameRepository
 	guildDataRepo      domain.GuildDataRepository
+	gameStatsRepo      domain.GameStatsRepository
+	redisStatsRepo     domain.RedisStatsRepository
 	transactionManager repository.TransactionManager
 	runningGames       map[string]*domain.Game
 }
@@ -40,6 +42,8 @@ func NewGameService(params ServiceParams) GameService {
 		metrics:            params.Metrics,
 		gameRepo:           params.GameRepo,
 		guildDataRepo:      params.GuildDataRepo,
+		gameStatsRepo:      params.GameStatsRepo,
+		redisStatsRepo:     params.RedisStatsRepo,
 		transactionManager: params.TransactionManager,
 
 		runningGames: make(map[string]*domain.Game),
@@ -123,6 +127,8 @@ func (s *gameService) FinishGame(ctx context.Context, req *types.FinishGameReque
 		return nil, txnErr
 	}
 
+	// TODO: Produce event for syncing game data to MongoDB
+
 	delete(s.runningGames, req.ChannelID)
 	s.metrics.GamesRunning.Dec()
 
@@ -151,6 +157,18 @@ func (s *gameService) HandleAttempt(ctx context.Context, req *types.HandleAttemp
 		return nil, err
 	}
 	game.Guesses = guesses
+
+	// Record guess asynchronously (no latency impact)
+	go func() {
+		ctx := lib.CopyContextKeys(ctx)
+
+		// Calculate distance and create lightweight record
+		distance := math.Abs(float64(req.Guess - game.Answer))
+
+		if err := s.redisStatsRepo.RecordGuessAsync(ctx, game, req.UserID, req.Guess, int64(distance), req.Timestamp); err != nil {
+			s.logger.FromContext(ctx).Error("failed to record guess in redis", "error", err, "gameID", game.ID, "userID", req.UserID, "guess", req.Guess)
+		}
+	}()
 
 	s.logger.FromContext(ctx).Debugw("guesses incremented", "guesses", guesses)
 
@@ -217,13 +235,27 @@ func (s *gameService) GetHint(ctx context.Context, req *types.GetHintRequest) (*
 	s.logger.FromContext(ctx).Debugw("hint generated", "hint", hint)
 
 	return &types.GetHintResponse{
-		Hint: hint,
+		GameID: game.ID,
+		Hint:   hint,
 	}, nil
 }
 
 func (s *gameService) GetGameInfo(ctx context.Context, req *types.GetGameInfoRequest) (*types.GetGameInfoResponse, error) {
-	if err := validator.New().Struct(req); err != nil {
-		return nil, ierr.NewErrorWithContext(ctx, ierr.ErrCodeValidation, err).WithMessage("invalid inputs")
+	if req.GameID == "" && req.ChannelID == "" {
+		return nil, ierr.New(ierr.ErrCodeValidation, "gameID or channelID is required")
+	}
+
+	if req.GameID != "" {
+		game, err := s.gameRepo.GetByID(ctx, req.GameID)
+		if err != nil {
+			return nil, err
+		}
+		if game == nil {
+			return nil, ierr.New(ierr.ErrCodeNotFound, "game not found")
+		}
+		return &types.GetGameInfoResponse{
+			Game: game,
+		}, nil
 	}
 
 	game, err := s.getRunningInChannel(ctx, req.ChannelID)

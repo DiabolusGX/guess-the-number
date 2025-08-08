@@ -5,7 +5,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/diabolusgx/guess-the-number-go/pkg/logger"
+	"github.com/diabolusgx/guess-the-number/pkg/logger"
 	"github.com/disgoorg/disgo/bot"
 	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/events"

@@ -26,8 +26,11 @@ type Game struct {
 type GameRepository interface {
 	Create(ctx context.Context, game *Game) error
 	Finish(ctx context.Context, gameID, messageID, wonBy string, guesses int64) error
+	GetByID(ctx context.Context, gameID string) (*Game, error)
 	GetRunningInChannel(ctx context.Context, channelID string) (*Game, error)
 	IncrementGuesses(ctx context.Context, gameID, channelID string) (int64, error)
+
+	// NOTE: these are legacy methods, we can remove them once we migrate to the new stats system
 	GetDailyLeaderboard(ctx context.Context, guildID string) ([]Game, error)
 	GetAllTimeLeaderboard(ctx context.Context, guildID string) ([]Game, error)
 	GetGamesBetweenDates(ctx context.Context, guildID string, startDate, endDate time.Time) ([]Game, error)

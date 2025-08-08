@@ -3,8 +3,8 @@ package misc
 import (
 	"context"
 
-	"github.com/diabolusgx/guess-the-number-go/internal/bot/events"
-	"github.com/diabolusgx/guess-the-number-go/pkg/logger"
+	"github.com/diabolusgx/guess-the-number/internal/bot/events"
+	"github.com/diabolusgx/guess-the-number/pkg/logger"
 	"github.com/disgoorg/disgo/bot"
 	disgoEvents "github.com/disgoorg/disgo/events"
 )
@@ -35,7 +35,7 @@ func (h *GuildReadyEventListener) OnEvent(ctx context.Context, e bot.Event) erro
 
 	h.Logger.FromContext(ctx).Debugw("Guild ready",
 		"guild_id", event.GuildID.String(),
-		"shard_id", event.ShardID,
+		"shard_id", event.ShardID(),
 	)
 
 	return nil
@@ -66,7 +66,7 @@ func (h *GuildsReadyEventListener) OnEvent(ctx context.Context, e bot.Event) err
 	}
 
 	h.Logger.FromContext(ctx).Infow("All guilds ready for shard",
-		"shard_id", event.ShardID,
+		"shard_id", event.ShardID(),
 	)
 
 	return nil

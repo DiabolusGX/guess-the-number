@@ -160,14 +160,18 @@ func LogToChannel(rest rest.Rest, logChannelID string, logType LogType, title, d
 
 // buildEmbeds creates a Discord embed from a MessageRequest
 func buildEmbeds(request MessageRequest) []discord.Embed {
+	isError := request.Emoji == EmojiError || request.EmbedColor == FailureEmbedColor
+
 	embedColor := DefaultEmbedColor
 	if request.EmbedColor != 0 {
 		embedColor = request.EmbedColor
 	}
 
-	embedBuilder := discord.NewEmbedBuilder().
-		SetColor(embedColor).
-		SetThumbnail(botAvatarURL)
+	embedBuilder := discord.NewEmbedBuilder().SetColor(embedColor)
+	if !isError {
+		embedBuilder.SetThumbnail(botAvatarURL)
+		embedBuilder.SetFooterText("Made with ❤️ by DiabolusGX").SetFooterIcon(botAvatarURL).SetTimestamp(botCreatedAt)
+	}
 
 	// Set title and description
 	if request.EmbedTitle != "" {
@@ -187,9 +191,6 @@ func buildEmbeds(request MessageRequest) []discord.Embed {
 	if len(request.Fields) > 0 {
 		embedBuilder.SetFields(request.Fields...)
 	}
-
-	// Prepare footer
-	embedBuilder.SetFooterText("Made with ❤️ by DiabolusGX").SetFooterIcon(botAvatarURL).SetTimestamp(botCreatedAt)
 
 	return []discord.Embed{embedBuilder.Build()}
 }

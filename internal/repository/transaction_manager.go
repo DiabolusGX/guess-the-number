@@ -3,8 +3,8 @@ package repository
 import (
 	"context"
 
-	"github.com/diabolusgx/guess-the-number-go/pkg/logger"
-	"github.com/diabolusgx/guess-the-number-go/pkg/mongo"
+	"github.com/diabolusgx/guess-the-number/pkg/logger"
+	"github.com/diabolusgx/guess-the-number/pkg/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
 	"go.mongodb.org/mongo-driver/v2/mongo/writeconcern"
 )

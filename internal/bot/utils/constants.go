@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/disgoorg/snowflake/v2"
@@ -15,6 +16,7 @@ const (
 	DefaultEmbedColor = 0x2B2D31
 	SuccessEmbedColor = 0x57F287
 	FailureEmbedColor = 0xED4245
+	WarningEmbedColor = 0xFEE75C // Discord yellow
 	InfoEmbedColor    = 0x5865F2 // Discord blurple
 
 	// Bot info
@@ -43,4 +45,8 @@ const (
 
 func (t LogType) String() string {
 	return string(t)
+}
+
+func FormMessageLink(guildID, channelID, messageID string) string {
+	return fmt.Sprintf("https://discord.com/channels/%s/%s/%s", guildID, channelID, messageID)
 }

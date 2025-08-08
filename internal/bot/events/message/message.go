@@ -3,11 +3,11 @@ package message
 import (
 	"context"
 
-	"github.com/diabolusgx/guess-the-number-go/internal/bot/events"
-	"github.com/diabolusgx/guess-the-number-go/internal/lib"
-	"github.com/diabolusgx/guess-the-number-go/internal/service"
-	"github.com/diabolusgx/guess-the-number-go/pkg/logger"
-	"github.com/diabolusgx/guess-the-number-go/pkg/metrics"
+	"github.com/diabolusgx/guess-the-number/internal/bot/events"
+	"github.com/diabolusgx/guess-the-number/internal/lib"
+	"github.com/diabolusgx/guess-the-number/internal/service"
+	"github.com/diabolusgx/guess-the-number/pkg/logger"
+	"github.com/diabolusgx/guess-the-number/pkg/metrics"
 	"github.com/disgoorg/disgo/bot"
 	"github.com/disgoorg/disgo/discord"
 	disgoEvents "github.com/disgoorg/disgo/events"
@@ -18,6 +18,7 @@ type MessageCreateListener struct {
 	Metrics         *metrics.Metrics
 	GameService     service.GameService
 	GuildManagement service.GuildManagementService
+	SyncService     service.SyncService
 }
 
 func NewMessageCreateListener(params events.EventListenerParams) *MessageCreateListener {
@@ -26,6 +27,7 @@ func NewMessageCreateListener(params events.EventListenerParams) *MessageCreateL
 		Metrics:         params.Metrics,
 		GameService:     params.GameService,
 		GuildManagement: params.GuildManagementService,
+		SyncService:     params.SyncService,
 	}
 }
 

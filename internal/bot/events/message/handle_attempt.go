@@ -7,11 +7,12 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/diabolusgx/guess-the-number-go/internal/bot/utils"
-	"github.com/diabolusgx/guess-the-number-go/internal/domain"
-	"github.com/diabolusgx/guess-the-number-go/internal/types"
-	ierr "github.com/diabolusgx/guess-the-number-go/pkg/errors"
-	"github.com/diabolusgx/guess-the-number-go/pkg/metrics"
+	"github.com/diabolusgx/guess-the-number/internal/bot/utils"
+	"github.com/diabolusgx/guess-the-number/internal/domain"
+	"github.com/diabolusgx/guess-the-number/internal/lib"
+	"github.com/diabolusgx/guess-the-number/internal/types"
+	ierr "github.com/diabolusgx/guess-the-number/pkg/errors"
+	"github.com/diabolusgx/guess-the-number/pkg/metrics"
 	"github.com/disgoorg/disgo/discord"
 	disgoEvents "github.com/disgoorg/disgo/events"
 	"github.com/disgoorg/disgo/rest"
@@ -73,6 +74,7 @@ func (h *MessageCreateListener) handleAttempt(ctx context.Context, event *disgoE
 		MessageID: event.Message.ID.String(),
 		UserID:    event.Message.Author.ID.String(),
 		Guess:     number,
+		Timestamp: event.Message.CreatedAt.Unix(),
 	})
 	if err != nil {
 		if appErr, ok := err.(*ierr.AppError); ok && appErr.Code == ierr.ErrCodeNotFound {
@@ -100,6 +102,13 @@ func (h *MessageCreateListener) handleAttempt(ctx context.Context, event *disgoE
 		}
 		return
 	}
+
+	// TODO: remove this and make it event based from the game service
+	go func() {
+		ctx := lib.CopyContextKeys(ctx)
+		ctx = context.WithValue(ctx, lib.CtxGameID, response.Game.ID)
+		h.SyncService.SyncGameOnFinish(ctx, response.Game.ID)
+	}()
 
 	// handle correct guess
 	var winDM, winChannelMsg strings.Builder
@@ -261,6 +270,9 @@ func (h *MessageCreateListener) logGameCompletion(ctx context.Context, event *di
 	} else {
 		logContent.WriteString("📌 No old messages to unpin")
 	}
+
+	// Add game id to log
+	logContent.WriteString(fmt.Sprintf("\n\n**Game ID:** `%s`", response.Game.ID))
 
 	utils.LogToChannel(event.Client().Rest(), guildConfig.LogChannel, utils.LogTypeGameActivity, "🏆 Game Won", logContent.String())
 }

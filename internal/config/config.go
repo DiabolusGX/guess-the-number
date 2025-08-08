@@ -4,9 +4,10 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
-	"github.com/diabolusgx/guess-the-number-go/internal/lib"
-	"github.com/diabolusgx/guess-the-number-go/internal/validator"
+	"github.com/diabolusgx/guess-the-number/internal/lib"
+	"github.com/diabolusgx/guess-the-number/internal/validator"
 	"github.com/joho/godotenv"
 	"github.com/spf13/viper"
 )
@@ -19,6 +20,7 @@ type Configuration struct {
 	Logging    LoggingConfig    `mapstructure:"logging" validate:"required"`
 	Sentry     SentryConfig     `mapstructure:"sentry" validate:"required"`
 	Metrics    MetricsConfig    `mapstructure:"metrics" validate:"required"`
+	Sync       SyncConfig       `mapstructure:"sync" validate:"required"`
 }
 
 type DeploymentConfig struct {
@@ -71,6 +73,13 @@ type SentryConfig struct {
 type MetricsConfig struct {
 	Enabled    bool   `mapstructure:"enabled"`
 	ListenAddr string `mapstructure:"listen_addr" default:":8080"`
+}
+
+type SyncConfig struct {
+	Enabled      bool          `mapstructure:"enabled"`
+	Interval     time.Duration `mapstructure:"interval"`
+	OnGameFinish bool          `mapstructure:"on_game_finish"`
+	BatchSize    int           `mapstructure:"batch_size"`
 }
 
 // Legacy type alias for backward compatibility

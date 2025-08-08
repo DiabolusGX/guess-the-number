@@ -5,7 +5,7 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/diabolusgx/guess-the-number-go/internal/config"
+	"github.com/diabolusgx/guess-the-number/internal/config"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.uber.org/fx"
 )

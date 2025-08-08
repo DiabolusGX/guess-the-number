@@ -1,4 +1,4 @@
-module github.com/diabolusgx/guess-the-number-go
+module github.com/diabolusgx/guess-the-number
 
 go 1.24
 

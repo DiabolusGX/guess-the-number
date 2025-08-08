@@ -5,15 +5,15 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/diabolusgx/guess-the-number-go/pkg/logger"
+	"github.com/diabolusgx/guess-the-number/pkg/logger"
 	"github.com/redis/go-redis/v9"
 	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
 
-	"github.com/diabolusgx/guess-the-number-go/internal/domain"
-	ierr "github.com/diabolusgx/guess-the-number-go/pkg/errors"
-	pkgMongo "github.com/diabolusgx/guess-the-number-go/pkg/mongo"
+	"github.com/diabolusgx/guess-the-number/internal/domain"
+	ierr "github.com/diabolusgx/guess-the-number/pkg/errors"
+	pkgMongo "github.com/diabolusgx/guess-the-number/pkg/mongo"
 )
 
 type GameRepository struct {
@@ -55,6 +55,29 @@ func (r *GameRepository) Create(ctx context.Context, game *domain.Game) error {
 	r.log.FromContext(ctx).Debugw("game started")
 	SetSpanSuccess(span)
 	return nil
+}
+
+func (r *GameRepository) GetByID(ctx context.Context, gameID string) (*domain.Game, error) {
+	span := StartRepositorySpan(ctx, gameCollection, "get_by_id", map[string]any{
+		"gameID": gameID,
+	})
+	defer FinishSpan(span)
+
+	filter := bson.M{"_id": gameID}
+	var game domain.Game
+	err := r.collection.FindOne(ctx, filter).Decode(&game)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			SetSpanSuccess(span)
+			return nil, nil
+		}
+		ierr.NewErrorWithContext(ctx, ierr.ErrCodeDatabase, fmt.Errorf("failed to get game by ID: %w", err))
+		SetSpanError(span, err)
+		return nil, err
+	}
+
+	SetSpanSuccess(span)
+	return &game, nil
 }
 
 func (r *GameRepository) Finish(ctx context.Context, gameID, messageID, wonBy string, guesses int64) error {
@@ -113,6 +136,14 @@ func (r *GameRepository) GetRunningInChannel(ctx context.Context, channelID stri
 		ierr.NewErrorWithContext(ctx, ierr.ErrCodeDatabase, fmt.Errorf("failed to get game by channel ID: %w", err))
 		SetSpanError(span, err)
 		return nil, err
+	}
+
+	if !game.Finished || game.Guesses == 0 {
+		guesses, err := r.redisClient.Get(ctx, getGameGuessesKey(game.ID)).Int64()
+		if err != nil {
+			r.log.FromContext(ctx).Error("failed to get guesses from redis", "error", err)
+		}
+		game.Guesses = guesses
 	}
 
 	SetSpanSuccess(span)

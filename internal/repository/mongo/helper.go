@@ -19,6 +19,7 @@ const (
 	guildConfigCollection = "guildconfigs"
 	guildDataCollection   = "guilddatas"
 	gameCollection        = "games"
+	gameStatsCollection   = "game_stats"
 )
 
 // StartRepositorySpan creates a new span for a repository operation

@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/diabolusgx/guess-the-number-go/internal/bot/events/commands"
-	"github.com/diabolusgx/guess-the-number-go/internal/bot/utils"
-	"github.com/diabolusgx/guess-the-number-go/internal/service"
-	"github.com/diabolusgx/guess-the-number-go/internal/types"
+	"github.com/diabolusgx/guess-the-number/internal/bot/events/commands"
+	"github.com/diabolusgx/guess-the-number/internal/bot/utils"
+	"github.com/diabolusgx/guess-the-number/internal/service"
+	"github.com/diabolusgx/guess-the-number/internal/types"
 	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/events"
 )
@@ -72,6 +72,7 @@ func (c *FinishCommand) Handler(ctx context.Context, event *events.ApplicationCo
 
 	var response strings.Builder
 	response.WriteString(fmt.Sprintf("Game finished in <#%s>\n\n", channel.ID.String()))
+	response.WriteString(fmt.Sprintf("- Use `/game stats` command with game ID: `%s` to see the stats.\n", game.Game.ID))
 
 	// TODO: add some game stats
 	_, err = utils.SendMessage(event.Client().Rest(), utils.MessageRequest{
@@ -98,6 +99,9 @@ func (c *FinishCommand) Handler(ctx context.Context, event *events.ApplicationCo
 		// Add status information
 		logContent.WriteString("**Status Report:**\n")
 		logContent.WriteString(gameFinishedMessageStatus)
+
+		// Add game id to log
+		logContent.WriteString(fmt.Sprintf("\n\n**Game ID:** `%s`", game.Game.ID))
 
 		utils.LogToChannel(event.Client().Rest(), data.GuildConfig.LogChannel, utils.LogTypeGameActivity, "🔴 Game Force Ended", logContent.String())
 	}

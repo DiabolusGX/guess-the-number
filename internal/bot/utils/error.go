@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/diabolusgx/guess-the-number-go/pkg/errors"
-	"github.com/diabolusgx/guess-the-number-go/pkg/logger"
+	"github.com/diabolusgx/guess-the-number/pkg/errors"
+	"github.com/diabolusgx/guess-the-number/pkg/logger"
 )
 
 func HandleError(ctx context.Context, event ReplyEvent, err error) {

@@ -19,6 +19,8 @@ const (
 	CtxGameID     ContextKey = "game_id"
 )
 
+var contextKeys = []ContextKey{CtxClientType, CtxShardID, CtxRequestID, CtxPriority, CtxUserID, CtxGuildID, CtxChannelID, CtxGameID}
+
 type Priority int
 
 const (
@@ -93,4 +95,12 @@ func GetGameID(ctx context.Context) string {
 		return gameID
 	}
 	return ""
+}
+
+func CopyContextKeys(ctx context.Context) context.Context {
+	newCtx := context.Background()
+	for _, key := range contextKeys {
+		newCtx = context.WithValue(newCtx, key, ctx.Value(key))
+	}
+	return newCtx
 }

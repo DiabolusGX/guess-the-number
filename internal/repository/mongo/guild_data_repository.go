@@ -7,10 +7,10 @@ import (
 	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 
-	"github.com/diabolusgx/guess-the-number-go/internal/domain"
-	ierr "github.com/diabolusgx/guess-the-number-go/pkg/errors"
-	"github.com/diabolusgx/guess-the-number-go/pkg/logger"
-	mongoPkg "github.com/diabolusgx/guess-the-number-go/pkg/mongo"
+	"github.com/diabolusgx/guess-the-number/internal/domain"
+	ierr "github.com/diabolusgx/guess-the-number/pkg/errors"
+	"github.com/diabolusgx/guess-the-number/pkg/logger"
+	mongoPkg "github.com/diabolusgx/guess-the-number/pkg/mongo"
 )
 
 type GuildDataRepository struct {

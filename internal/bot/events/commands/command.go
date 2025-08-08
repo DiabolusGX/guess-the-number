@@ -3,11 +3,11 @@ package commands
 import (
 	"context"
 
-	"github.com/diabolusgx/guess-the-number-go/internal/config"
-	"github.com/diabolusgx/guess-the-number-go/internal/domain"
-	"github.com/diabolusgx/guess-the-number-go/internal/service"
-	"github.com/diabolusgx/guess-the-number-go/pkg/logger"
-	"github.com/diabolusgx/guess-the-number-go/pkg/metrics"
+	"github.com/diabolusgx/guess-the-number/internal/config"
+	"github.com/diabolusgx/guess-the-number/internal/domain"
+	"github.com/diabolusgx/guess-the-number/internal/service"
+	"github.com/diabolusgx/guess-the-number/pkg/logger"
+	"github.com/diabolusgx/guess-the-number/pkg/metrics"
 	"github.com/disgoorg/disgo/discord"
 	disgoEvents "github.com/disgoorg/disgo/events"
 	"go.uber.org/fx"
@@ -21,6 +21,7 @@ type CommandParams struct {
 	Metrics                *metrics.Metrics
 	GameService            service.GameService
 	GuildManagementService service.GuildManagementService
+	StatsService           service.StatsService
 }
 
 type Command interface {

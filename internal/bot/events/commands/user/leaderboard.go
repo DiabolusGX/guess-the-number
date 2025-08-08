@@ -6,10 +6,10 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/diabolusgx/guess-the-number-go/internal/bot/events/commands"
-	"github.com/diabolusgx/guess-the-number-go/internal/bot/utils"
-	"github.com/diabolusgx/guess-the-number-go/internal/domain"
-	"github.com/diabolusgx/guess-the-number-go/internal/service"
+	"github.com/diabolusgx/guess-the-number/internal/bot/events/commands"
+	"github.com/diabolusgx/guess-the-number/internal/bot/utils"
+	"github.com/diabolusgx/guess-the-number/internal/domain"
+	"github.com/diabolusgx/guess-the-number/internal/service"
 	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/events"
 )
@@ -53,11 +53,25 @@ func (c *LeaderboardCommand) Handler(ctx context.Context, event *events.Applicat
 	subcommand := *event.SlashCommandInteractionData().SubCommandName
 	guildID := event.GuildID().String()
 
+	// Show deprecation notice first
+	deprecationNotice := "⚠️ **Command Deprecated** ⚠️\n\n"
+	deprecationNotice += "The `/leaderboard` command has been **moved and enhanced**!\n\n"
+	deprecationNotice += "**Use these new commands instead:**\n"
+	deprecationNotice += "• `/game stats winners` - View top winners\n"
+	deprecationNotice += "• `/game stats points` - View top point earners\n"
+	deprecationNotice += "• `/game stats top-guessers` - View most active players\n"
+	deprecationNotice += "• `/game stats top-numbers` - View most guessed numbers\n\n"
+	deprecationNotice += "**New features available:**\n"
+	deprecationNotice += "• Time range filtering (last day, week, month, all-time)\n"
+	deprecationNotice += "• Game-specific statistics\n"
+	deprecationNotice += "• Enhanced performance and caching\n\n"
+	deprecationNotice += "---\n\n"
+
 	switch subcommand {
 	case "wins":
-		return c.handleLeaderboardWins(ctx, event, guildID)
+		return c.showDeprecationNoticeWithLegacyData(event, deprecationNotice, "wins", guildID)
 	case "points":
-		return c.handleLeaderboardPoints(ctx, event, guildID)
+		return c.showDeprecationNoticeWithLegacyData(event, deprecationNotice, "points", guildID)
 	}
 	return nil
 }
@@ -190,5 +204,115 @@ func getMedalEmoji(position int) string {
 		return "🥉"
 	default:
 		return "🏅"
+	}
+}
+
+func (c *LeaderboardCommand) showDeprecationNoticeWithLegacyData(event *events.ApplicationCommandInteractionCreate, deprecationNotice, statType, guildID string) error {
+	guildData, err := c.guildManagementService.GetGuildData(context.Background(), guildID)
+	if err != nil {
+		// If we can't get data, just show the deprecation notice
+		return utils.EventReply(event, utils.MessageRequest{
+			Content: deprecationNotice + "❌ Unable to load legacy data. Please use `/game stats` commands.",
+			Emoji:   utils.EmojiInfo,
+		})
+	}
+
+	var content strings.Builder
+	content.WriteString(deprecationNotice)
+
+	// Add simplified legacy data
+	if statType == "wins" {
+		content.WriteString("🏆 **Legacy Wins Data:**\n")
+		c.addLegacyWinsData(&content, guildData)
+	} else {
+		content.WriteString("💎 **Legacy Points Data:**\n")
+		c.addLegacyPointsData(&content, guildData)
+	}
+
+	content.WriteString("\n\n🚀 **Upgrade to `/game stats` for more features!**")
+
+	return utils.EventReply(event, utils.MessageRequest{
+		Content: content.String(),
+		Emoji:   utils.EmojiInfo,
+	})
+}
+
+func (c *LeaderboardCommand) addLegacyWinsData(content *strings.Builder, guildData *domain.GuildData) {
+	// Convert users map to slice for sorting
+	type userEntry struct {
+		userID string
+		stats  *domain.UserStats
+	}
+
+	var users []userEntry
+	for userID, stats := range guildData.Users {
+		if stats.Wins > 0 {
+			users = append(users, userEntry{userID: userID, stats: stats})
+		}
+	}
+
+	// Sort by wins (descending)
+	sort.Slice(users, func(i, j int) bool {
+		return users[i].stats.Wins > users[j].stats.Wins
+	})
+
+	if len(users) == 0 {
+		content.WriteString("No players with wins yet!")
+	} else {
+		maxShow := 5 // Show fewer in deprecation notice
+		if len(users) < maxShow {
+			maxShow = len(users)
+		}
+
+		for i := 0; i < maxShow; i++ {
+			user := users[i]
+			medal := getMedalEmoji(i + 1)
+			content.WriteString(fmt.Sprintf("%s **%d.** <@%s> - %d wins\n",
+				medal, i+1, user.userID, user.stats.Wins))
+		}
+
+		if len(users) > maxShow {
+			content.WriteString(fmt.Sprintf("... and %d more players\n", len(users)-maxShow))
+		}
+	}
+}
+
+func (c *LeaderboardCommand) addLegacyPointsData(content *strings.Builder, guildData *domain.GuildData) {
+	// Convert users map to slice for sorting
+	type userEntry struct {
+		userID string
+		stats  *domain.UserStats
+	}
+
+	var users []userEntry
+	for userID, stats := range guildData.Users {
+		if stats.Points > 0 {
+			users = append(users, userEntry{userID: userID, stats: stats})
+		}
+	}
+
+	// Sort by points (descending)
+	sort.Slice(users, func(i, j int) bool {
+		return users[i].stats.Points > users[j].stats.Points
+	})
+
+	if len(users) == 0 {
+		content.WriteString("No players with points yet!")
+	} else {
+		maxShow := 5 // Show fewer in deprecation notice
+		if len(users) < maxShow {
+			maxShow = len(users)
+		}
+
+		for i := 0; i < maxShow; i++ {
+			user := users[i]
+			medal := getMedalEmoji(i + 1)
+			content.WriteString(fmt.Sprintf("%s **%d.** <@%s> - %d points\n",
+				medal, i+1, user.userID, user.stats.Points))
+		}
+
+		if len(users) > maxShow {
+			content.WriteString(fmt.Sprintf("... and %d more players\n", len(users)-maxShow))
+		}
 	}
 }

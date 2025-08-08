@@ -3,8 +3,8 @@ package misc
 import (
 	"context"
 
-	"github.com/diabolusgx/guess-the-number-go/internal/bot/events"
-	"github.com/diabolusgx/guess-the-number-go/pkg/logger"
+	"github.com/diabolusgx/guess-the-number/internal/bot/events"
+	"github.com/diabolusgx/guess-the-number/pkg/logger"
 	"github.com/disgoorg/disgo/bot"
 	disgoEvents "github.com/disgoorg/disgo/events"
 )

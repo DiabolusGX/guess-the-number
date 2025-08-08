@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/diabolusgx/guess-the-number-go/internal/bot/utils"
-	"github.com/diabolusgx/guess-the-number-go/internal/domain"
-	"github.com/diabolusgx/guess-the-number-go/internal/service"
-	"github.com/diabolusgx/guess-the-number-go/internal/types"
+	"github.com/diabolusgx/guess-the-number/internal/bot/utils"
+	"github.com/diabolusgx/guess-the-number/internal/domain"
+	"github.com/diabolusgx/guess-the-number/internal/service"
+	"github.com/diabolusgx/guess-the-number/internal/types"
 	"github.com/disgoorg/disgo/bot"
 	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/rest"
@@ -161,6 +161,9 @@ func logGameStart(
 	} else {
 		logContent.WriteString("✅ DM with answer sent successfully")
 	}
+
+	// Add game id to log
+	logContent.WriteString(fmt.Sprintf("\n\n**Game ID:** `%s`", result.Game.Game.ID))
 
 	utils.LogToChannel(client, logChannelID, utils.LogTypeGameActivity, "🎮 Game Started", logContent.String())
 }

@@ -4,8 +4,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/diabolusgx/guess-the-number-go/internal/config"
-	"github.com/diabolusgx/guess-the-number-go/pkg/logger"
+	"github.com/diabolusgx/guess-the-number/internal/config"
+	"github.com/diabolusgx/guess-the-number/pkg/logger"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
 	"go.mongodb.org/mongo-driver/v2/mongo/readpref"

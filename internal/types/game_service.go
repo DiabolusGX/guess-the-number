@@ -1,7 +1,7 @@
 package types
 
 import (
-	"github.com/diabolusgx/guess-the-number-go/internal/domain"
+	"github.com/diabolusgx/guess-the-number/internal/domain"
 )
 
 type CreateGameRequest struct {
@@ -22,6 +22,7 @@ type HandleAttemptRequest struct {
 	MessageID string `json:"message_id" validate:"required"`
 	UserID    string `json:"user_id" validate:"required"`
 	Guess     int64  `json:"guess" validate:"required,min=0"`
+	Timestamp int64  `json:"timestamp" validate:"required"`
 }
 
 type HandleAttemptResponse struct {
@@ -59,11 +60,13 @@ type GetHintRequest struct {
 }
 
 type GetHintResponse struct {
-	Hint string `json:"hint"`
+	Hint   string `json:"hint"`
+	GameID string `json:"game_id"`
 }
 
 type GetGameInfoRequest struct {
-	ChannelID string `json:"channel_id" validate:"required"`
+	GameID    string `json:"game_id"`
+	ChannelID string `json:"channel_id"`
 }
 
 type GetGameInfoResponse struct {

@@ -14,19 +14,19 @@ import (
 	"github.com/disgoorg/paginator"
 	"go.uber.org/fx"
 
-	"github.com/diabolusgx/guess-the-number-go/internal/bot/events"
-	"github.com/diabolusgx/guess-the-number-go/internal/bot/events/commands"
-	"github.com/diabolusgx/guess-the-number-go/internal/bot/events/commands/mod"
-	"github.com/diabolusgx/guess-the-number-go/internal/bot/events/commands/user"
-	"github.com/diabolusgx/guess-the-number-go/internal/bot/events/guild"
-	"github.com/diabolusgx/guess-the-number-go/internal/bot/events/interactions"
-	"github.com/diabolusgx/guess-the-number-go/internal/bot/events/interactions/component"
-	"github.com/diabolusgx/guess-the-number-go/internal/bot/events/interactions/modal"
-	"github.com/diabolusgx/guess-the-number-go/internal/bot/events/message"
-	"github.com/diabolusgx/guess-the-number-go/internal/bot/events/misc"
-	"github.com/diabolusgx/guess-the-number-go/internal/config"
-	"github.com/diabolusgx/guess-the-number-go/internal/lib"
-	"github.com/diabolusgx/guess-the-number-go/pkg/logger"
+	"github.com/diabolusgx/guess-the-number/internal/bot/events"
+	"github.com/diabolusgx/guess-the-number/internal/bot/events/commands"
+	"github.com/diabolusgx/guess-the-number/internal/bot/events/commands/mod"
+	"github.com/diabolusgx/guess-the-number/internal/bot/events/commands/user"
+	"github.com/diabolusgx/guess-the-number/internal/bot/events/guild"
+	"github.com/diabolusgx/guess-the-number/internal/bot/events/interactions"
+	"github.com/diabolusgx/guess-the-number/internal/bot/events/interactions/component"
+	"github.com/diabolusgx/guess-the-number/internal/bot/events/interactions/modal"
+	"github.com/diabolusgx/guess-the-number/internal/bot/events/message"
+	"github.com/diabolusgx/guess-the-number/internal/bot/events/misc"
+	"github.com/diabolusgx/guess-the-number/internal/config"
+	"github.com/diabolusgx/guess-the-number/internal/lib"
+	"github.com/diabolusgx/guess-the-number/pkg/logger"
 )
 
 func NewClient(cfg *config.Configuration) (bot.Client, error) {
@@ -130,9 +130,11 @@ var Module = fx.Module(
 		// Mod commands
 		applicationCommandHandler.AddCommand(mod.NewSetupCommand(commandParams))
 		applicationCommandHandler.AddCommand(mod.NewStartCommand(commandParams))
-		applicationCommandHandler.AddCommand(mod.NewGameCommand(commandParams))
 		applicationCommandHandler.AddCommand(mod.NewFinishCommand(commandParams))
 		applicationCommandHandler.AddCommand(mod.NewEndCommand(commandParams))
+
+		// Mod + User commands
+		applicationCommandHandler.AddCommand(user.NewGameCommand(commandParams))
 
 		// User commands
 		applicationCommandHandler.AddCommand(user.NewPingCommand(commandParams))

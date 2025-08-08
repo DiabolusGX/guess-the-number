@@ -3,9 +3,9 @@ package service
 import (
 	"context"
 
-	"github.com/diabolusgx/guess-the-number-go/internal/domain"
-	"github.com/diabolusgx/guess-the-number-go/internal/repository"
-	"github.com/diabolusgx/guess-the-number-go/pkg/metrics"
+	"github.com/diabolusgx/guess-the-number/internal/domain"
+	"github.com/diabolusgx/guess-the-number/internal/repository"
+	"github.com/diabolusgx/guess-the-number/pkg/metrics"
 )
 
 type GuildManagementService interface {

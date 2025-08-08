@@ -3,8 +3,8 @@ package logger
 import (
 	"context"
 
-	"github.com/diabolusgx/guess-the-number-go/internal/config"
-	"github.com/diabolusgx/guess-the-number-go/internal/lib"
+	"github.com/diabolusgx/guess-the-number/internal/config"
+	"github.com/diabolusgx/guess-the-number/internal/lib"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )

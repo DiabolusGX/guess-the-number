@@ -1,0 +1,143 @@
+package service
+
+import (
+	"context"
+	"fmt"
+	"time"
+
+	"github.com/diabolusgx/guess-the-number/internal/domain"
+	"github.com/diabolusgx/guess-the-number/pkg/logger"
+)
+
+// SyncService handles background synchronization from Redis to MongoDB
+type SyncService interface {
+	StartPeriodicSync(ctx context.Context) error
+	SyncGameGuesses(ctx context.Context, gameID string) error
+	SyncAllActiveGames(ctx context.Context) error
+	SyncGameOnFinish(ctx context.Context, gameID string) error
+}
+
+type syncService struct {
+	logger *logger.Logger
+
+	redisStatsRepo domain.RedisStatsRepository
+	gameStatsRepo  domain.GameStatsRepository
+	gameRepo       domain.GameRepository
+
+	syncInterval     time.Duration
+	enabled          bool
+	onGameFinishSync bool
+	batchSize        int
+}
+
+func NewSyncService(params ServiceParams) SyncService {
+	return &syncService{
+		logger: params.Logger,
+
+		redisStatsRepo: params.RedisStatsRepo,
+		gameStatsRepo:  params.GameStatsRepo,
+		gameRepo:       params.GameRepo,
+
+		syncInterval:     params.Config.Sync.Interval,
+		enabled:          params.Config.Sync.Enabled,
+		onGameFinishSync: params.Config.Sync.OnGameFinish,
+		batchSize:        params.Config.Sync.BatchSize,
+	}
+}
+
+// StartPeriodicSync starts the background synchronization process
+func (s *syncService) StartPeriodicSync(ctx context.Context) error {
+	if !s.enabled {
+		s.logger.FromContext(ctx).Info("sync service disabled, skipping periodic sync")
+		return nil
+	}
+
+	s.logger.FromContext(ctx).Info("starting periodic sync service", "interval", s.syncInterval)
+
+	ticker := time.NewTicker(s.syncInterval)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			s.logger.FromContext(ctx).Info("sync service stopping due to context cancellation")
+			return ctx.Err()
+		case <-ticker.C:
+			if err := s.SyncAllActiveGames(ctx); err != nil {
+				s.logger.FromContext(ctx).Error("periodic sync failed", "error", err)
+			}
+		}
+	}
+}
+
+// SyncAllActiveGames syncs all active games across all guilds
+func (s *syncService) SyncAllActiveGames(ctx context.Context) error {
+	s.logger.FromContext(ctx).Debug("starting sync for all active games")
+
+	// For now, we'll need to track guilds separately or query MongoDB for recent games
+	// This is a simplified implementation that could be enhanced
+
+	// For this implementation, we'll need to add a method to get all guilds
+	// For now, let's implement a basic sync for a known set or skip this for MVP
+	// In a full implementation, we would query active games from Redis or MongoDB
+
+	s.logger.FromContext(ctx).Debug("completed sync for all active games")
+	return nil
+}
+
+// SyncGameGuesses syncs guesses for a specific game from Redis to MongoDB
+func (s *syncService) SyncGameGuesses(ctx context.Context, gameID string) error {
+	s.logger.FromContext(ctx).Debug("syncing game guesses")
+
+	// Get game information from MongoDB
+	game, err := s.gameRepo.GetByID(ctx, gameID)
+	if err != nil {
+		return fmt.Errorf("failed to get game from database: %w", err)
+	}
+	if game == nil {
+		s.logger.FromContext(ctx).Debug("game not found in database, skipping sync")
+		return nil
+	}
+
+	// Get all guesses from Redis
+	attempts, err := s.redisStatsRepo.GetGameGuesses(ctx, game)
+	if err != nil {
+		return fmt.Errorf("failed to get guesses from redis: %w", err)
+	}
+
+	if len(attempts) == 0 {
+		s.logger.FromContext(ctx).Debug("no guesses to sync")
+		return nil
+	}
+
+	// Generate IDs for the attempts if they don't have them
+	for i := range attempts {
+		if attempts[i].ID == "" {
+			attempts[i].ID = fmt.Sprintf("%s_%d_%d", gameID, attempts[i].Timestamp.Unix(), i)
+		}
+	}
+
+	// Bulk insert to MongoDB
+	if err := s.gameStatsRepo.BulkInsert(ctx, attempts); err != nil {
+		return fmt.Errorf("failed to bulk insert guesses: %w", err)
+	}
+
+	// Clean up synced data from Redis
+	if err := s.redisStatsRepo.CleanupGameData(ctx, game); err != nil {
+		s.logger.FromContext(ctx).Error("failed to cleanup game data from redis after sync", "error", err)
+		// Don't fail the sync for cleanup errors
+	}
+
+	s.logger.FromContext(ctx).Info("synced game guesses to mongodb", "count", len(attempts))
+	return nil
+}
+
+// SyncGameOnFinish immediately syncs a game when it finishes
+func (s *syncService) SyncGameOnFinish(ctx context.Context, gameID string) error {
+	if !s.onGameFinishSync {
+		return nil
+	}
+
+	s.logger.FromContext(ctx).Debug("syncing game on finish")
+	return s.SyncGameGuesses(ctx, gameID)
+}

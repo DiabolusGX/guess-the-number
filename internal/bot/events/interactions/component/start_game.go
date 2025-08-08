@@ -3,10 +3,10 @@ package component
 import (
 	"context"
 
-	"github.com/diabolusgx/guess-the-number-go/internal/bot/events/interactions"
-	"github.com/diabolusgx/guess-the-number-go/internal/service"
-	"github.com/diabolusgx/guess-the-number-go/pkg/errors"
-	"github.com/diabolusgx/guess-the-number-go/pkg/logger"
+	"github.com/diabolusgx/guess-the-number/internal/bot/events/interactions"
+	"github.com/diabolusgx/guess-the-number/internal/service"
+	"github.com/diabolusgx/guess-the-number/pkg/errors"
+	"github.com/diabolusgx/guess-the-number/pkg/logger"
 	"github.com/disgoorg/disgo/discord"
 	disgoEvents "github.com/disgoorg/disgo/events"
 )

@@ -1,13 +1,14 @@
 package service
 
 import (
-	"github.com/diabolusgx/guess-the-number-go/internal/config"
-	"github.com/diabolusgx/guess-the-number-go/internal/domain"
-	"github.com/diabolusgx/guess-the-number-go/internal/repository"
-	"github.com/diabolusgx/guess-the-number-go/pkg/logger"
-	"github.com/diabolusgx/guess-the-number-go/pkg/metrics"
-	"github.com/diabolusgx/guess-the-number-go/pkg/mongo"
-	"github.com/diabolusgx/guess-the-number-go/pkg/sentry"
+	"github.com/diabolusgx/guess-the-number/internal/config"
+	"github.com/diabolusgx/guess-the-number/internal/domain"
+	"github.com/diabolusgx/guess-the-number/internal/repository"
+	"github.com/diabolusgx/guess-the-number/pkg/logger"
+	"github.com/diabolusgx/guess-the-number/pkg/metrics"
+	"github.com/diabolusgx/guess-the-number/pkg/mongo"
+	"github.com/diabolusgx/guess-the-number/pkg/sentry"
+	"github.com/redis/go-redis/v9"
 	"go.uber.org/fx"
 )
 
@@ -17,6 +18,7 @@ type ServiceParams struct {
 	Logger             *logger.Logger
 	Config             *config.Configuration
 	MongoClient        mongo.BaseClient
+	RedisClient        *redis.Client
 	SentryClient       *sentry.Client
 	TransactionManager repository.TransactionManager
 
@@ -24,5 +26,7 @@ type ServiceParams struct {
 	GameRepo        domain.GameRepository
 	GuildConfigRepo domain.GuildConfigRepository
 	GuildDataRepo   domain.GuildDataRepository
+	GameStatsRepo   domain.GameStatsRepository
+	RedisStatsRepo  domain.RedisStatsRepository
 	Metrics         *metrics.Metrics
 }

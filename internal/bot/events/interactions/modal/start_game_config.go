@@ -4,12 +4,12 @@ import (
 	"context"
 	"strconv"
 
-	"github.com/diabolusgx/guess-the-number-go/internal/bot/events/commons"
-	"github.com/diabolusgx/guess-the-number-go/internal/bot/events/interactions"
-	"github.com/diabolusgx/guess-the-number-go/internal/bot/utils"
-	"github.com/diabolusgx/guess-the-number-go/internal/service"
-	"github.com/diabolusgx/guess-the-number-go/pkg/errors"
-	"github.com/diabolusgx/guess-the-number-go/pkg/logger"
+	"github.com/diabolusgx/guess-the-number/internal/bot/events/commons"
+	"github.com/diabolusgx/guess-the-number/internal/bot/events/interactions"
+	"github.com/diabolusgx/guess-the-number/internal/bot/utils"
+	"github.com/diabolusgx/guess-the-number/internal/service"
+	"github.com/diabolusgx/guess-the-number/pkg/errors"
+	"github.com/diabolusgx/guess-the-number/pkg/logger"
 	disgoEvents "github.com/disgoorg/disgo/events"
 )
 

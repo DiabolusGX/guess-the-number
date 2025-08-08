@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/diabolusgx/guess-the-number-go/internal/config"
-	"github.com/diabolusgx/guess-the-number-go/pkg/logger"
+	"github.com/diabolusgx/guess-the-number/internal/config"
+	"github.com/diabolusgx/guess-the-number/pkg/logger"
 	"github.com/redis/go-redis/v9"
 )
 
