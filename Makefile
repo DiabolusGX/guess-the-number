@@ -103,7 +103,6 @@ pm2-direct: env ## Build and run Go bot directly with PM2 (no Docker)
 
 pm2-direct-stop: ## Stop direct PM2 process
 	pm2 stop gtn-go-bot || true
-	pm2 delete gtn-go-bot || true
 
 pm2-direct-restart: ## Restart direct PM2 process
 	pm2 restart gtn-go-bot || make pm2-direct
