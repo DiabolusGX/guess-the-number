@@ -2,12 +2,12 @@ package user
 
 import (
 	"context"
-	"strings"
 
 	"github.com/diabolusgx/guess-the-number/internal/bot/events/commands"
 	"github.com/diabolusgx/guess-the-number/internal/bot/utils"
 	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/events"
+	"github.com/disgoorg/omit"
 )
 
 type HelpCommand struct {
@@ -34,59 +34,86 @@ func (c *HelpCommand) Definition() discord.ApplicationCommandCreate {
 }
 
 func (c *HelpCommand) Handler(ctx context.Context, event *events.ApplicationCommandInteractionCreate, data *commands.Data) error {
-	var content strings.Builder
+	description := "Welcome to the ultimate number guessing game bot! Here are all the available commands and features:"
 
-	content.WriteString("🤖 **Guess The Number Bot - Help**\n\n")
-	content.WriteString("Welcome to the ultimate number guessing game bot! Here are all the available commands:\n\n")
+	// Game Commands Field
+	gameCommands := "• `/start` - Start a new guessing game in the current channel\n"
+	gameCommands += "• `/end` - End the current game (moderators only)\n"
+	gameCommands += "• `/hint` - Get a hint for the current game (moderators only)\n"
+	gameCommands += "• `/gameinfo <channel>` - Show information about a game in a specific channel"
 
-	// Game Commands
-	content.WriteString("🎮 **Game Commands:**\n")
-	content.WriteString("• `/start` - Start a new guessing game in the current channel\n")
-	content.WriteString("• `/end` - End the current game (moderators only)\n")
-	content.WriteString("• `/hint` - Get a hint for the current game (moderators only)\n")
-	content.WriteString("• `/gameinfo <channel>` - Show information about a game in a specific channel\n\n")
+	// User Commands Field
+	userCommands := "• `/leaderboard wins` - Show top players by total wins\n"
+	userCommands += "• `/leaderboard points` - Show top players by total points\n"
+	userCommands += "• `/userinfo [user]` - Show detailed information about a user\n"
+	userCommands += "• `/ping` - Check bot latency and status\n"
+	userCommands += "• `/invite` - Get the bot's invite link\n"
+	userCommands += "• `/help` - Show this help message"
 
-	// User Commands
-	content.WriteString("👥 **User Commands:**\n")
-	content.WriteString("• `/leaderboard wins` - Show top players by total wins\n")
-	content.WriteString("• `/leaderboard points` - Show top players by total points\n")
-	content.WriteString("• `/userinfo [user]` - Show detailed information about a user\n")
-	content.WriteString("• `/ping` - Check bot latency and status\n")
-	content.WriteString("• `/invite` - Get the bot's invite link\n")
-	content.WriteString("• `/help` - Show this help message\n\n")
+	// Moderator Commands Field
+	moderatorCommands := "• `/setup` - Configure bot settings for your server\n"
+	moderatorCommands += "• `/start` - Start games (if required role is set)\n"
+	moderatorCommands += "• `/end` - End active games\n"
+	moderatorCommands += "• `/hint` - Provide hints to players"
 
-	// Moderator Commands
-	content.WriteString("🛠️ **Moderator Commands:**\n")
-	content.WriteString("• `/setup` - Configure bot settings for your server\n")
-	content.WriteString("• `/start` - Start games (if required role is set)\n")
-	content.WriteString("• `/end` - End active games\n")
-	content.WriteString("• `/hint` - Provide hints to players\n\n")
+	// How to Play Field
+	howToPlay := "1️⃣ Use `/start` to begin a new game\n"
+	howToPlay += "2️⃣ The bot will think of a number between 1-100\n"
+	howToPlay += "3️⃣ Players guess by typing numbers in chat\n"
+	howToPlay += "4️⃣ Get feedback: 📈 (higher), 📉 (lower), or 🎉 (correct!)\n"
+	howToPlay += "5️⃣ First to guess wins points and possibly a role!"
 
-	// How to Play
-	content.WriteString("📖 **How to Play:**\n")
-	content.WriteString("1️⃣ Use `/start` to begin a new game\n")
-	content.WriteString("2️⃣ The bot will think of a number between 1-100\n")
-	content.WriteString("3️⃣ Players guess by typing numbers in chat\n")
-	content.WriteString("4️⃣ Get feedback: 📈 (higher), 📉 (lower), or 🎉 (correct!)\n")
-	content.WriteString("5️⃣ First to guess wins points and possibly a role!\n\n")
+	// Features Field
+	features := "• Customizable point rewards\n"
+	features += "• Role rewards for winners\n"
+	features += "• Required roles to play\n"
+	features += "• Server-wide leaderboards\n"
+	features += "• Game statistics tracking\n"
+	features += "• Multiple simultaneous games"
 
-	// Features
-	content.WriteString("✨ **Features:**\n")
-	content.WriteString("• Customizable point rewards\n")
-	content.WriteString("• Role rewards for winners\n")
-	content.WriteString("• Required roles to play\n")
-	content.WriteString("• Server-wide leaderboards\n")
-	content.WriteString("• Game statistics tracking\n")
-	content.WriteString("• Multiple simultaneous games\n\n")
-
-	// Support
-	content.WriteString("🆘 **Need Help?**\n")
-	content.WriteString("Join our support server for assistance, updates, and community:\n")
-	content.WriteString("🔗 **[DEV Studios](https://discord.gg/8kdx63YsDf)**\n\n")
-	content.WriteString("💡 *Tip: Use `/setup` to configure the bot for your server's needs!*")
+	// Support Field
+	support := "Join our support server for assistance, updates, and community:\n"
+	support += "🔗 **[DEV Studios](https://discord.gg/8kdx63YsDf)**\n\n"
+	support += "💡 *Tip: Use `/setup` to configure the bot for your server's needs!*"
 
 	return utils.EventReply(event, utils.MessageRequest{
-		Content: content.String(),
-		Emoji:   utils.EmojiSuccess,
+		UseEmbed:         true,
+		EmbedTitle:       "🤖 Guess The Number Bot - Help",
+		EmbedDescription: description,
+		EmbedColor:       utils.InfoEmbedColor,
+		Fields: []discord.EmbedField{
+			{
+				Name:   "🎮 Game Commands",
+				Value:  gameCommands,
+				Inline: omit.NewPtr(false).Value,
+			},
+			{
+				Name:   "👥 User Commands",
+				Value:  userCommands,
+				Inline: omit.NewPtr(false).Value,
+			},
+			{
+				Name:   "🛠️ Moderator Commands",
+				Value:  moderatorCommands,
+				Inline: omit.NewPtr(false).Value,
+			},
+			{
+				Name:   "📖 How to Play",
+				Value:  howToPlay,
+				Inline: omit.NewPtr(false).Value,
+			},
+			{
+				Name:   "✨ Features",
+				Value:  features,
+				Inline: omit.NewPtr(false).Value,
+			},
+			{
+				Name:   "🆘 Need Help?",
+				Value:  support,
+				Inline: omit.NewPtr(false).Value,
+			},
+		},
+		WithVote:          true,
+		WithSupportServer: true,
 	})
 }

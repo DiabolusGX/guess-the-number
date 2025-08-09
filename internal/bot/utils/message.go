@@ -38,6 +38,7 @@ type MessageRequest struct {
 	WithVote            bool
 	WithSupportServer   bool
 	WithStartGameButton bool
+	WithBotInviteButton bool
 }
 
 func EventReply(event ReplyEvent, request MessageRequest) error {
@@ -218,6 +219,13 @@ func buildComponents(request MessageRequest) []discord.ContainerComponent {
 		buttons = append(buttons, discord.NewLinkButton("Join support server!", supportServerLink).WithEmoji(discord.ComponentEmoji{
 			ID:       emojiDevBadgeID,
 			Animated: true,
+		}))
+	}
+
+	if request.WithBotInviteButton {
+		buttons = append(buttons, discord.NewLinkButton("Invite the bot to your server!", "https://discord.com/api/oauth2/authorize?client_id=686988635999830076&permissions=8&scope=bot").WithEmoji(discord.ComponentEmoji{
+			ID:       emojiGTNLogoID,
+			Animated: false,
 		}))
 	}
 

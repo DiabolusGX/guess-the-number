@@ -415,7 +415,9 @@ func (c *GameCommand) handleStats(ctx context.Context, event *events.Application
 	userID := event.User().ID.String()
 
 	var content strings.Builder
-	content.WriteString(fmt.Sprintf("**Game ID:** `%s`\n", gameID))
+	if hasGameID {
+		content.WriteString(fmt.Sprintf("**Game ID:** `%s`\n", gameID))
+	}
 	content.WriteString(fmt.Sprintf("**Time Range:** `%s`\n\n", timeRangeStr))
 
 	switch statsType {
@@ -445,7 +447,7 @@ func (c *GameCommand) handleStats(ctx context.Context, event *events.Application
 		}
 
 		if stats.Game != nil && stats.Game.Finished {
-			content.WriteString(fmt.Sprintf("Game winner: <@%s> (at <t:%d:f>)\n", stats.Game.WonBy, stats.Game.FinishedAt.Unix()/1000))
+			content.WriteString(fmt.Sprintf("Game winner: <@%s> (at %s)\n", stats.Game.WonBy, utils.FormMessageLink(guildID, stats.Game.ChannelID, stats.Game.WinMessageID)))
 			content.WriteString(fmt.Sprintf("Game answer: **%d** 🎉 (guessed after **%d attempts**)\n\n", stats.Game.Answer, stats.Game.Guesses))
 		}
 
@@ -476,7 +478,7 @@ func (c *GameCommand) handleStats(ctx context.Context, event *events.Application
 
 		if len(result.Numbers) > 0 {
 			for i, stat := range result.Numbers {
-				content.WriteString(fmt.Sprintf("`%d.` **%d** - guessed %d times\n", i+1, stat.Number, stat.Count))
+				content.WriteString(fmt.Sprintf("`%d.` **%d** - guessed **%d** times\n", i+1, stat.Number, stat.Count))
 			}
 		} else {
 			content.WriteString("No guess data found for the specified period.")

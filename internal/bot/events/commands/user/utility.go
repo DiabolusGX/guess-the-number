@@ -12,6 +12,7 @@ import (
 	"github.com/diabolusgx/guess-the-number/internal/service"
 	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/events"
+	"github.com/disgoorg/omit"
 )
 
 type PingCommand struct {
@@ -40,16 +41,16 @@ func (c *PingCommand) Definition() discord.ApplicationCommandCreate {
 func (c *PingCommand) Handler(ctx context.Context, event *events.ApplicationCommandInteractionCreate, data *commands.Data) error {
 	latency := time.Since(event.ID().Time())
 
-	var content strings.Builder
-	content.WriteString("🏓 **Pong!**\n\n")
-	content.WriteString("📊 **Connection Info:**\n")
-	content.WriteString(fmt.Sprintf("• Response time: %s\n", latency))
-	content.WriteString("• Status: Online and ready!\n")
-	content.WriteString("• Ready to start games! 🎮")
+	var description strings.Builder
+	description.WriteString(fmt.Sprintf("• Response time: %s\n", latency))
+	description.WriteString("• Status: Online and ready!\n")
+	description.WriteString("• Ready to start games! 🎮")
 
 	return utils.EventReply(event, utils.MessageRequest{
-		Content: content.String(),
-		Emoji:   utils.EmojiSuccess,
+		UseEmbed:         true,
+		EmbedTitle:       "🏓 Pong!",
+		EmbedDescription: description.String(),
+		EmbedColor:       utils.SuccessEmbedColor,
 	})
 }
 
@@ -107,16 +108,22 @@ func (c *UserinfoCommand) Handler(ctx context.Context, event *events.Application
 		userStats = stats
 	}
 
-	var content strings.Builder
-	content.WriteString(fmt.Sprintf("👤 **%s** (`%s`)\n\n", user.Username, user.ID))
-
-	// Game Statistics
-	content.WriteString("🎮 **Game Statistics:**\n")
-	content.WriteString(fmt.Sprintf("• Total Wins: **%d** 🎉\n", userStats.Wins))
-	content.WriteString(fmt.Sprintf("• Total Points: **%d** ⚖️", userStats.Points))
+	var description strings.Builder
+	description.WriteString(fmt.Sprintf("**User ID:** `%s`\n", user.ID))
+	description.WriteString(fmt.Sprintf("**Mention:** <@%s>", user.ID))
 
 	return utils.EventReply(event, utils.MessageRequest{
-		Content:  content.String(),
+		UseEmbed:         true,
+		EmbedTitle:       fmt.Sprintf("👤 %s", user.Username),
+		EmbedDescription: description.String(),
+		EmbedColor:       utils.InfoEmbedColor,
+		Fields: []discord.EmbedField{
+			{
+				Name:   "🎮 Game Statistics",
+				Value:  fmt.Sprintf("• Total Wins: **%d** 🎉\n• Total Points: **%d** ⚖️", userStats.Wins, userStats.Points),
+				Inline: omit.NewPtr(false).Value,
+			},
+		},
 		WithVote: true,
 	})
 }
@@ -147,19 +154,20 @@ func (c *InviteCommand) Definition() discord.ApplicationCommandCreate {
 func (c *InviteCommand) Handler(ctx context.Context, event *events.ApplicationCommandInteractionCreate, data *commands.Data) error {
 	inviteURL := fmt.Sprintf("https://discord.com/api/oauth2/authorize?client_id=%s&permissions=8&scope=bot", event.Client().ApplicationID())
 
-	var content strings.Builder
-	content.WriteString("🤖 **Add Guess The Number Bot to Your Server!**\n\n")
-	content.WriteString("🔗 **Invite Link:**\n")
-	content.WriteString(fmt.Sprintf("[Click here to invite the bot](%s)\n\n", inviteURL))
-	content.WriteString("✨ **What you'll get:**\n")
-	content.WriteString("• Fun number guessing games\n")
-	content.WriteString("• Leaderboards and statistics\n")
-	content.WriteString("• Customizable game settings\n")
-	content.WriteString("• Role rewards for winners\n")
-	content.WriteString("• And much more! 🎮")
+	var description strings.Builder
+	description.WriteString(fmt.Sprintf("🔗 **[Click here to invite the bot](%s)**\n\n", inviteURL))
+	description.WriteString("✨ **What you'll get:**\n")
+	description.WriteString("• Fun number guessing games\n")
+	description.WriteString("• Leaderboards and statistics\n")
+	description.WriteString("• Customizable game settings\n")
+	description.WriteString("• Role rewards for winners\n")
+	description.WriteString("• And much more! 🎮")
 
 	return utils.EventReply(event, utils.MessageRequest{
-		Content: content.String(),
-		Emoji:   utils.EmojiSuccess,
+		UseEmbed:            true,
+		EmbedTitle:          "🤖 Add Guess The Number Bot to Your Server!",
+		EmbedDescription:    description.String(),
+		EmbedColor:          utils.SuccessEmbedColor,
+		WithBotInviteButton: true,
 	})
 }

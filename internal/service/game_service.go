@@ -106,7 +106,7 @@ func (s *gameService) FinishGame(ctx context.Context, req *types.FinishGameReque
 		return nil, err
 	}
 	if game == nil {
-		return nil, ierr.New(ierr.ErrCodeNotFound, "game not found")
+		return nil, ierr.New(ierr.ErrCodeNotFound, "There's no active game in given channel!")
 	}
 
 	ctx = context.WithValue(ctx, lib.CtxGameID, game.ID)
@@ -147,7 +147,7 @@ func (s *gameService) HandleAttempt(ctx context.Context, req *types.HandleAttemp
 		return nil, err
 	}
 	if game == nil {
-		return nil, ierr.New(ierr.ErrCodeNotFound, "game not found")
+		return nil, ierr.New(ierr.ErrCodeNotFound, "There's no active game in given channel!")
 	}
 
 	ctx = context.WithValue(ctx, lib.CtxGameID, game.ID)
@@ -251,7 +251,7 @@ func (s *gameService) GetGameInfo(ctx context.Context, req *types.GetGameInfoReq
 			return nil, err
 		}
 		if game == nil {
-			return nil, ierr.New(ierr.ErrCodeNotFound, "game not found")
+			return nil, ierr.New(ierr.ErrCodeNotFound, "There's no active game in given channel!")
 		}
 		return &types.GetGameInfoResponse{
 			Game: game,
@@ -263,7 +263,7 @@ func (s *gameService) GetGameInfo(ctx context.Context, req *types.GetGameInfoReq
 		return nil, err
 	}
 	if game == nil {
-		return nil, ierr.New(ierr.ErrCodeNotFound, "game not found")
+		return nil, ierr.New(ierr.ErrCodeNotFound, "There's no active game in given channel!")
 	}
 
 	return &types.GetGameInfoResponse{

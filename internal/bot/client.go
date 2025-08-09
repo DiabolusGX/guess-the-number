@@ -140,6 +140,7 @@ var Module = fx.Module(
 		applicationCommandHandler.AddCommand(user.NewPingCommand(commandParams))
 		applicationCommandHandler.AddCommand(user.NewUserinfoCommand(commandParams))
 		applicationCommandHandler.AddCommand(user.NewInviteCommand(commandParams))
+		applicationCommandHandler.AddCommand(user.NewHelpCommand(commandParams))
 	}),
 
 	// Component interactions

@@ -175,8 +175,12 @@ func FormatGameStartReply(
 	guildConfig *domain.GuildConfig,
 ) string {
 	var reply strings.Builder
-	reply.WriteString("**Game Started**\n")
-	reply.WriteString("Sending the game's answer to your DM.")
+	if result.Game.Game.ID != "" {
+		reply.WriteString(fmt.Sprintf("**Game Started** (`%s`)\n", result.Game.Game.ID))
+	}
+	if result.DMError != nil {
+		reply.WriteString("Sent the game's answer to your DM.")
+	}
 
 	// Add unlock status if applicable
 	if guildConfig != nil && guildConfig.LockRole != "" {

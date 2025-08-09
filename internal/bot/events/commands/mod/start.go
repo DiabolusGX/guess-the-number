@@ -67,16 +67,23 @@ func (c *StartCommand) Handler(ctx context.Context, event *events.ApplicationCom
 		return fmt.Errorf("unknown channel")
 	}
 
-	// check bot's permissions in target channel
-	res := utils.CheckBotPermissionsInChannel(
-		event, targetChannel,
+	requiredPermissions := []discord.Permissions{
 		discord.PermissionViewChannel,
 		discord.PermissionSendMessages,
 		discord.PermissionEmbedLinks,
-		discord.PermissionManageChannels,
-		discord.PermissionManageRoles,
-		discord.PermissionAddReactions,
-	)
+	}
+	if data.GuildConfig != nil && data.GuildConfig.AutoReactionHints {
+		requiredPermissions = append(requiredPermissions, discord.PermissionAddReactions)
+	}
+	if data.GuildConfig != nil && data.GuildConfig.LockRole != "" {
+		requiredPermissions = append(requiredPermissions, discord.PermissionManageChannels)
+	}
+	if data.GuildConfig != nil && data.GuildConfig.WinRole != "" {
+		requiredPermissions = append(requiredPermissions, discord.PermissionManageRoles)
+	}
+
+	// check bot's permissions in target channel
+	res := utils.CheckBotPermissionsInChannel(event, targetChannel, requiredPermissions...)
 	if !res.HasAllPermissions {
 		utils.EventReply(event, utils.MessageRequest{
 			Content:     fmt.Sprintf("**Missing permissions**\nPlease grant the following permissions to the bot and try again: %s", strings.Join(res.MissingPermissions, ", ")),
