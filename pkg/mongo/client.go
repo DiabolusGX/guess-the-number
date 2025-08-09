@@ -28,11 +28,17 @@ func NewClient(config *config.Configuration, logger *logger.Logger) (BaseClient,
 		return nil, errors.New("empty mongo connection uri")
 	}
 
+	// Configure BSON options to handle ObjectIDs as hex strings
+	bsonOpts := &options.BSONOptions{
+		ObjectIDAsHexString: true,
+	}
+
 	clientOptions := options.Client().
 		SetMaxPoolSize(config.Mongo.MaxPoolSize).
 		SetMinPoolSize(config.Mongo.MinPoolSize).
 		ApplyURI(uri).
-		SetReadPreference(readpref.SecondaryPreferred())
+		SetReadPreference(readpref.SecondaryPreferred()).
+		SetBSONOptions(bsonOpts)
 
 	client, err := mongo.Connect(clientOptions)
 	if err != nil {

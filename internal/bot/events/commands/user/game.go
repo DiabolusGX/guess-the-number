@@ -415,6 +415,7 @@ func (c *GameCommand) handleStats(ctx context.Context, event *events.Application
 	userID := event.User().ID.String()
 
 	var content strings.Builder
+	var noContent bool
 	if hasGameID {
 		content.WriteString(fmt.Sprintf("**Game ID:** `%s`\n", gameID))
 	}
@@ -452,7 +453,7 @@ func (c *GameCommand) handleStats(ctx context.Context, event *events.Application
 		}
 
 		if len(stats.Guesses) == 0 {
-			content.WriteString("No guesses found for this game.")
+			noContent = true
 		} else {
 			for i, guess := range stats.Guesses {
 				content.WriteString(fmt.Sprintf("`%d.` <@%s> guessed **%d**\n", i+1, guess.UserID, guess.Guess))
@@ -476,12 +477,12 @@ func (c *GameCommand) handleStats(ctx context.Context, event *events.Application
 			content.WriteString(fmt.Sprintf("Game answer: **%d** 🎉 (guessed after **%d attempts**)\n\n", result.Game.Answer, result.Game.Guesses))
 		}
 
-		if len(result.Numbers) > 0 {
+		if len(result.Numbers) == 0 {
+			noContent = true
+		} else {
 			for i, stat := range result.Numbers {
 				content.WriteString(fmt.Sprintf("`%d.` **%d** - guessed **%d** times\n", i+1, stat.Number, stat.Count))
 			}
-		} else {
-			content.WriteString("No guess data found for the specified period.")
 		}
 
 	case "top-guessers":
@@ -501,12 +502,12 @@ func (c *GameCommand) handleStats(ctx context.Context, event *events.Application
 			content.WriteString(fmt.Sprintf("Game answer: **%d** 🎉 (guessed after **%d attempts**)\n\n", result.Game.Answer, result.Game.Guesses))
 		}
 
-		if len(result.TopGuessers) > 0 {
+		if len(result.TopGuessers) == 0 {
+			noContent = true
+		} else {
 			for i, stat := range result.TopGuessers {
 				content.WriteString(fmt.Sprintf("`%d.` <@%s> - **%d** unique guesses\n", i+1, stat.UserID, stat.TotalGuesses))
 			}
-		} else {
-			content.WriteString("No guess data found for the specified period.")
 		}
 
 	case "top-game-winners":
@@ -531,12 +532,12 @@ func (c *GameCommand) handleStats(ctx context.Context, event *events.Application
 			return nil
 		}
 
-		if len(result.Winners) > 0 {
+		if len(result.Winners) == 0 {
+			noContent = true
+		} else {
 			for i, stat := range result.Winners {
 				content.WriteString(fmt.Sprintf("`%d.` <@%s> - **%d wins**\n", i+1, stat.UserID, stat.Wins))
 			}
-		} else {
-			content.WriteString("No winner data found for the specified period.")
 		}
 
 	case "top-points":
@@ -561,12 +562,12 @@ func (c *GameCommand) handleStats(ctx context.Context, event *events.Application
 			return nil
 		}
 
-		if len(result.Winners) > 0 {
+		if len(result.Winners) == 0 {
+			noContent = true
+		} else {
 			for i, stat := range result.Winners {
 				content.WriteString(fmt.Sprintf("`%d.` <@%s> - **%d points**\n", i+1, stat.UserID, stat.Points))
 			}
-		} else {
-			content.WriteString("No point data found for the specified period.")
 		}
 
 	default:
@@ -576,6 +577,17 @@ func (c *GameCommand) handleStats(ctx context.Context, event *events.Application
 			EmbedTitle:       "Invalid Stats Type",
 			EmbedDescription: "Please select a valid statistics type.",
 			EmbedColor:       utils.FailureEmbedColor,
+			IsEphemeral:      true,
+		})
+	}
+
+	if noContent {
+		return utils.EventReply(event, utils.MessageRequest{
+			UseEmbed:         true,
+			Emoji:            utils.EmojiInfo,
+			EmbedTitle:       "Not enough data",
+			EmbedDescription: "Not enough data found for this game.",
+			EmbedColor:       utils.InfoEmbedColor,
 			IsEphemeral:      true,
 		})
 	}

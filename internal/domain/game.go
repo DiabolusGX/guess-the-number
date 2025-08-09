@@ -9,27 +9,27 @@ type Game struct {
 	ID                string    `bson:"_id,omitempty"`
 	GuildID           string    `bson:"guildID"`
 	ChannelID         string    `bson:"channelID"`
-	WinMessageID      string    `bson:"winMessageID"`
-	WonBy             string    `bson:"wonBy"`
+	WinMessageID      string    `bson:"winMessageID,omitempty"`
+	WonBy             string    `bson:"wonBy,omitempty"`
 	Answer            int64     `bson:"answer"`
 	Points            int64     `bson:"points"`
 	Guesses           int64     `bson:"guesses"`
-	FinishedAt        time.Time `bson:"finishedAt"`
-	Finished          bool      `bson:"finished"`
-	Disabled          bool      `bson:"disabled"`
+	FinishedAt        time.Time `bson:"finishedAt,omitempty"`
+	Finished          bool      `bson:"finished,omitempty"`
+	Disabled          bool      `bson:"disabled,omitempty"`
 	CreatedBy         string    `bson:"createdBy"`
 	CreatedAt         time.Time `bson:"createdAt"`
 	UpdatedAt         time.Time `bson:"updatedAt"`
-	AutoReactionHints bool      `bson:"autoReactionHints"`
-	PreviousGameID    string    `bson:"previousGameID"`
-	AutoRestarted     bool      `bson:"autoRestarted"`
+	AutoReactionHints bool      `bson:"autoReactionHints,omitempty"`
+	PreviousGameID    string    `bson:"previousGameID,omitempty"`
+	AutoRestarted     bool      `bson:"autoRestarted,omitempty"`
 	LowerBound        int64     `bson:"lowerBound"`
 	UpperBound        int64     `bson:"upperBound"`
 }
 
 type GameRepository interface {
 	Create(ctx context.Context, game *Game) error
-	Finish(ctx context.Context, gameID, messageID, wonBy string, guesses int64) error
+	Finish(ctx context.Context, gameID, channelID, messageID, wonBy string, guesses int64) error
 	GetByID(ctx context.Context, gameID string) (*Game, error)
 	GetRunningInChannel(ctx context.Context, channelID string) (*Game, error)
 	IncrementGuesses(ctx context.Context, gameID, channelID string) (int64, error)

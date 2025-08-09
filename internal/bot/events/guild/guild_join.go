@@ -78,13 +78,15 @@ func (h *GuildJoinListener) OnEvent(ctx context.Context, e bot.Event) error {
 		SetColor(utils.SuccessEmbedColor).
 		SetAuthor(owner.Username, "", owner.EffectiveAvatarURL()).
 		SetDescription(description.String()).
-		SetThumbnail(*event.Guild.IconURL()).
 		SetFooterText("Guild created at").
-		SetTimestamp(event.Guild.CreatedAt()).
-		Build()
+		SetTimestamp(event.Guild.CreatedAt())
+
+	if event.Guild.IconURL() != nil {
+		guildInfoEmbed.SetThumbnail(*event.Guild.IconURL())
+	}
 
 	messageRequest := discord.NewMessageCreateBuilder().
-		SetEmbeds(guildInfoEmbed).
+		SetEmbeds(guildInfoEmbed.Build()).
 		Build()
 
 	_, err = event.Client().Rest().CreateMessage(utils.AdminChannelID, messageRequest)

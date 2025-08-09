@@ -125,6 +125,10 @@ func (r *RedisStatsRepository) GetGameGuesses(ctx context.Context, game *domain.
 	// Get all guesses from Redis
 	guessesJSON, err := r.redis.LRange(ctx, gamePrefix+suffixGuesses, 0, -1).Result()
 	if err != nil {
+		if err == redis.Nil {
+			SetSpanSuccess(span)
+			return []*domain.GuessAttempt{}, nil
+		}
 		ierr.NewErrorWithContext(ctx, ierr.ErrCodeDatabase, fmt.Errorf("failed to get guesses from redis: %w", err))
 		SetSpanError(span, err)
 		return nil, fmt.Errorf("failed to get guesses from redis: %w", err)
@@ -166,6 +170,11 @@ func (r *RedisStatsRepository) GetGameTopNumbers(ctx context.Context, game *doma
 	// Get all number frequencies
 	numberCounts, err := r.redis.HGetAll(ctx, gamePrefix+suffixNumbers).Result()
 	if err != nil {
+		if err == redis.Nil {
+			// Key doesn't exist, return empty slice
+			SetSpanSuccess(span)
+			return []*domain.NumberFrequencyStats{}, nil
+		}
 		ierr.NewErrorWithContext(ctx, ierr.ErrCodeDatabase, fmt.Errorf("failed to get number frequencies from redis: %w", err))
 		SetSpanError(span, err)
 		return nil, err
@@ -221,6 +230,10 @@ func (r *RedisStatsRepository) GetGameTopGuessers(ctx context.Context, game *dom
 	// Get user guess counts
 	userCounts, err := r.redis.HGetAll(ctx, gamePrefix+suffixUsers).Result()
 	if err != nil {
+		if err == redis.Nil {
+			SetSpanSuccess(span)
+			return []*domain.UserGuessStats{}, nil
+		}
 		ierr.NewErrorWithContext(ctx, ierr.ErrCodeDatabase, fmt.Errorf("failed to get user counts from redis: %w", err))
 		SetSpanError(span, err)
 		return nil, err
@@ -268,6 +281,10 @@ func (r *RedisStatsRepository) GetGameClosestGuesses(ctx context.Context, game *
 	// Get closest guesses from sorted set
 	closestMembers, err := r.redis.ZRange(ctx, gamePrefix+suffixClosest, 0, int64(limit-1)).Result()
 	if err != nil {
+		if err == redis.Nil {
+			SetSpanSuccess(span)
+			return []*domain.GuessAttempt{}, nil
+		}
 		ierr.NewErrorWithContext(ctx, ierr.ErrCodeDatabase, fmt.Errorf("failed to get closest guesses from redis: %w", err))
 		SetSpanError(span, err)
 		return nil, err
@@ -318,7 +335,7 @@ func (r *RedisStatsRepository) CleanupGameData(ctx context.Context, game *domain
 	}
 
 	_, err := r.redis.Del(ctx, keys...).Result()
-	if err != nil {
+	if err != nil && err != redis.Nil {
 		ierr.NewErrorWithContext(ctx, ierr.ErrCodeDatabase, fmt.Errorf("failed to cleanup game data from redis: %w", err))
 		SetSpanError(span, err)
 		return err

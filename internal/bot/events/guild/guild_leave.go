@@ -52,14 +52,10 @@ func (h *GuildLeaveListener) OnEvent(ctx context.Context, e bot.Event) error {
 		h.Logger.FromContext(ctx).Errorw("Failed to delete guild", "error", err)
 	}
 
-	// fetch guild owner
-	owner, err := event.Client().Rest().GetUser(event.Guild.OwnerID)
-	if err != nil {
-		h.Logger.FromContext(ctx).Errorw("Failed to fetch guild owner", "error", err)
-		owner = &discord.User{
-			ID:       event.Guild.OwnerID,
-			Username: event.Guild.OwnerID.String(),
-		}
+	// NOTE: skipping fetch guild owner, because user might not have any common guilds with the bot
+	owner := &discord.User{
+		ID:       event.Guild.OwnerID,
+		Username: event.Guild.OwnerID.String(),
 	}
 
 	var description strings.Builder
@@ -78,13 +74,15 @@ func (h *GuildLeaveListener) OnEvent(ctx context.Context, e bot.Event) error {
 		SetColor(utils.FailureEmbedColor).
 		SetAuthor(owner.Username, "", owner.EffectiveAvatarURL()).
 		SetDescription(description.String()).
-		SetThumbnail(*event.Guild.IconURL()).
 		SetFooterText("Guild created at").
-		SetTimestamp(event.Guild.CreatedAt()).
-		Build()
+		SetTimestamp(event.Guild.CreatedAt())
+
+	if event.Guild.IconURL() != nil {
+		guildInfoEmbed.SetThumbnail(*event.Guild.IconURL())
+	}
 
 	messageRequest := discord.NewMessageCreateBuilder().
-		SetEmbeds(guildInfoEmbed).
+		SetEmbeds(guildInfoEmbed.Build()).
 		Build()
 
 	_, err = event.Client().Rest().CreateMessage(utils.AdminChannelID, messageRequest)

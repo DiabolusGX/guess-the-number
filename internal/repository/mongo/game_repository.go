@@ -80,15 +80,18 @@ func (r *GameRepository) GetByID(ctx context.Context, gameID string) (*domain.Ga
 	return &game, nil
 }
 
-func (r *GameRepository) Finish(ctx context.Context, gameID, messageID, wonBy string, guesses int64) error {
+func (r *GameRepository) Finish(ctx context.Context, gameID, channelID, messageID, wonBy string, guesses int64) error {
 	span := StartRepositorySpan(ctx, gameCollection, "finish", map[string]any{
-		"gameID":  gameID,
-		"wonBy":   wonBy,
-		"guesses": guesses,
+		"gameID":    gameID,
+		"channelID": channelID,
+		"wonBy":     wonBy,
+		"guesses":   guesses,
 	})
 	defer FinishSpan(span)
 
-	filter := bson.M{"_id": gameID}
+	// TODO: use gameID instead of channelID in future, had to use channelID till legacy games are running
+	// filter := bson.M{"_id": gameID}
+	filter := bson.M{"channelID": channelID, "finished": false}
 	update := bson.M{
 		"$set": bson.M{
 			"wonBy":        wonBy,
@@ -108,7 +111,7 @@ func (r *GameRepository) Finish(ctx context.Context, gameID, messageID, wonBy st
 
 	// clear guess count from redis
 	out := r.redisClient.Unlink(ctx, getGameGuessesKey(gameID))
-	if out.Err() != nil {
+	if out.Err() != nil && out.Err() != redis.Nil {
 		r.log.FromContext(ctx).Error("failed to clear guess count from redis", "error", out.Err().Error())
 	}
 
@@ -140,10 +143,11 @@ func (r *GameRepository) GetRunningInChannel(ctx context.Context, channelID stri
 
 	if !game.Finished || game.Guesses == 0 {
 		guesses, err := r.redisClient.Get(ctx, getGameGuessesKey(game.ID)).Int64()
-		if err != nil {
+		if err != nil && err != redis.Nil {
 			r.log.FromContext(ctx).Error("failed to get guesses from redis", "error", err)
+		} else if guesses != 0 {
+			game.Guesses = guesses
 		}
-		game.Guesses = guesses
 	}
 
 	SetSpanSuccess(span)

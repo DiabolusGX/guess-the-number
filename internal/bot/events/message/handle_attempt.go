@@ -33,7 +33,7 @@ func (h *MessageCreateListener) handleAttempt(ctx context.Context, event *disgoE
 	}
 
 	number, err := strconv.ParseInt(content, 10, 64)
-	if err != nil {
+	if err != nil || number <= 0 {
 		return
 	}
 

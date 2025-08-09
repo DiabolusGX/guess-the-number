@@ -120,7 +120,7 @@ func (s *gameService) FinishGame(ctx context.Context, req *types.FinishGameReque
 	ctx = context.WithValue(ctx, lib.CtxGameID, game.ID)
 
 	_, txnErr := s.transactionManager.WithTransaction(ctx, func(ctx context.Context) (any, error) {
-		if err := s.gameRepo.Finish(ctx, game.ID, req.MessageID, req.WonBy, req.Guesses); err != nil {
+		if err := s.gameRepo.Finish(ctx, game.ID, game.ChannelID, req.MessageID, req.WonBy, req.Guesses); err != nil {
 			return nil, err
 		}
 

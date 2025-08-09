@@ -171,7 +171,7 @@ func buildEmbeds(request MessageRequest) []discord.Embed {
 	embedBuilder := discord.NewEmbedBuilder().SetColor(embedColor)
 	if !isError {
 		embedBuilder.SetThumbnail(botAvatarURL)
-		embedBuilder.SetFooterText("Made with ❤️ by DiabolusGX").SetFooterIcon(botAvatarURL).SetTimestamp(botCreatedAt)
+		embedBuilder.SetFooterText("Made with ❤️ by DiabolusGX").SetFooterIcon(botAvatarURL) //.SetTimestamp(botCreatedAt)
 	}
 
 	// Set title and description

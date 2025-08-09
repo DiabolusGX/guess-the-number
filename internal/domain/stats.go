@@ -1,19 +1,34 @@
 package domain
 
 import (
-	"context"
 	"time"
 )
 
-type StatsRepository interface {
-	GetClosestGuesses(ctx context.Context, gameID string, limit int) ([]GuessAttempt, error)
+// NumberFrequencyStats represents how often a number was guessed
+type NumberFrequencyStats struct {
+	Number int64
+	Count  int64
+}
+
+// UserGuessStats represents guess statistics for a user
+type UserGuessStats struct {
+	UserID        string
+	UniqueGuesses int64
+	TotalGuesses  int64
+}
+
+// WinnerStats represents win statistics for users
+type WinnerStats struct {
+	UserID string
+	Wins   int64
+	Points int64
 }
 
 // TimeRange represents a time period for filtering stats
 type TimeRange struct {
-	Type      string     `json:"type"` // "last-day", "last-week", "last-month", "all-time", "custom"
-	StartDate *time.Time `json:"startDate,omitempty"`
-	EndDate   *time.Time `json:"endDate,omitempty"`
+	Type      string
+	StartDate *time.Time
+	EndDate   *time.Time
 }
 
 // String returns a string representation of the time range for caching
@@ -55,40 +70,4 @@ func (tr TimeRange) GetTimeRange() (time.Time, time.Time) {
 	}
 
 	return start, end
-}
-
-// StatResult represents the response structure for stats queries
-type StatResult struct {
-	Type        string    `json:"type"`
-	TimeRange   TimeRange `json:"timeRange"`
-	Data        any       `json:"data"`
-	UserRank    *UserRank `json:"userRank,omitempty"`
-	GeneratedAt time.Time `json:"generatedAt"`
-}
-
-// UserRank represents a user's rank in a particular stat
-type UserRank struct {
-	Position int `json:"position"`
-	Value    any `json:"value"`
-	Total    int `json:"total"`
-}
-
-// NumberFrequencyStats represents how often a number was guessed
-type NumberFrequencyStats struct {
-	Number int64 `json:"number"`
-	Count  int64 `json:"count"`
-}
-
-// UserGuessStats represents guess statistics for a user
-type UserGuessStats struct {
-	UserID        string `json:"userId"`
-	UniqueGuesses int64  `json:"uniqueGuesses"`
-	TotalGuesses  int64  `json:"totalGuesses"`
-}
-
-// WinnerStats represents win statistics for users
-type WinnerStats struct {
-	UserID string `json:"userId"`
-	Wins   int64  `json:"wins"`
-	Points int64  `json:"points"`
 }

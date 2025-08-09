@@ -41,20 +41,22 @@ func NewLogger(cfg *config.Configuration, sentry *sentry.Client) (*Logger, error
 		return nil, err
 	}
 
-	// Add Sentry core
-	cfgSentry := zapsentry.Configuration{
-		Hub:               sentry.GetHub(),
-		Level:             zapcore.ErrorLevel, // Only send Error+ logs to Sentry
-		EnableBreadcrumbs: true,
-		BreadcrumbLevel:   zapcore.InfoLevel, // Info+ becomes breadcrumbs
-	}
+	// Add Sentry core only if Sentry is enabled and properly initialized
+	if sentry != nil && sentry.GetHub() != nil && sentry.GetHub().Client() != nil {
+		cfgSentry := zapsentry.Configuration{
+			Hub:               sentry.GetHub(),
+			Level:             zapcore.ErrorLevel, // Only send Error+ logs to Sentry
+			EnableBreadcrumbs: true,
+			BreadcrumbLevel:   zapcore.InfoLevel, // Info+ becomes breadcrumbs
+		}
 
-	sentryCore, err := zapsentry.NewCore(cfgSentry, zapsentry.NewSentryClientFromClient(sentry.GetHub().Client()))
-	if err != nil {
-		return nil, err
-	}
+		sentryCore, err := zapsentry.NewCore(cfgSentry, zapsentry.NewSentryClientFromClient(sentry.GetHub().Client()))
+		if err != nil {
+			return nil, err
+		}
 
-	zapLogger = zapsentry.AttachCoreToLogger(sentryCore, zapLogger)
+		zapLogger = zapsentry.AttachCoreToLogger(sentryCore, zapLogger)
+	}
 
 	logger := &Logger{
 		SugaredLogger: zapLogger.Sugar(),
