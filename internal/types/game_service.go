@@ -23,7 +23,7 @@ type HandleAttemptRequest struct {
 	ChannelID string `json:"channel_id" validate:"required"`
 	MessageID string `json:"message_id" validate:"required"`
 	UserID    string `json:"user_id" validate:"required"`
-	Guess     int64  `json:"guess" validate:"required,min=0"`
+	Guess     int64  `json:"guess" validate:"min=0"`
 	Timestamp int64  `json:"timestamp" validate:"required"`
 }
 

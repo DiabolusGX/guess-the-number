@@ -6,6 +6,7 @@ import (
 
 	"github.com/diabolusgx/guess-the-number/internal/config"
 	"github.com/diabolusgx/guess-the-number/pkg/logger"
+	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
 	"go.mongodb.org/mongo-driver/v2/mongo/readpref"
@@ -32,7 +33,11 @@ func NewClient(config *config.Configuration, logger *logger.Logger) (BaseClient,
 		SetMaxPoolSize(config.Mongo.MaxPoolSize).
 		SetMinPoolSize(config.Mongo.MinPoolSize).
 		ApplyURI(uri).
-		SetReadPreference(readpref.SecondaryPreferred())
+		SetReadPreference(readpref.SecondaryPreferred()).
+		SetBSONOptions(&options.BSONOptions{
+			UseJSONStructTags: true,
+			ObjectIDAsHexString: true,
+		})
 
 	client, err := mongo.Connect(clientOptions)
 	if err != nil {
