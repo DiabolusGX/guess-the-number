@@ -19,9 +19,9 @@ module.exports = {
                 GTN_LOGGING_LEVEL: "debug",
             },
             // Logging configuration
-            log_file: "~/logs/gtn-bot/combined.log",
-            out_file: "~/logs/gtn-bot/out.log",
-            error_file: "~/logs/gtn-bot/pm2-error.log",
+            // log_file: "~/logs/gtn-bot/combined.log",
+            // out_file: "~/logs/gtn-bot/out.log",
+            // error_file: "~/logs/gtn-bot/pm2-error.log",
             log_date_format: "YYYY-MM-DD HH:mm:ss Z",
 
             // Process management

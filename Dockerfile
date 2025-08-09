@@ -35,7 +35,7 @@ RUN adduser -D -s /bin/sh appuser
 WORKDIR /app
 
 # Create logs and PM2 directories
-RUN mkdir -p ~/logs/gtn-bot /app/.pm2 && chown -R appuser:appuser /app ~/logs/gtn-bot
+# RUN mkdir -p ~/logs/gtn-bot /app/.pm2 && chown -R appuser:appuser /app ~/logs/gtn-bot
 
 # Copy the binary from builder stage
 COPY --from=builder /app/main .

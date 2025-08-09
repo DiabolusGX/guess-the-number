@@ -1,7 +1,11 @@
-.PHONY: help build up down logs clean prod local-db
+.PHONY: help build up down logs clean prod local-db pm2-direct pm2-direct-stop pm2-direct-restart pm2-direct-status pm2-direct-logs pm2-direct-rebuild
 
 # Docker configuration
 COMPOSE_FILE := docker-compose.yml
+
+# Go build configuration
+GO_BINARY := main
+GO_PACKAGE := ./cmd/bot
 
 # Default target
 help: ## Show this help message
@@ -88,6 +92,29 @@ pm2-logs: ## Show PM2 application logs
 
 pm2-flush: ## Flush PM2 logs
 	docker exec -it guess-the-number-bot pm2 flush
+
+# Direct PM2 management (no Docker)
+pm2-direct: env ## Build and run Go bot directly with PM2 (no Docker)
+	@echo "Building Go binary for Linux..."
+	CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o $(GO_BINARY) $(GO_PACKAGE)
+	chmod +x $(GO_BINARY)
+	@echo "Starting with PM2..."
+	pm2 start ./$(GO_BINARY) --name "gtn-go-bot" --restart-delay=10000 --max-memory-restart=6G
+
+pm2-direct-stop: ## Stop direct PM2 process
+	pm2 stop gtn-go-bot || true
+	pm2 delete gtn-go-bot || true
+
+pm2-direct-restart: ## Restart direct PM2 process
+	pm2 restart gtn-go-bot || make pm2-direct
+
+pm2-direct-status: ## Show direct PM2 status
+	pm2 status gtn-go-bot
+
+pm2-direct-logs: ## Show direct PM2 logs
+	pm2 logs gtn-go-bot
+
+pm2-direct-rebuild: pm2-direct-stop pm2-direct ## Stop, rebuild and restart direct PM2
 
 # Database operations
 mongo-shell: ## Connect to MongoDB shell
