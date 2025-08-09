@@ -1,0 +1,57 @@
+# Git
+.git
+.gitignore
+
+# Documentation
+README.md
+SHARDING.md
+todo.md
+*.md
+
+# Docker files
+Dockerfile
+.dockerignore
+docker-compose*.yml
+
+# Environment files
+.env
+.env.*
+
+# IDE and editor files
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Build artifacts
+main
+dist/
+build/
+
+# Logs
+*.log
+logs/
+
+# Test coverage
+coverage.out
+*.cover
+
+# Temporary files
+tmp/
+temp/
+
+# Node modules (if any frontend components)
+node_modules/
+
+# Vendor directory (if using vendor)
+vendor/

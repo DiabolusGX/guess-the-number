@@ -1,0 +1,129 @@
+version: "3.8"
+
+services:
+    bot:
+        build:
+            context: .
+            dockerfile: Dockerfile.pm2
+        container_name: guess-the-number-bot-pm2
+        restart: unless-stopped
+        env_file:
+            - .env
+        environment:
+            # Override config paths for container
+            # - GTN_REDIS_HOST=${GTN_REDIS_HOST:-redis}
+            # - GTN_MONGO_HOST=${GTN_MONGO_HOST:-mongodb://mongo:27017}
+            # PM2 specific environment
+            - PM2_HOME=/app/.pm2
+            - NODE_ENV=production
+        ports:
+            - "${METRICS_PORT:-8080}:8080" # Metrics endpoint
+            - "${PM2_WEB_PORT:-9615}:9615" # PM2 web interface (optional)
+        depends_on:
+            - redis
+            - mongo
+        networks:
+            - bot-network
+        volumes:
+            - ./logs:/app/logs # Mount logs directory
+            - pm2_data:/app/.pm2 # PM2 data persistence
+        healthcheck:
+            test: ["CMD", "pm2", "ping"]
+            interval: 30s
+            timeout: 10s
+            retries: 3
+            start_period: 40s
+        # Resource limits for production
+        deploy:
+            resources:
+                limits:
+                    cpus: "4.0"
+                    memory: 4096M
+                reservations:
+                    cpus: "1.0"
+                    memory: 1024M
+
+    # Optional local MongoDB - can be removed if using remote MongoDB
+    mongo:
+        image: mongo:7.0
+        container_name: guess-the-number-mongo-pm2
+        restart: unless-stopped
+        environment:
+            MONGO_INITDB_ROOT_USERNAME: ${GTN_MONGO_USERNAME:-admin}
+            MONGO_INITDB_ROOT_PASSWORD: ${GTN_MONGO_PASSWORD:-password}
+            MONGO_INITDB_DATABASE: ${GTN_MONGO_DATABASE:-guess_the_number}
+        volumes:
+            - mongo_data_pm2:/data/db
+            - ./docker/mongo-init:/docker-entrypoint-initdb.d # Optional: initialization scripts
+        ports:
+            - "${MONGO_PORT:-27017}:27017"
+        networks:
+            - bot-network
+        profiles:
+            - local-db # Use profile to optionally include this service
+        healthcheck:
+            test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+            interval: 30s
+            timeout: 10s
+            retries: 5
+            start_period: 30s
+
+    # Optional local Redis - can be removed if using remote Redis
+    redis:
+        image: redis:7.2-alpine
+        container_name: guess-the-number-redis-pm2
+        restart: unless-stopped
+        environment:
+            - REDIS_PASSWORD=${GTN_REDIS_PASSWORD:-}
+        volumes:
+            - redis_data_pm2:/data
+            - ./docker/redis.conf:/etc/redis/redis.conf # Optional: custom Redis config
+        ports:
+            - "${REDIS_PORT:-6379}:6379"
+        networks:
+            - bot-network
+        profiles:
+            - local-db # Use profile to optionally include this service
+        healthcheck:
+            test: ["CMD", "redis-cli", "ping"]
+            interval: 30s
+            timeout: 10s
+            retries: 5
+            start_period: 30s
+        command: >
+            sh -c "
+              if [ -n \"$$REDIS_PASSWORD\" ]; then
+                redis-server --requirepass $$REDIS_PASSWORD
+              else
+                redis-server
+              fi
+            "
+
+    # PM2 Monitoring Dashboard (optional)
+    pm2-web:
+        image: pm2io/pm2-web
+        container_name: guess-the-number-pm2-web
+        restart: unless-stopped
+        environment:
+            - PM2_SECRET_KEY=${PM2_SECRET_KEY:-your-secret-key}
+            - PM2_PUBLIC_KEY=${PM2_PUBLIC_KEY:-your-public-key}
+        ports:
+            - "${PM2_WEB_UI_PORT:-4200}:4200"
+        depends_on:
+            - bot
+        networks:
+            - bot-network
+        profiles:
+            - monitoring # Use profile to optionally include this service
+
+networks:
+    bot-network:
+        driver: bridge
+
+volumes:
+    mongo_data_pm2:
+        driver: local
+    redis_data_pm2:
+        driver: local
+    pm2_data:
+        driver: local

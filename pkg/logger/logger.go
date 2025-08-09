@@ -21,7 +21,7 @@ var L *Logger
 func NewLogger(cfg *config.Configuration) (*Logger, error) {
 	config := zap.NewProductionConfig()
 
-	if cfg.Logging.Level == lib.LogLevelDebug {
+	if cfg.Deployment.Mode == lib.ModeLocal {
 		config = zap.NewDevelopmentConfig()
 	}
 

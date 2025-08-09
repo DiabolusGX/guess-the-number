@@ -133,6 +133,10 @@ func (s *syncService) SyncGameGuesses(ctx context.Context, gameID string) error 
 		return fmt.Errorf("failed to bulk insert guesses: %w", err)
 	}
 
+	// TODO: fix this issue: redis stats repo is continously updated
+	// so during the time of mongo insertion, the redis stats repo is also updated
+	// cleanup will delete those new entries from redis
+
 	// Clean up synced data from Redis
 	if err := s.redisStatsRepo.CleanupGameData(ctx, game); err != nil {
 		s.logger.FromContext(ctx).Error("failed to cleanup game data from redis after sync", "error", err)

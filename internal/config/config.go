@@ -97,6 +97,7 @@ func NewConfig() (*Configuration, error) {
 	v.AddConfigPath("./internal/config")
 	v.AddConfigPath("../../internal/config")
 	v.AddConfigPath("./config")
+	v.AddConfigPath("/app/internal/config") // Docker container path
 
 	// Step 3: Set up environment variables support
 	v.SetEnvPrefix("GTN")
