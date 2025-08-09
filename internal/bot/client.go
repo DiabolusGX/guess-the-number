@@ -26,6 +26,7 @@ import (
 	"github.com/diabolusgx/guess-the-number/internal/bot/events/misc"
 	"github.com/diabolusgx/guess-the-number/internal/config"
 	"github.com/diabolusgx/guess-the-number/internal/lib"
+	"github.com/diabolusgx/guess-the-number/internal/service"
 	"github.com/diabolusgx/guess-the-number/pkg/logger"
 )
 
@@ -174,7 +175,7 @@ var Module = fx.Module(
 	}),
 )
 
-func Start(lc fx.Lifecycle, client bot.Client, logger *logger.Logger, cfg *config.Configuration, handler BotHandler) {
+func Start(lc fx.Lifecycle, client bot.Client, logger *logger.Logger, cfg *config.Configuration, handler BotHandler, syncService service.SyncService) {
 	lc.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
 			logger.Infow(
@@ -191,6 +192,22 @@ func Start(lc fx.Lifecycle, client bot.Client, logger *logger.Logger, cfg *confi
 			}
 
 			client.AddEventListeners(handler)
+
+			// Sync all active games stats from redis to mongo periodically
+			go func() {
+				ctx = context.WithValue(ctx, lib.CtxFlowID, "sync_all_active_games")
+
+				defer func() {
+					if r := recover(); r != nil {
+						logger.FromContext(ctx).Error("Recovered from panic in sync all active games", "error", r)
+					}
+				}()
+
+				err := syncService.SyncAllActiveGames(ctx)
+				if err != nil {
+					logger.FromContext(ctx).Error("Failed to sync all active games", "error", err)
+				}
+			}()
 
 			// Use appropriate connection method based on sharding configuration
 			if cfg.Bot.Sharding.Enabled {

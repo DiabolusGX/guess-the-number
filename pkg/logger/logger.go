@@ -100,6 +100,10 @@ func (l *Logger) FromContext(ctx context.Context) *Logger {
 		loggerArgs = append(loggerArgs, "game_id", gameID)
 	}
 
+	if flowID := lib.GetFlowID(ctx); flowID != "" {
+		loggerArgs = append(loggerArgs, "flow_id", flowID)
+	}
+
 	return &Logger{
 		SugaredLogger: l.SugaredLogger.With(loggerArgs...),
 	}

@@ -23,6 +23,7 @@ type GameService interface {
 	FinishGame(ctx context.Context, req *types.FinishGameRequest) (*types.FinishGameResponse, error)
 	GetHint(ctx context.Context, req *types.GetHintRequest) (*types.GetHintResponse, error)
 	GetGameInfo(ctx context.Context, req *types.GetGameInfoRequest) (*types.GetGameInfoResponse, error)
+	GetAllActiveGames(ctx context.Context) ([]*domain.Game, error)
 }
 
 type gameService struct {
@@ -269,6 +270,16 @@ func (s *gameService) GetGameInfo(ctx context.Context, req *types.GetGameInfoReq
 	return &types.GetGameInfoResponse{
 		Game: game,
 	}, nil
+}
+
+func (s *gameService) GetAllActiveGames(ctx context.Context) ([]*domain.Game, error) {
+	games := make([]*domain.Game, len(s.runningGames))
+	i := 0
+	for _, game := range s.runningGames {
+		games[i] = game
+		i++
+	}
+	return games, nil
 }
 
 func (s *gameService) getRunningInChannel(ctx context.Context, channelID string) (*domain.Game, error) {

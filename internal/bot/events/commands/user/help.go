@@ -2,6 +2,7 @@ package user
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/diabolusgx/guess-the-number/internal/bot/events/commands"
 	"github.com/diabolusgx/guess-the-number/internal/bot/utils"
@@ -34,47 +35,33 @@ func (c *HelpCommand) Definition() discord.ApplicationCommandCreate {
 }
 
 func (c *HelpCommand) Handler(ctx context.Context, event *events.ApplicationCommandInteractionCreate, data *commands.Data) error {
-	description := "Welcome to the ultimate number guessing game bot! Here are all the available commands and features:"
+	description := "Welcome to the ultimate number guessing game bot! Here are all the available commands:"
 
 	// Game Commands Field
-	gameCommands := "• `/start` - Start a new guessing game in the current channel\n"
-	gameCommands += "• `/end` - End the current game (moderators only)\n"
-	gameCommands += "• `/hint` - Get a hint for the current game (moderators only)\n"
-	gameCommands += "• `/gameinfo <channel>` - Show information about a game in a specific channel"
+	gameCommands := "• `/game info <channel>` - Show information about a game in a specific channel\n"
+	gameCommands += "• `/game hint <type> <channel>` - Get a hint for the current game (moderators only)\n"
+	gameCommands += "• `/game answer <channel>` - Reveal the answer for the current game (moderators only)\n"
+	gameCommands += "• `/game stats <channel>` - Show game statistics for a channel"
 
 	// User Commands Field
-	userCommands := "• `/leaderboard wins` - Show top players by total wins\n"
-	userCommands += "• `/leaderboard points` - Show top players by total points\n"
-	userCommands += "• `/userinfo [user]` - Show detailed information about a user\n"
+	userCommands := "• `/userinfo [user]` - Show detailed information about a user including game statistics\n"
 	userCommands += "• `/ping` - Check bot latency and status\n"
-	userCommands += "• `/invite` - Get the bot's invite link\n"
+	userCommands += "• `/invite` - Get the bot's invite link to add it to other servers\n"
 	userCommands += "• `/help` - Show this help message"
 
 	// Moderator Commands Field
-	moderatorCommands := "• `/setup` - Configure bot settings for your server\n"
-	moderatorCommands += "• `/start` - Start games (if required role is set)\n"
-	moderatorCommands += "• `/end` - End active games\n"
-	moderatorCommands += "• `/hint` - Provide hints to players"
+	moderatorCommands := "• `/setup` - Configure bot settings for your server (prefix, roles, channels, etc.)\n"
+	moderatorCommands += "• `/start <min> <max> <channel>` - Start a new game with custom range and channel\n"
+	moderatorCommands += "• `/end <channel>` - End the running game in a channel\n"
+	moderatorCommands += "• `/finish-game <channel>` - Finish the running game in a channel"
 
 	// How to Play Field
-	howToPlay := "1️⃣ Use `/start` to begin a new game\n"
-	howToPlay += "2️⃣ The bot will think of a number between 1-100\n"
-	howToPlay += "3️⃣ Players guess by typing numbers in chat\n"
-	howToPlay += "4️⃣ Get feedback: 📈 (higher), 📉 (lower), or 🎉 (correct!)\n"
-	howToPlay += "5️⃣ First to guess wins points and possibly a role!"
-
-	// Features Field
-	features := "• Customizable point rewards\n"
-	features += "• Role rewards for winners\n"
-	features += "• Required roles to play\n"
-	features += "• Server-wide leaderboards\n"
-	features += "• Game statistics tracking\n"
-	features += "• Multiple simultaneous games"
-
-	// Support Field
-	support := "Join our support server for assistance, updates, and community:\n"
-	support += "🔗 **[DEV Studios](https://discord.gg/8kdx63YsDf)**\n\n"
-	support += "💡 *Tip: Use `/setup` to configure the bot for your server's needs!*"
+	howToPlay := fmt.Sprintf("1️⃣ Moderators use %s to begin a new game\n", utils.MentionApplicationCommand(event.Client().ID(), utils.CommandStart))
+	howToPlay += "2️⃣ The bot will think of a number within the specified range\n"
+	howToPlay += "3️⃣ Players guess by typing numbers in the game channel\n"
+	howToPlay += "4️⃣ Get feedback (if enabled): 📈 (higher), 📉 (lower), or 🎉 (correct!)\n"
+	howToPlay += "5️⃣ First to guess correctly wins points and possibly a role!"
+	howToPlay += "\n\n💡 *Tip: Use `/setup` to configure the bot for your server's needs!*"
 
 	return utils.EventReply(event, utils.MessageRequest{
 		UseEmbed:         true,
@@ -100,16 +87,6 @@ func (c *HelpCommand) Handler(ctx context.Context, event *events.ApplicationComm
 			{
 				Name:   "📖 How to Play",
 				Value:  howToPlay,
-				Inline: omit.NewPtr(false).Value,
-			},
-			{
-				Name:   "✨ Features",
-				Value:  features,
-				Inline: omit.NewPtr(false).Value,
-			},
-			{
-				Name:   "🆘 Need Help?",
-				Value:  support,
 				Inline: omit.NewPtr(false).Value,
 			},
 		},

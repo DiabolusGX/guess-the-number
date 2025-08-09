@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/diabolusgx/guess-the-number/internal/domain"
+	"github.com/diabolusgx/guess-the-number/internal/lib"
 	"github.com/diabolusgx/guess-the-number/pkg/logger"
 )
 
@@ -24,19 +25,23 @@ type syncService struct {
 	gameStatsRepo  domain.GameStatsRepository
 	gameRepo       domain.GameRepository
 
+	gameService GameService
+
 	syncInterval     time.Duration
 	enabled          bool
 	onGameFinishSync bool
 	batchSize        int
 }
 
-func NewSyncService(params ServiceParams) SyncService {
+func NewSyncService(params ServiceParams, gameService GameService) SyncService {
 	return &syncService{
 		logger: params.Logger,
 
 		redisStatsRepo: params.RedisStatsRepo,
 		gameStatsRepo:  params.GameStatsRepo,
 		gameRepo:       params.GameRepo,
+
+		gameService: gameService,
 
 		syncInterval:     params.Config.Sync.Interval,
 		enabled:          params.Config.Sync.Enabled,
@@ -72,14 +77,20 @@ func (s *syncService) StartPeriodicSync(ctx context.Context) error {
 
 // SyncAllActiveGames syncs all active games across all guilds
 func (s *syncService) SyncAllActiveGames(ctx context.Context) error {
+	ctx = context.WithValue(ctx, lib.CtxRequestID, lib.NewRequestID())
+
 	s.logger.FromContext(ctx).Debug("starting sync for all active games")
 
-	// For now, we'll need to track guilds separately or query MongoDB for recent games
-	// This is a simplified implementation that could be enhanced
+	games, err := s.gameService.GetAllActiveGames(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to get all active games: %w", err)
+	}
 
-	// For this implementation, we'll need to add a method to get all guilds
-	// For now, let's implement a basic sync for a known set or skip this for MVP
-	// In a full implementation, we would query active games from Redis or MongoDB
+	for _, game := range games {
+		if err := s.SyncGameGuesses(ctx, game.ID); err != nil {
+			s.logger.FromContext(ctx).Error("failed to sync game guesses", "error", err)
+		}
+	}
 
 	s.logger.FromContext(ctx).Debug("completed sync for all active games")
 	return nil

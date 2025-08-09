@@ -17,6 +17,7 @@ const (
 	CtxGuildID    ContextKey = "guild_id"
 	CtxChannelID  ContextKey = "channel_id"
 	CtxGameID     ContextKey = "game_id"
+	CtxFlowID     ContextKey = "flow_id"
 )
 
 var contextKeys = []ContextKey{CtxClientType, CtxShardID, CtxRequestID, CtxPriority, CtxUserID, CtxGuildID, CtxChannelID, CtxGameID}
@@ -93,6 +94,13 @@ func GetGuildID(ctx context.Context) string {
 func GetGameID(ctx context.Context) string {
 	if gameID, ok := ctx.Value(CtxGameID).(string); ok {
 		return gameID
+	}
+	return ""
+}
+
+func GetFlowID(ctx context.Context) string {
+	if flowID, ok := ctx.Value(CtxFlowID).(string); ok {
+		return flowID
 	}
 	return ""
 }

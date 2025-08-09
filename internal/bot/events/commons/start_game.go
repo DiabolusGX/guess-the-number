@@ -89,7 +89,7 @@ func StartGameCommon(
 
 	// send game start message with answer to user's DM
 	dmErr := utils.SendDM(request.Client.Rest(), request.CreatedBy.ID, utils.MessageRequest{
-		Content: fmt.Sprintf("Game started!\nRandom answer ||%d|| has been set. Start guessing here: %s", game.Game.Answer, msg.JumpURL()),
+		Content: fmt.Sprintf("Game started!\nRandom answer ||%d|| has been set. Start guessing here: %s\n\nGame ID: `%s`", game.Game.Answer, msg.JumpURL(), game.Game.ID),
 		Emoji:   utils.EmojiSuccess,
 	})
 

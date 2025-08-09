@@ -152,7 +152,7 @@ func (c *InviteCommand) Definition() discord.ApplicationCommandCreate {
 }
 
 func (c *InviteCommand) Handler(ctx context.Context, event *events.ApplicationCommandInteractionCreate, data *commands.Data) error {
-	inviteURL := fmt.Sprintf("https://discord.com/api/oauth2/authorize?client_id=%s&permissions=8&scope=bot", event.Client().ApplicationID())
+	inviteURL := utils.GetBotInviteLink(event.Client().ApplicationID())
 
 	var description strings.Builder
 	description.WriteString(fmt.Sprintf("🔗 **[Click here to invite the bot](%s)**\n\n", inviteURL))
@@ -168,6 +168,7 @@ func (c *InviteCommand) Handler(ctx context.Context, event *events.ApplicationCo
 		EmbedTitle:          "🤖 Add Guess The Number Bot to Your Server!",
 		EmbedDescription:    description.String(),
 		EmbedColor:          utils.SuccessEmbedColor,
+		WithSupportServer:   true,
 		WithBotInviteButton: true,
 	})
 }

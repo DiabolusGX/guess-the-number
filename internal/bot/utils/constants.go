@@ -50,3 +50,11 @@ func (t LogType) String() string {
 func FormMessageLink(guildID, channelID, messageID string) string {
 	return fmt.Sprintf("https://discord.com/channels/%s/%s/%s", guildID, channelID, messageID)
 }
+
+func GetBotInviteLink(clientID snowflake.ID) string {
+	if clientID == 0 {
+		clientID = defaultBotClientID
+	}
+
+	return fmt.Sprintf("https://discord.com/oauth2/authorize?client_id=%s", clientID.String())
+}

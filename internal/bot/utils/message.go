@@ -223,7 +223,7 @@ func buildComponents(request MessageRequest) []discord.ContainerComponent {
 	}
 
 	if request.WithBotInviteButton {
-		buttons = append(buttons, discord.NewLinkButton("Invite the bot to your server!", "https://discord.com/api/oauth2/authorize?client_id=686988635999830076&permissions=8&scope=bot").WithEmoji(discord.ComponentEmoji{
+		buttons = append(buttons, discord.NewLinkButton("Invite the bot to your server!", GetBotInviteLink(0)).WithEmoji(discord.ComponentEmoji{
 			ID:       emojiGTNLogoID,
 			Animated: false,
 		}))

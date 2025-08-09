@@ -72,7 +72,7 @@ func (c *FinishCommand) Handler(ctx context.Context, event *events.ApplicationCo
 
 	var response strings.Builder
 	response.WriteString(fmt.Sprintf("Game finished in <#%s>\n\n", channel.ID.String()))
-	response.WriteString(fmt.Sprintf("- Use `/game stats` command with game ID: `%s` to see the stats.\n", game.Game.ID))
+	response.WriteString(fmt.Sprintf("Use %s command with Game ID: `%s` to see the stats.\n", utils.MentionApplicationCommand(event.Client().ID(), utils.CommandGameStats), game.Game.ID))
 
 	// TODO: add some game stats
 	_, err = utils.SendMessage(event.Client().Rest(), utils.MessageRequest{
