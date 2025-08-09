@@ -11,10 +11,10 @@ help: ## Show this help message
 
 # Build targets
 build: ## Build the Docker image
-	docker-compose build
+	docker compose build
 
 build-no-cache: ## Build the Docker image without cache
-	docker-compose build --no-cache
+	docker compose build --no-cache
 
 # Environment setup
 env: ## Copy environment template
@@ -27,66 +27,66 @@ env: ## Copy environment template
 
 # Production deployment
 prod: env ## Deploy with remote databases (production)
-	docker-compose up -d bot
+	docker compose up -d bot
 
 prod-build: env ## Build and deploy with remote databases
-	docker-compose up -d --build bot
+	docker compose up -d --build bot
 
 # Local development with local databases
 local-db: env ## Deploy with local MongoDB and Redis
-	docker-compose --profile local-db up -d
+	docker compose --profile local-db up -d
 
 local-db-build: env ## Build and deploy with local databases
-	docker-compose --profile local-db up -d --build
+	docker compose --profile local-db up -d --build
 
 # PM2 deployment targets
 pm2: env ## Deploy with PM2 process manager
-	docker-compose -f $(PM2_COMPOSE_FILE) up -d bot
+	docker compose -f $(PM2_COMPOSE_FILE) up -d bot
 
 pm2-build: env ## Build and deploy with PM2
-	docker-compose -f $(PM2_COMPOSE_FILE) up -d --build bot
+	docker compose -f $(PM2_COMPOSE_FILE) up -d --build bot
 
 pm2-local: env ## Deploy PM2 with local databases
-	docker-compose -f $(PM2_COMPOSE_FILE) --profile local-db up -d
+	docker compose -f $(PM2_COMPOSE_FILE) --profile local-db up -d
 
 pm2-monitoring: env ## Deploy PM2 with monitoring dashboard
-	docker-compose -f $(PM2_COMPOSE_FILE) --profile monitoring up -d
+	docker compose -f $(PM2_COMPOSE_FILE) --profile monitoring up -d
 
 pm2-full: env ## Deploy PM2 with local databases and monitoring
-	docker-compose -f $(PM2_COMPOSE_FILE) --profile local-db --profile monitoring up -d
+	docker compose -f $(PM2_COMPOSE_FILE) --profile local-db --profile monitoring up -d
 
 # Service management
 up: ## Start all services
-	docker-compose up -d
+	docker compose up -d
 
 down: ## Stop all services
-	docker-compose down
+	docker compose down
 
 stop: ## Stop services without removing containers
-	docker-compose stop
+	docker compose stop
 
 restart: ## Restart all services
-	docker-compose restart
+	docker compose restart
 
 restart-bot: ## Restart only the bot service
-	docker-compose restart bot
+	docker compose restart bot
 
 # Logs and monitoring
 logs: ## Show logs for all services
-	docker-compose logs -f
+	docker compose logs -f
 
 logs-bot: ## Show logs for bot service only
-	docker-compose logs -f bot
+	docker compose logs -f bot
 
 logs-mongo: ## Show logs for MongoDB service
-	docker-compose logs -f mongo
+	docker compose logs -f mongo
 
 logs-redis: ## Show logs for Redis service
-	docker-compose logs -f redis
+	docker compose logs -f redis
 
 # PM2 specific log commands
 logs-pm2: ## Show PM2 logs
-	docker-compose -f $(PM2_COMPOSE_FILE) logs -f bot
+	docker compose -f $(PM2_COMPOSE_FILE) logs -f bot
 
 pm2-status: ## Show PM2 process status
 	docker exec -it guess-the-number-bot-pm2 pm2 status
@@ -129,24 +129,24 @@ backup-redis: ## Backup Redis data
 
 # Maintenance
 clean: ## Remove containers, networks, and volumes
-	docker-compose down -v --remove-orphans
+	docker compose down -v --remove-orphans
 	docker system prune -f
 
 clean-all: ## Remove everything including images
-	docker-compose down -v --remove-orphans --rmi all
+	docker compose down -v --remove-orphans --rmi all
 	docker system prune -af
 
 update: ## Pull latest images and restart
-	docker-compose pull
-	docker-compose up -d
+	docker compose pull
+	docker compose up -d
 
 # Health checks
 status: ## Show status of all services
-	docker-compose ps
+	docker compose ps
 
 health: ## Check health of running containers
 	@echo "=== Container Status ==="
-	docker-compose ps
+	docker compose ps
 	@echo "\n=== Container Health ==="
 	@docker ps --format "table {{.Names}}\t{{.Status}}" | grep guess-the-number || echo "No running containers"
 	@echo "\n=== Bot Metrics (if available) ==="

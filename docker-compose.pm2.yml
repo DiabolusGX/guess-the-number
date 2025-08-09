@@ -19,9 +19,9 @@ services:
         ports:
             - "${METRICS_PORT:-8080}:8080" # Metrics endpoint
             - "${PM2_WEB_PORT:-9615}:9615" # PM2 web interface (optional)
-        depends_on:
-            - redis
-            - mongo
+        # depends_on:
+        #     - redis
+        #     - mongo
         networks:
             - bot-network
         volumes:
