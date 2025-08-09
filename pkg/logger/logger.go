@@ -28,8 +28,8 @@ func NewLogger(cfg *config.Configuration, sentry *sentry.Client) (*Logger, error
 		config = zap.NewDevelopmentConfig()
 	}
 
-	config.OutputPaths = []string{"stdout", "/var/log/gtn-botinfo.log"}
-	config.ErrorOutputPaths = []string{"stderr", "/var/log/gtn-boterror.log"}
+	config.OutputPaths = []string{"stdout", "~/logs/gtn-bot/info.log"}
+	config.ErrorOutputPaths = []string{"stderr", "~/logs/gtn-bot/error.log"}
 
 	config.EncoderConfig.TimeKey = "timestamp"
 	config.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
