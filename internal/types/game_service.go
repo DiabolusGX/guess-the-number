@@ -11,6 +11,8 @@ type CreateGameRequest struct {
 	LowerBound        int64  `json:"lower_bound"`
 	UpperBound        int64  `json:"upper_bound" validate:"required,min=1"`
 	AutoReactionHints bool   `json:"auto_reaction_hints,omitempty"`
+	AutoRestarting    bool   `json:"auto_restarting,omitempty"`
+	PreviousGameID    string `json:"previous_game_id,omitempty"`
 }
 
 type CreateGameResponse struct {

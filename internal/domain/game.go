@@ -21,6 +21,10 @@ type Game struct {
 	CreatedAt         time.Time `bson:"createdAt"`
 	UpdatedAt         time.Time `bson:"updatedAt"`
 	AutoReactionHints bool      `bson:"autoReactionHints"`
+	PreviousGameID    string    `bson:"previousGameID"`
+	AutoRestarted     bool      `bson:"autoRestarted"`
+	LowerBound        int64     `bson:"lowerBound"`
+	UpperBound        int64     `bson:"upperBound"`
 }
 
 type GameRepository interface {

@@ -9,6 +9,7 @@ import (
 	"github.com/diabolusgx/guess-the-number/internal/domain"
 	"github.com/diabolusgx/guess-the-number/internal/service"
 	"github.com/diabolusgx/guess-the-number/internal/types"
+	"github.com/diabolusgx/guess-the-number/pkg/errors"
 	"github.com/disgoorg/disgo/bot"
 	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/rest"
@@ -23,6 +24,8 @@ type GameStartRequest struct {
 	LowerBound        int64
 	UpperBound        int64
 	AutoReactionHints bool
+	AutoRestarting    bool
+	PreviousGameID    string
 }
 
 // GameStartResult contains the result of starting a game
@@ -53,9 +56,14 @@ func StartGameCommon(
 		LowerBound:        request.LowerBound,
 		UpperBound:        request.UpperBound,
 		AutoReactionHints: request.AutoReactionHints,
+		AutoRestarting:    request.AutoRestarting,
+		PreviousGameID:    request.PreviousGameID,
 	})
 	if err != nil {
 		return nil, err
+	}
+	if game == nil || game.Game == nil {
+		return nil, errors.New(errors.ErrCodeInternalError, "Failed to create game. Please try again later.")
 	}
 
 	// unlock target channel from lock role if it's locked
@@ -63,13 +71,21 @@ func StartGameCommon(
 	if guildConfig != nil && guildConfig.LockRole != "" {
 		lockRole, ok := request.Client.Caches().Role(guildID, snowflake.MustParse(guildConfig.LockRole))
 		if ok {
-			lockRoleErr = utils.UnlockChannel(ctx, request.Client, request.TargetChannel, lockRole, "New game started, unlocking channel")
+			unlockReason := "New game started, unlocking channel"
+			if request.AutoRestarting {
+				unlockReason = "Game auto-restarted, unlocking channel"
+			}
+			lockRoleErr = utils.UnlockChannel(ctx, request.Client, request.TargetChannel, lockRole, unlockReason)
 		}
 	}
 
 	// send game start message in target channel
 	var gameStartMsg strings.Builder
-	gameStartMsg.WriteString("**Game Started**\n")
+	if request.AutoRestarting {
+		gameStartMsg.WriteString("**Game Auto Restarted**\n")
+	} else {
+		gameStartMsg.WriteString("**Game Started**\n")
+	}
 	gameStartMsg.WriteString(fmt.Sprintf("Guess a number between `%d` and `%d`\n", request.LowerBound, request.UpperBound))
 	gameStartMsg.WriteString(fmt.Sprintf("Correct guess will get you **%d points**", game.Game.Points))
 	if guildConfig != nil && guildConfig.WinRole != "" {
@@ -78,6 +94,10 @@ func StartGameCommon(
 			gameStartMsg.WriteString(fmt.Sprintf(" and %s role.", winRole.Mention()))
 		}
 	}
+	gameStartMsg.WriteString(fmt.Sprintf("\n\n*Game ID: `%s`*\n", game.Game.ID))
+	if request.PreviousGameID != "" {
+		gameStartMsg.WriteString(fmt.Sprintf("*Previous Game ID: `%s`*\n", request.PreviousGameID))
+	}
 	msg, gameStartMsgErr := utils.SendMessage(request.Client.Rest(), utils.MessageRequest{
 		ChannelID: request.TargetChannel.ID(),
 		Content:   gameStartMsg.String(),
@@ -85,11 +105,26 @@ func StartGameCommon(
 	})
 
 	// pin game start message in target channel
-	pinErr := request.Client.Rest().PinMessage(request.TargetChannel.ID(), msg.ID, rest.WithReason("Pinning game start message"))
+	pinReason := "Pinning game start message"
+	if request.AutoRestarting {
+		pinReason = "Pinning auto-restarted game start message"
+	}
+	pinErr := request.Client.Rest().PinMessage(request.TargetChannel.ID(), msg.ID, rest.WithReason(pinReason))
 
 	// send game start message with answer to user's DM
+	var dmContent strings.Builder
+	if request.AutoRestarting {
+		dmContent.WriteString("**Game Auto Restarted**\n")
+	} else {
+		dmContent.WriteString("Game started!\n")
+	}
+	dmContent.WriteString(fmt.Sprintf("Random answer ||%d|| has been set. Start guessing here: %s\n\nGame ID: `%s`", game.Game.Answer, msg.JumpURL(), game.Game.ID))
+	if request.PreviousGameID != "" {
+		dmContent.WriteString(fmt.Sprintf("\nPrevious game (`%s`) has ended, and a new one has automatically started.\n", request.PreviousGameID))
+	}
+
 	dmErr := utils.SendDM(request.Client.Rest(), request.CreatedBy.ID, utils.MessageRequest{
-		Content: fmt.Sprintf("Game started!\nRandom answer ||%d|| has been set. Start guessing here: %s\n\nGame ID: `%s`", game.Game.Answer, msg.JumpURL(), game.Game.ID),
+		Content: dmContent.String(),
 		Emoji:   utils.EmojiSuccess,
 	})
 
@@ -125,13 +160,18 @@ func logGameStart(
 	logContent.WriteString(fmt.Sprintf("**Channel:** %s\n", request.TargetChannel.Mention()))
 	logContent.WriteString(fmt.Sprintf("**Range:** %d - %d\n", request.LowerBound, request.UpperBound))
 	logContent.WriteString(fmt.Sprintf("**Points:** %d\n", game.Game.Points))
-	logContent.WriteString(fmt.Sprintf("**Started by:** %s\n\n", request.CreatedBy.Mention()))
+	if request.AutoRestarting && request.PreviousGameID != "" {
+		logContent.WriteString(fmt.Sprintf("**Previous Game ID:** `%s`\n", request.PreviousGameID))
+		logContent.WriteString(fmt.Sprintf("**Auto Restarted by:** %s\n\n", request.CreatedBy.Mention()))
+	} else {
+		logContent.WriteString(fmt.Sprintf("**Started by:** %s\n\n", request.CreatedBy.Mention()))
+	}
 
 	// Add status information
 	logContent.WriteString("**Status Report:**\n")
 
 	// Channel unlock status
-	if guildConfig != nil && guildConfig.LockRole != "" {
+	if guildConfig.LockRole != "" {
 		if result.UnlockError != nil {
 			logContent.WriteString(fmt.Sprintf("❌ Failed to unlock channel: %s\n", result.UnlockError.Error()))
 		} else {
@@ -165,7 +205,13 @@ func logGameStart(
 	// Add game id to log
 	logContent.WriteString(fmt.Sprintf("\n\n**Game ID:** `%s`", result.Game.Game.ID))
 
-	utils.LogToChannel(client, logChannelID, utils.LogTypeGameActivity, "🎮 Game Started", logContent.String())
+	// Use different log title based on auto restart status
+	logTitle := "🎮 Game Started"
+	if request.AutoRestarting {
+		logTitle = "🔄 Game Auto Restarted"
+	}
+
+	utils.LogToChannel(client, logChannelID, utils.LogTypeGameActivity, logTitle, logContent.String())
 }
 
 // FormatGameStartReply formats the reply message for the user who started the game
@@ -176,9 +222,17 @@ func FormatGameStartReply(
 ) string {
 	var reply strings.Builder
 	if result.Game.Game.ID != "" {
-		reply.WriteString(fmt.Sprintf("**Game Started** (`%s`)\n", result.Game.Game.ID))
+		// Check if this is an auto-restarted game
+		if result.Game.Game.AutoRestarted {
+			reply.WriteString(fmt.Sprintf("🔄 **Game Auto Restarted** (`%s`)\n", result.Game.Game.ID))
+			if result.Game.Game.PreviousGameID != "" {
+				reply.WriteString(fmt.Sprintf("*Previous game: `%s`*\n", result.Game.Game.PreviousGameID))
+			}
+		} else {
+			reply.WriteString(fmt.Sprintf("**Game Started** (`%s`)\n", result.Game.Game.ID))
+		}
 	}
-	if result.DMError != nil {
+	if result.DMError == nil {
 		reply.WriteString("Sent the game's answer to your DM.")
 	}
 

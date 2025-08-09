@@ -127,6 +127,17 @@ func (c *SetupCommand) Definition() discord.ApplicationCommandCreate {
 				},
 			},
 			discord.ApplicationCommandOptionSubCommand{
+				Name:        "auto-restart",
+				Description: "Enable or disable automatic game restart after completion",
+				Options: []discord.ApplicationCommandOption{
+					discord.ApplicationCommandOptionBool{
+						Name:        "enabled",
+						Description: "Whether to automatically start a new game with same config after completion",
+						Required:    true,
+					},
+				},
+			},
+			discord.ApplicationCommandOptionSubCommand{
 				Name:        "show",
 				Description: "Show all current server configuration settings",
 			},
@@ -157,6 +168,8 @@ func (c *SetupCommand) Handler(ctx context.Context, event *events.ApplicationCom
 		return c.handleLogChannel(ctx, event, data)
 	case "auto-reaction-hints":
 		return c.handleAutoReactionHints(ctx, event, data)
+	case "auto-restart":
+		return c.handleAutoRestart(ctx, event, data)
 	case "show", "info":
 		return c.handleShow(ctx, event, data)
 	}
@@ -564,6 +577,44 @@ func (c *SetupCommand) handleAutoReactionHints(ctx context.Context, event *event
 	})
 }
 
+func (c *SetupCommand) handleAutoRestart(ctx context.Context, event *events.ApplicationCommandInteractionCreate, data *commands.Data) error {
+	enabled := event.SlashCommandInteractionData().Bool("enabled")
+
+	// Store old value for logging
+	oldStatus := formatBooleanSetting(data.GuildConfig.AutoRestart)
+	newStatus := formatBooleanSetting(enabled)
+
+	cfg := data.GuildConfig
+	cfg.AutoRestart = enabled
+	if err := c.guildManagementService.ReplaceGuildConfig(ctx, cfg); err != nil {
+		return utils.EventReply(event, utils.MessageRequest{
+			UseEmbed:         true,
+			Emoji:            utils.EmojiError,
+			EmbedTitle:       "Update Failed",
+			EmbedDescription: "Failed to update auto restart settings. Please try again later.",
+			EmbedColor:       utils.FailureEmbedColor,
+			IsEphemeral:      true,
+		})
+	}
+
+	// Log the configuration change with before/after values
+	logContent := fmt.Sprintf(logFmt, oldStatus, newStatus, event.User().Mention())
+	utils.LogToChannel(event.Client().Rest(), cfg.LogChannel, utils.LogTypeConfigurationChange, "🔧 Auto Restart Updated", logContent)
+
+	return utils.EventReply(event, utils.MessageRequest{
+		UseEmbed:         true,
+		Emoji:            utils.EmojiSuccess,
+		EmbedTitle:       "Auto Restart Updated",
+		EmbedDescription: "> *This applies to all new and currently running games*",
+		EmbedColor:       utils.SuccessEmbedColor,
+		IsEphemeral:      false,
+		Fields: []discord.EmbedField{
+			{Name: "Previous", Value: oldStatus, Inline: omit.NewPtr(true).Value},
+			{Name: "New", Value: newStatus, Inline: omit.NewPtr(true).Value},
+		},
+	})
+}
+
 func (c *SetupCommand) handleShow(ctx context.Context, event *events.ApplicationCommandInteractionCreate, data *commands.Data) error {
 	cfg := data.GuildConfig
 
@@ -577,7 +628,8 @@ func (c *SetupCommand) handleShow(ctx context.Context, event *events.Application
 	// basicSettings += fmt.Sprintf("• Prefix: `%s`\n", prefix)
 	// basicSettings += fmt.Sprintf("• Premium: %s\n", formatBooleanSetting(cfg.Premium))
 	basicSettings += fmt.Sprintf("• DMs to Winners: %s\n", formatBooleanSetting(cfg.DM))
-	basicSettings += fmt.Sprintf("• Auto Reaction Hints: %s", formatBooleanSetting(cfg.AutoReactionHints))
+	basicSettings += fmt.Sprintf("• Auto Reaction Hints: %s\n", formatBooleanSetting(cfg.AutoReactionHints))
+	basicSettings += fmt.Sprintf("• Auto Restart Games: %s", formatBooleanSetting(cfg.AutoRestart))
 
 	roleSettings := ""
 	roleSettings += fmt.Sprintf("• Manager Role: %s\n", formatRoleSetting(event, cfg.BotManager))

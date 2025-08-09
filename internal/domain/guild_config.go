@@ -16,6 +16,7 @@ type GuildConfig struct {
 	LockRole          string `bson:"lockRole,omitempty"`
 	LogChannel        string `bson:"logChannel,omitempty"`
 	AutoReactionHints bool   `bson:"autoReactionHints,omitempty"`
+	AutoRestart       bool   `bson:"autoRestart,omitempty"`
 }
 
 type GuildConfigRepository interface {

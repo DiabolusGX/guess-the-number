@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/diabolusgx/guess-the-number/internal/bot/events/commons"
 	"github.com/diabolusgx/guess-the-number/internal/bot/utils"
 	"github.com/diabolusgx/guess-the-number/internal/domain"
 	"github.com/diabolusgx/guess-the-number/internal/lib"
@@ -164,7 +165,7 @@ func (h *MessageCreateListener) handleAttempt(ctx context.Context, event *disgoE
 	}
 
 	// send game completion message and pin it
-	winMsg, messageErr := utils.SendMessage(event.Client().Rest(), utils.MessageRequest{
+	_, messageErr := utils.SendMessage(event.Client().Rest(), utils.MessageRequest{
 		ChannelID:           event.ChannelID,
 		Emoji:               utils.EmojiSuccess,
 		Content:             winChannelMsg.String(),
@@ -175,13 +176,15 @@ func (h *MessageCreateListener) handleAttempt(ctx context.Context, event *disgoE
 		h.Logger.FromContext(ctx).Error("failed to send game completion message", "error", messageErr.Error())
 	}
 
+	// NOTE: not pinning the win message to keep the channel clean
+	// TODO: make it configurable
 	var pinErr error
-	if messageErr == nil {
-		pinErr = event.Client().Rest().PinMessage(event.Message.ChannelID, winMsg.ID, rest.WithReason("Pinning game completion message"))
-		if pinErr != nil {
-			h.Logger.FromContext(ctx).Error("failed to pin game completion message", "error", pinErr.Error())
-		}
-	}
+	// if messageErr == nil {
+	// 	pinErr = event.Client().Rest().PinMessage(event.Message.ChannelID, winMsg.ID, rest.WithReason("Pinning game completion message"))
+	// 	if pinErr != nil {
+	// 		h.Logger.FromContext(ctx).Error("failed to pin game completion message", "error", pinErr.Error())
+	// 	}
+	// }
 
 	// un-pin other messages pinned by bot
 	var unpinErr error
@@ -205,6 +208,9 @@ func (h *MessageCreateListener) handleAttempt(ctx context.Context, event *disgoE
 
 	// Log the game completion to the log channel
 	h.logGameCompletion(ctx, event, response, guildConfig, winRole, winRoleExists, winRoleErr, dmErr, messageErr, pinErr, unpinErr, unpinCount, unpinFailures)
+
+	// Handle auto restart if enabled
+	h.handleAutoRestart(ctx, event, response, guildConfig)
 }
 
 func (h *MessageCreateListener) logGameCompletion(ctx context.Context, event *disgoEvents.MessageCreate, response *types.HandleAttemptResponse, guildConfig *domain.GuildConfig, winRole discord.Role, winRoleExists bool, winRoleErr error, dmErr error, messageErr error, pinErr error, unpinErr error, unpinCount int, unpinFailures int) {
@@ -275,4 +281,59 @@ func (h *MessageCreateListener) logGameCompletion(ctx context.Context, event *di
 	logContent.WriteString(fmt.Sprintf("\n\n**Game ID:** `%s`", response.Game.ID))
 
 	utils.LogToChannel(event.Client().Rest(), guildConfig.LogChannel, utils.LogTypeGameActivity, "🏆 Game Won", logContent.String())
+}
+
+func (h *MessageCreateListener) handleAutoRestart(ctx context.Context, event *disgoEvents.MessageCreate, response *types.HandleAttemptResponse, guildConfig *domain.GuildConfig) {
+	// Check if auto restart is enabled globally and for this specific game
+	if guildConfig == nil || !guildConfig.AutoRestart {
+		return
+	}
+
+	h.Logger.FromContext(ctx).Debugw("auto restarting game")
+
+	// Get the channel where the game was played
+	channel, ok := event.Client().Caches().Channel(snowflake.MustParse(response.Game.ChannelID))
+	if !ok {
+		h.Logger.FromContext(ctx).Error("failed to get channel for auto restart", "channelID", response.Game.ChannelID)
+		return
+	}
+
+	// fetch discord user from id
+	createdBy, err := event.Client().Rest().GetUser(snowflake.MustParse(response.Game.CreatedBy))
+	if err != nil {
+		h.Logger.FromContext(ctx).Error("failed to get user for auto restart", "userID", response.Game.CreatedBy)
+		return
+	}
+
+	// Create a new game with the same configuration
+	gameStartRequest := &commons.GameStartRequest{
+		Client:            event.Client(),
+		TargetChannel:     channel,
+		CreatedBy:         *createdBy,
+		LowerBound:        response.Game.LowerBound,
+		UpperBound:        response.Game.UpperBound,
+		AutoReactionHints: response.Game.AutoReactionHints,
+		AutoRestarting:    true,
+		PreviousGameID:    response.Game.ID,
+	}
+
+	// Start the new game
+	_, err = commons.StartGameCommon(ctx, event.Client().Rest(), h.GameService, gameStartRequest, guildConfig)
+	if err != nil {
+		h.Logger.FromContext(ctx).Error("failed to auto restart game", "error", err.Error(), "channelID", response.Game.ChannelID)
+
+		// Send an error message to the channel
+		_, sendErr := utils.SendMessage(event.Client().Rest(), utils.MessageRequest{
+			ChannelID:   event.ChannelID,
+			Emoji:       utils.EmojiError,
+			Content:     "**Auto Restart Failed**\nUnable to automatically start a new game. Please start one manually using `/start`.",
+			IsEphemeral: false,
+		})
+		if sendErr != nil {
+			h.Logger.FromContext(ctx).Error("failed to send auto restart error message", "error", sendErr.Error())
+		}
+		return
+	}
+
+	h.Logger.FromContext(ctx).Infow("game auto restarted successfully", "old_game_id", response.Game.ID)
 }

@@ -59,6 +59,9 @@ func (s *gameService) CreateGame(ctx context.Context, req *types.CreateGameReque
 	if req.LowerBound >= req.UpperBound {
 		return nil, ierr.New(ierr.ErrCodeValidation, "Make sure Min is less than Max value")
 	}
+	if req.AutoRestarting && req.PreviousGameID == "" {
+		return nil, ierr.New(ierr.ErrCodeValidation, "PreviousGameID is required when AutoRestarting is true")
+	}
 
 	// check if game is already running in this channel
 	runningGame, err := s.getRunningInChannel(ctx, req.ChannelID)
@@ -80,6 +83,10 @@ func (s *gameService) CreateGame(ctx context.Context, req *types.CreateGameReque
 		Answer:            answer,
 		Points:            points,
 		AutoReactionHints: req.AutoReactionHints,
+		PreviousGameID:    req.PreviousGameID,
+		AutoRestarted:     req.AutoRestarting,
+		LowerBound:        req.LowerBound,
+		UpperBound:        req.UpperBound,
 	}
 
 	err = s.gameRepo.Create(ctx, game)

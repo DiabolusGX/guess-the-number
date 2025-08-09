@@ -180,15 +180,16 @@ func (c *GameCommand) handleInfo(ctx context.Context, event *events.ApplicationC
 		// No game running - show prompt to start game
 		embedTitle = "🎮 Game Info"
 		gameStatus.WriteString(fmt.Sprintf("No game currently running in <#%s>.\n\n", channel.ID.String()))
-		gameStatus.WriteString("🎮 **Start a new game with `/start` command!**")
+		gameStatus.WriteString(fmt.Sprintf("🎮 **Start a new game with %s command!**", utils.MentionApplicationCommand(event.Client().ID(), utils.CommandStart)))
 	} else {
 		// Game is running - show current game info
 		gameInfo := game.Game
 		embedTitle = "🎯 Running Game"
-		gameStatus.WriteString(fmt.Sprintf("**Game ID:** `%s`\nRunning in <#%s>\n", gameInfo.ID, channel.ID.String()))
+		gameStatus.WriteString(fmt.Sprintf("**Game ID:** `%s`\nRunning in <#%s>\n\n", gameInfo.ID, channel.ID.String()))
+		gameStatus.WriteString(fmt.Sprintf("Answer lies between `%d` and `%d`\n", gameInfo.LowerBound, gameInfo.UpperBound))
 		gameStatus.WriteString(fmt.Sprintf("Guesses so far: **%d**\n", gameInfo.Guesses))
-		gameStatus.WriteString(fmt.Sprintf("Points for winner: **%d**\n\n", gameInfo.Points))
-		gameStatus.WriteString("*Use `/game stats` with game ID for detailed statistics*")
+		gameStatus.WriteString(fmt.Sprintf("Points for winner: **%d**\n", gameInfo.Points))
+		gameStatus.WriteString(fmt.Sprintf("*Use %s with game ID for detailed statistics*", utils.MentionApplicationCommand(event.Client().ID(), utils.CommandGameStats)))
 	}
 
 	// Add game configuration details
@@ -347,7 +348,6 @@ func (c *GameCommand) handleAnswer(ctx context.Context, event *events.Applicatio
 
 	dmErr := utils.SendDM(event.Client().Rest(), event.User().ID, utils.MessageRequest{
 		Content:  dmContent,
-		Emoji:    utils.EmojiSuccess,
 		WithVote: true,
 	})
 
