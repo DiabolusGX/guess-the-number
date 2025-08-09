@@ -34,11 +34,11 @@ func main() {
 			// Config
 			config.NewConfig,
 
-			// Logger
-			logger.NewLogger,
-
 			// Sentry
 			sentry.NewSentry,
+
+			// Logger
+			logger.NewLogger,
 
 			// Metrics
 			metrics.NewMetrics,

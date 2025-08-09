@@ -67,6 +67,7 @@ type SentryConfig struct {
 	Enabled     bool    `mapstructure:"enabled"`
 	DSN         string  `mapstructure:"dsn"`
 	Environment string  `mapstructure:"environment"`
+	EnabledLogs bool    `mapstructure:"enabled_logs"`
 	SampleRate  float64 `mapstructure:"sample_rate" default:"1.0"`
 }
 

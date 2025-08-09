@@ -3,6 +3,7 @@ module github.com/diabolusgx/guess-the-number
 go 1.24
 
 require (
+	github.com/TheZeroSlave/zapsentry v1.23.0
 	github.com/disgoorg/disgo v0.18.16
 	github.com/disgoorg/omit v1.0.0
 	github.com/disgoorg/paginator v0.0.0-20240725182907-1bdf780b5586

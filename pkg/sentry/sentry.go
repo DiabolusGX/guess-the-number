@@ -3,10 +3,10 @@ package sentry
 import (
 	"context"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/diabolusgx/guess-the-number/internal/config"
-	"github.com/diabolusgx/guess-the-number/pkg/logger"
 	sentrygo "github.com/getsentry/sentry-go"
 	"go.uber.org/fx"
 )
@@ -17,19 +17,19 @@ type Client struct {
 	enabled bool
 }
 
-func NewSentry(lc fx.Lifecycle, cfg *config.Configuration, logger *logger.Logger) (*Client, error) {
+func NewSentry(lc fx.Lifecycle, cfg *config.Configuration) (*Client, error) {
 	client := &Client{
 		enabled: cfg.Sentry.Enabled,
 		hub:     sentrygo.CurrentHub(),
 	}
 
 	if !cfg.Sentry.Enabled {
-		logger.Info("Sentry is disabled")
+		log.Println("Sentry is disabled")
 		return client, nil
 	}
 
 	if cfg.Sentry.DSN == "" {
-		logger.Warn("Sentry is enabled but DSN is empty, disabling Sentry")
+		log.Println("Sentry is enabled but DSN is empty, disabling Sentry")
 		client.enabled = false
 		return client, nil
 	}
@@ -37,6 +37,8 @@ func NewSentry(lc fx.Lifecycle, cfg *config.Configuration, logger *logger.Logger
 	err := sentrygo.Init(sentrygo.ClientOptions{
 		Dsn:              cfg.Sentry.DSN,
 		Environment:      cfg.Sentry.Environment,
+		EnableLogs:       cfg.Sentry.EnabledLogs,
+		EnableTracing:    true,
 		TracesSampleRate: cfg.Sentry.SampleRate,
 		BeforeSend: func(event *sentrygo.Event, hint *sentrygo.EventHint) *sentrygo.Event {
 			// Add additional context or filtering here
@@ -49,7 +51,7 @@ func NewSentry(lc fx.Lifecycle, cfg *config.Configuration, logger *logger.Logger
 
 	client.hub = sentrygo.CurrentHub()
 
-	logger.Infow("Sentry initialized",
+	log.Println("Sentry initialized",
 		"environment", cfg.Sentry.Environment,
 		"sample_rate", cfg.Sentry.SampleRate,
 	)

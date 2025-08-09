@@ -3,10 +3,13 @@ package logger
 import (
 	"context"
 
-	"github.com/diabolusgx/guess-the-number/internal/config"
-	"github.com/diabolusgx/guess-the-number/internal/lib"
+	"github.com/TheZeroSlave/zapsentry"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+
+	"github.com/diabolusgx/guess-the-number/internal/config"
+	"github.com/diabolusgx/guess-the-number/internal/lib"
+	"github.com/diabolusgx/guess-the-number/pkg/sentry"
 )
 
 // Logger wraps zap.SugaredLogger to provide logging functionality
@@ -18,7 +21,7 @@ type Logger struct {
 var L *Logger
 
 // NewLogger creates and returns a new Logger instance
-func NewLogger(cfg *config.Configuration) (*Logger, error) {
+func NewLogger(cfg *config.Configuration, sentry *sentry.Client) (*Logger, error) {
 	config := zap.NewProductionConfig()
 
 	if cfg.Deployment.Mode == lib.ModeLocal {
@@ -33,6 +36,21 @@ func NewLogger(cfg *config.Configuration) (*Logger, error) {
 		return nil, err
 	}
 
+	// Add Sentry core
+	cfgSentry := zapsentry.Configuration{
+		Hub:               sentry.GetHub(),
+		Level:             zapcore.ErrorLevel, // Only send Error+ logs to Sentry
+		EnableBreadcrumbs: true,
+		BreadcrumbLevel:   zapcore.InfoLevel, // Info+ becomes breadcrumbs
+	}
+
+	sentryCore, err := zapsentry.NewCore(cfgSentry, zapsentry.NewSentryClientFromClient(sentry.GetHub().Client()))
+	if err != nil {
+		return nil, err
+	}
+
+	zapLogger = zapsentry.AttachCoreToLogger(sentryCore, zapLogger)
+
 	logger := &Logger{
 		SugaredLogger: zapLogger.Sugar(),
 	}
@@ -43,14 +61,9 @@ func NewLogger(cfg *config.Configuration) (*Logger, error) {
 	return logger, nil
 }
 
-// Initialize default logger and set it as global while also using Dependency Injection
-func init() {
-	L, _ = NewLogger(config.GetDefaultConfig())
-}
-
 func GetLogger() *Logger {
 	if L == nil {
-		L, _ = NewLogger(config.GetDefaultConfig())
+		L, _ = NewLogger(config.GetDefaultConfig(), nil)
 	}
 	return L
 }

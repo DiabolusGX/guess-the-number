@@ -36,6 +36,7 @@ sentry:
   dsn: ""
   environment: "development"
   sample_rate: 1.0
+  enabled_logs: true
 
 metrics:
   enabled: true
