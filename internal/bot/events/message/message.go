@@ -2,8 +2,10 @@ package message
 
 import (
 	"context"
+	"strings"
 
 	"github.com/diabolusgx/guess-the-number/internal/bot/events"
+	"github.com/diabolusgx/guess-the-number/internal/bot/utils"
 	"github.com/diabolusgx/guess-the-number/internal/lib"
 	"github.com/diabolusgx/guess-the-number/internal/service"
 	"github.com/diabolusgx/guess-the-number/pkg/logger"
@@ -56,6 +58,16 @@ func (h *MessageCreateListener) OnEvent(ctx context.Context, e bot.Event) error 
 	ctx = context.WithValue(ctx, lib.CtxShardID, event.ShardID())
 
 	h.handleAttempt(ctx, event)
+
+	// handle prefix commands
+	if strings.HasPrefix(event.Message.Content, "gg") {
+		utils.SendMessage(event.Client().Rest(), utils.MessageRequest{
+			ChannelID: event.ChannelID,
+			Emoji:     utils.EmojiError,
+			Content: "Message commands have been migrated to slash commands. Please use the new commands instead.\n\n" +
+				"To get started, use the `/help` command.",
+		})
+	}
 
 	return nil
 }
