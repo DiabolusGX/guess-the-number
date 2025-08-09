@@ -26,10 +26,10 @@ env: ## Copy environment template
 
 # Production deployment
 prod: env ## Deploy with remote databases (production) - uses host Redis
-	GTN_REDIS_HOST=host.docker.internal docker compose up -d bot
+	docker compose up -d bot
 
 prod-build: env ## Build and deploy with remote databases - uses host Redis
-	GTN_REDIS_HOST=host.docker.internal docker compose up -d --build bot
+	docker compose up -d --build bot
 
 # Local development with local databases
 local-db: env ## Deploy with local MongoDB and Redis

@@ -26,7 +26,7 @@ services:
         extra_hosts:
             - "host.docker.internal:host-gateway" # Allow access to host machine
         volumes:
-            - /var/log/gtn-bot:/var/log/gtn-bot # Mount host Promtail log path to container
+            - ~/logs/gtn-bot:/var/log/gtn-bot # Mount host Promtail log path to container
             - pm2_data:/app/.pm2 # PM2 data persistence
         healthcheck:
             test: ["CMD", "sh", "-c", "pm2 list | grep -q 'online' || exit 1"]
