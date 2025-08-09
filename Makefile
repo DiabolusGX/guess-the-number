@@ -1,8 +1,7 @@
-.PHONY: help build up down logs clean prod local-db pm2 pm2-build pm2-local pm2-monitoring pm2-full
+.PHONY: help build up down logs clean prod local-db
 
 # Docker configuration
 COMPOSE_FILE := docker-compose.yml
-PM2_COMPOSE_FILE := docker-compose.pm2.yml
 
 # Default target
 help: ## Show this help message
@@ -26,11 +25,11 @@ env: ## Copy environment template
 	fi
 
 # Production deployment
-prod: env ## Deploy with remote databases (production)
-	docker compose up -d bot
+prod: env ## Deploy with remote databases (production) - uses host Redis
+	GTN_REDIS_HOST=host.docker.internal docker compose up -d bot
 
-prod-build: env ## Build and deploy with remote databases
-	docker compose up -d --build bot
+prod-build: env ## Build and deploy with remote databases - uses host Redis
+	GTN_REDIS_HOST=host.docker.internal docker compose up -d --build bot
 
 # Local development with local databases
 local-db: env ## Deploy with local MongoDB and Redis
@@ -38,22 +37,6 @@ local-db: env ## Deploy with local MongoDB and Redis
 
 local-db-build: env ## Build and deploy with local databases
 	docker compose --profile local-db up -d --build
-
-# PM2 deployment targets
-pm2: env ## Deploy with PM2 process manager
-	docker compose -f $(PM2_COMPOSE_FILE) up -d bot
-
-pm2-build: env ## Build and deploy with PM2
-	docker compose -f $(PM2_COMPOSE_FILE) up -d --build bot
-
-pm2-local: env ## Deploy PM2 with local databases
-	docker compose -f $(PM2_COMPOSE_FILE) --profile local-db up -d
-
-pm2-monitoring: env ## Deploy PM2 with monitoring dashboard
-	docker compose -f $(PM2_COMPOSE_FILE) --profile monitoring up -d
-
-pm2-full: env ## Deploy PM2 with local databases and monitoring
-	docker compose -f $(PM2_COMPOSE_FILE) --profile local-db --profile monitoring up -d
 
 # Service management
 up: ## Start all services
@@ -84,30 +67,27 @@ logs-mongo: ## Show logs for MongoDB service
 logs-redis: ## Show logs for Redis service
 	docker compose logs -f redis
 
-# PM2 specific log commands
-logs-pm2: ## Show PM2 logs
-	docker compose -f $(PM2_COMPOSE_FILE) logs -f bot
-
+# PM2 process management
 pm2-status: ## Show PM2 process status
-	docker exec -it guess-the-number-bot-pm2 pm2 status
+	docker exec -it guess-the-number-bot pm2 status
 
 pm2-monit: ## Open PM2 monitoring interface
-	docker exec -it guess-the-number-bot-pm2 pm2 monit
+	docker exec -it guess-the-number-bot pm2 monit
 
 pm2-restart: ## Restart PM2 processes
-	docker exec -it guess-the-number-bot-pm2 pm2 restart all
+	docker exec -it guess-the-number-bot pm2 restart all
 
 pm2-reload: ## Graceful reload PM2 processes
-	docker exec -it guess-the-number-bot-pm2 pm2 reload all
+	docker exec -it guess-the-number-bot pm2 reload all
 
 pm2-stop: ## Stop PM2 processes
-	docker exec -it guess-the-number-bot-pm2 pm2 stop all
+	docker exec -it guess-the-number-bot pm2 stop all
 
 pm2-logs: ## Show PM2 application logs
-	docker exec -it guess-the-number-bot-pm2 pm2 logs
+	docker exec -it guess-the-number-bot pm2 logs
 
 pm2-flush: ## Flush PM2 logs
-	docker exec -it guess-the-number-bot-pm2 pm2 flush
+	docker exec -it guess-the-number-bot pm2 flush
 
 # Database operations
 mongo-shell: ## Connect to MongoDB shell

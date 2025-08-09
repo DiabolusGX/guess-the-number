@@ -12,41 +12,37 @@ services:
         environment:
             # Override config paths for container
             - GTN_REDIS_HOST=${GTN_REDIS_HOST:-redis}
-            - GTN_MONGO_HOST=${GTN_MONGO_HOST:-mongodb://mongo:27017}
+            # PM2 specific environment
+            - PM2_HOME=/app/.pm2
+            - NODE_ENV=production
         ports:
             - "${METRICS_PORT:-8080}:8080" # Metrics endpoint
-        depends_on:
-            - redis
-            - mongo
+            - "${PM2_WEB_PORT:-9615}:9615" # PM2 web interface (optional)
+        # depends_on:
+        #     - redis
+        #     - mongo
         networks:
             - bot-network
+        extra_hosts:
+            - "host.docker.internal:host-gateway" # Allow access to host machine
         volumes:
-            - ./logs:/app/logs # Optional: Mount logs directory
+            - /var/log/gtn-bot:/var/log/gtn-bot # Mount host Promtail log path to container
+            - pm2_data:/app/.pm2 # PM2 data persistence
         healthcheck:
-            test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/metrics"]
+            test: ["CMD", "sh", "-c", "pm2 list | grep -q 'online' || exit 1"]
             interval: 30s
             timeout: 10s
             retries: 3
             start_period: 40s
-
-    # Optional local MongoDB - can be removed if using remote MongoDB
-    mongo:
-        image: mongo:7.0
-        container_name: guess-the-number-mongo
-        restart: unless-stopped
-        environment:
-            MONGO_INITDB_ROOT_USERNAME: ${GTN_MONGO_USERNAME:-admin}
-            MONGO_INITDB_ROOT_PASSWORD: ${GTN_MONGO_PASSWORD:-password}
-            MONGO_INITDB_DATABASE: ${GTN_MONGO_DATABASE:-guess_the_number}
-        volumes:
-            - mongo_data:/data/db
-            - ./docker/mongo-init:/docker-entrypoint-initdb.d # Optional: initialization scripts
-        ports:
-            - "${MONGO_PORT:-27017}:27017"
-        networks:
-            - bot-network
-        profiles:
-            - local-db # Use profile to optionally include this service
+        # Resource limits for production
+        deploy:
+            resources:
+                limits:
+                    cpus: "4.0"
+                    memory: 4096M
+                reservations:
+                    cpus: "1.0"
+                    memory: 1024M
 
     # Optional local Redis - can be removed if using remote Redis
     redis:
@@ -64,6 +60,12 @@ services:
             - bot-network
         profiles:
             - local-db # Use profile to optionally include this service
+        healthcheck:
+            test: ["CMD", "redis-cli", "ping"]
+            interval: 30s
+            timeout: 10s
+            retries: 5
+            start_period: 30s
         command: >
             sh -c "
               if [ -n \"$$REDIS_PASSWORD\" ]; then
@@ -78,7 +80,7 @@ networks:
         driver: bridge
 
 volumes:
-    mongo_data:
-        driver: local
     redis_data:
+        driver: local
+    pm2_data:
         driver: local

@@ -19,9 +19,9 @@ module.exports = {
                 GTN_LOGGING_LEVEL: "debug",
             },
             // Logging configuration
-            log_file: "/app/logs/combined.log",
-            out_file: "/app/logs/out.log",
-            error_file: "/app/logs/error.log",
+            log_file: "/var/log/gtn-bot/combined.log",
+            out_file: "/var/log/gtn-bot/out.log",
+            error_file: "/var/log/gtn-bot/pm2-error.log",
             log_date_format: "YYYY-MM-DD HH:mm:ss Z",
 
             // Process management
@@ -70,7 +70,7 @@ module.exports = {
             ref: "origin/main",
             repo: "git@github.com:diabolusgx/guess-the-number.git",
             path: "/var/www/guess-the-number",
-            "post-deploy": "docker-compose -f docker-compose.pm2.yml up -d --build",
+            "post-deploy": "make prod-build",
             "pre-setup": "apt update && apt install docker.io docker-compose -y",
         },
         staging: {
@@ -79,7 +79,7 @@ module.exports = {
             ref: "origin/develop",
             repo: "git@github.com:diabolusgx/guess-the-number.git",
             path: "/var/www/guess-the-number-staging",
-            "post-deploy": "docker-compose -f docker-compose.pm2.yml up -d --build",
+            "post-deploy": "make prod-build",
             env: {
                 NODE_ENV: "staging",
             },
