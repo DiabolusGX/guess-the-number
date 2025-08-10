@@ -115,7 +115,7 @@ func (h *ApplicationCommandHandler) handleCommand(ctx context.Context, event *di
 				Content: &content,
 			})
 			h.Logger.FromContext(ctx).Infow("user is missing permissions for mod command", "command", commandName, "user_id", event.User().ID.String())
-			return ierr.New(ierr.ErrCodeMissingPermissions, "user is missing permissions")
+			return nil
 		}
 	}
 

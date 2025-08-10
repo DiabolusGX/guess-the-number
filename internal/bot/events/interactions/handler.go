@@ -155,7 +155,7 @@ func (h *InteractionHandler) processComponentInteraction(ctx context.Context, ev
 				Flags:   discord.MessageFlagEphemeral,
 			})
 			h.Logger.FromContext(ctx).Infow("user lacks permissions for mod component interaction", "custom_id", customID, "user_id", event.User().ID.String())
-			return ierr.New(ierr.ErrCodeMissingPermissions, "user is missing permissions")
+			return nil
 		}
 	}
 
@@ -202,7 +202,7 @@ func (h *InteractionHandler) processModalInteraction(ctx context.Context, event 
 				Flags:   discord.MessageFlagEphemeral,
 			})
 			h.Logger.FromContext(ctx).Infow("user lacks permissions for mod modal interaction", "custom_id", customID, "user_id", event.User().ID.String())
-			return ierr.New(ierr.ErrCodeMissingPermissions, "user is missing permissions")
+			return nil
 		}
 	}
 
