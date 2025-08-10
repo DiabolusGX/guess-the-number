@@ -210,7 +210,29 @@ func Start(lc fx.Lifecycle, client *bot.Client, logger *logger.Logger, cfg *conf
 			// Use appropriate connection method based on sharding configuration
 			if cfg.Bot.Sharding.Enabled {
 				logger.Info("Starting bot with sharding enabled")
-				return client.OpenShardManager(ctx)
+				// return client.OpenShardManager(ctx)
+
+				// Start shards asynchronously to avoid Discord rate limits and Fx timeout
+				// Discord allows only X shards per minute, so we need to start them in background
+				go func() {
+					// Use context.Background() to avoid Fx's 15-second timeout constraint
+					shardCtx := context.Background()
+
+					logger.Info("Opening shard manager asynchronously (no timeout)")
+					err := client.OpenShardManager(shardCtx)
+					if err != nil {
+						logger.Errorw("Failed to open shard manager", "error", err)
+						// Note: In a production environment, you might want to implement
+						// a retry mechanism or alerting system here
+					} else {
+						logger.Info("Shard manager started successfully")
+					}
+				}()
+
+				// Return immediately to avoid Fx timeout
+				// The shards will start connecting in the background
+				logger.Info("Shard startup initiated asynchronously")
+				return nil
 			} else {
 				logger.Info("Starting bot with single gateway connection")
 				return client.OpenGateway(ctx)
