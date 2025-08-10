@@ -18,7 +18,7 @@ import (
 
 // GameStartRequest contains the parameters for starting a new game
 type GameStartRequest struct {
-	Client            bot.Client
+	Client            *bot.Client
 	TargetChannel     discord.GuildChannel
 	CreatedBy         discord.User
 	LowerBound        int64
@@ -69,7 +69,7 @@ func StartGameCommon(
 	// unlock target channel from lock role if it's locked
 	var lockRoleErr error
 	if guildConfig != nil && guildConfig.LockRole != "" {
-		lockRole, ok := request.Client.Caches().Role(guildID, snowflake.MustParse(guildConfig.LockRole))
+		lockRole, ok := request.Client.Caches.Role(guildID, snowflake.MustParse(guildConfig.LockRole))
 		if ok {
 			unlockReason := "New game started, unlocking channel"
 			if request.AutoRestarting {
@@ -89,7 +89,7 @@ func StartGameCommon(
 	gameStartMsg.WriteString(fmt.Sprintf("Guess a number between `%d` and `%d`\n", request.LowerBound, request.UpperBound))
 	gameStartMsg.WriteString(fmt.Sprintf("Correct guess will get you **%d points**", game.Game.Points))
 	if guildConfig != nil && guildConfig.WinRole != "" {
-		winRole, ok := request.Client.Caches().Role(guildID, snowflake.MustParse(guildConfig.WinRole))
+		winRole, ok := request.Client.Caches.Role(guildID, snowflake.MustParse(guildConfig.WinRole))
 		if ok {
 			gameStartMsg.WriteString(fmt.Sprintf(" and %s role.", winRole.Mention()))
 		}
@@ -98,7 +98,7 @@ func StartGameCommon(
 	if request.PreviousGameID != "" {
 		gameStartMsg.WriteString(fmt.Sprintf("*Previous Game ID: `%s`*\n", request.PreviousGameID))
 	}
-	msg, gameStartMsgErr := utils.SendMessage(request.Client.Rest(), utils.MessageRequest{
+	msg, gameStartMsgErr := utils.SendMessage(request.Client.Rest, utils.MessageRequest{
 		ChannelID: request.TargetChannel.ID(),
 		Content:   gameStartMsg.String(),
 		Emoji:     utils.EmojiSuccess,
@@ -109,7 +109,7 @@ func StartGameCommon(
 	if request.AutoRestarting {
 		pinReason = "Pinning auto-restarted game start message"
 	}
-	pinErr := request.Client.Rest().PinMessage(request.TargetChannel.ID(), msg.ID, rest.WithReason(pinReason))
+	pinErr := request.Client.Rest.PinMessage(request.TargetChannel.ID(), msg.ID, rest.WithReason(pinReason))
 
 	// send game start message with answer to user's DM
 	var dmContent strings.Builder
@@ -123,7 +123,7 @@ func StartGameCommon(
 		dmContent.WriteString(fmt.Sprintf("\nPrevious game (`%s`) has ended, and a new one has automatically started.\n", request.PreviousGameID))
 	}
 
-	dmErr := utils.SendDM(request.Client.Rest(), request.CreatedBy.ID, utils.MessageRequest{
+	dmErr := utils.SendDM(request.Client.Rest, request.CreatedBy.ID, utils.MessageRequest{
 		Content: dmContent.String(),
 		Emoji:   utils.EmojiSuccess,
 	})

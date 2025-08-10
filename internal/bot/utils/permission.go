@@ -35,7 +35,7 @@ func CheckBotPermissions(permissions *discord.Permissions, requiredPermissions .
 }
 
 func CheckBotPermissionsInChannel(event *events.ApplicationCommandInteractionCreate, channel discord.GuildChannel, requiredPermissions ...discord.Permissions) *PermissionResult {
-	botMember, ok := event.Client().Caches().SelfMember(*event.GuildID())
+	botMember, ok := event.Client().Caches.SelfMember(*event.GuildID())
 	if !ok {
 		return &PermissionResult{
 			HasAllPermissions:  false,
@@ -43,15 +43,15 @@ func CheckBotPermissionsInChannel(event *events.ApplicationCommandInteractionCre
 		}
 	}
 
-	permission := event.Client().Caches().MemberPermissionsInChannel(channel, botMember)
+	permission := event.Client().Caches.MemberPermissionsInChannel(channel, botMember)
 	return CheckBotPermissions(&permission, requiredPermissions...)
 }
 
-func UnlockChannel(ctx context.Context, client bot.Client, channel discord.GuildChannel, lockRole discord.Role, reason string) error {
+func UnlockChannel(ctx context.Context, client *bot.Client, channel discord.GuildChannel, lockRole discord.Role, reason string) error {
 	// TODO: skipping lock & unlock till blocking execution by rate limiting is fixed
 	if false && strings.HasSuffix(channel.Name(), "🔒") {
 		name := channel.Name()[:len(channel.Name())-1]
-		_, err := client.Rest().UpdateChannel(
+		_, err := client.Rest.UpdateChannel(
 			channel.ID(),
 			discord.GuildTextChannelUpdate{Name: &name},
 			rest.WithReason(reason),
@@ -61,7 +61,7 @@ func UnlockChannel(ctx context.Context, client bot.Client, channel discord.Guild
 		}
 	}
 
-	err := client.Rest().DeletePermissionOverwrite(channel.ID(), lockRole.ID, rest.WithReason(reason))
+	err := client.Rest.DeletePermissionOverwrite(channel.ID(), lockRole.ID, rest.WithReason(reason))
 	if err != nil {
 		logger.GetLoggerFromContext(ctx).Error("Failed to delete permission overwrite", "error", err)
 	}
@@ -69,11 +69,11 @@ func UnlockChannel(ctx context.Context, client bot.Client, channel discord.Guild
 	return err
 }
 
-func LockChannel(ctx context.Context, client bot.Client, channel discord.GuildChannel, lockRole discord.Role, reason string) error {
+func LockChannel(ctx context.Context, client *bot.Client, channel discord.GuildChannel, lockRole discord.Role, reason string) error {
 	// TODO: skipping lock & unlock till blocking execution by rate limiting is fixed
 	if false && !strings.HasSuffix(channel.Name(), "🔒") {
 		name := channel.Name() + "🔒"
-		_, err := client.Rest().UpdateChannel(
+		_, err := client.Rest.UpdateChannel(
 			channel.ID(),
 			discord.GuildTextChannelUpdate{Name: &name},
 			rest.WithReason(reason),
@@ -85,7 +85,7 @@ func LockChannel(ctx context.Context, client bot.Client, channel discord.GuildCh
 
 	denyPermissions := discord.PermissionSendMessages
 
-	err := client.Rest().UpdatePermissionOverwrite(
+	err := client.Rest.UpdatePermissionOverwrite(
 		channel.ID(),
 		lockRole.ID,
 		discord.RolePermissionOverwriteUpdate{
@@ -104,13 +104,13 @@ func LockChannel(ctx context.Context, client bot.Client, channel discord.GuildCh
 // Returns true if user is Admin OR has the Bot Manager role.
 // Makes a single REST API call to fetch member data.
 func CheckUserModPermissions(event *events.ApplicationCommandInteractionCreate, botManagerRoleID string) bool {
-	member, err := event.Client().Rest().GetMember(*event.GuildID(), event.User().ID)
+	member, err := event.Client().Rest.GetMember(*event.GuildID(), event.User().ID)
 	if err != nil {
 		return false
 	}
 
 	// Check if user has administrator permissions
-	permissions := event.Client().Caches().MemberPermissions(*member)
+	permissions := event.Client().Caches.MemberPermissions(*member)
 	if permissions.Has(discord.PermissionAdministrator) {
 		return true
 	}
@@ -128,13 +128,13 @@ func CheckUserModPermissions(event *events.ApplicationCommandInteractionCreate, 
 // CheckUserModPermissionsComponent checks if a user has permission for mod component interactions.
 // Returns true if user is Admin OR has the Bot Manager role.
 func CheckUserModPermissionsComponent(event *events.ComponentInteractionCreate, botManagerRoleID string) bool {
-	member, err := event.Client().Rest().GetMember(*event.GuildID(), event.User().ID)
+	member, err := event.Client().Rest.GetMember(*event.GuildID(), event.User().ID)
 	if err != nil {
 		return false
 	}
 
 	// Check if user has administrator permissions
-	permissions := event.Client().Caches().MemberPermissions(*member)
+	permissions := event.Client().Caches.MemberPermissions(*member)
 	if permissions.Has(discord.PermissionAdministrator) {
 		return true
 	}
@@ -152,13 +152,13 @@ func CheckUserModPermissionsComponent(event *events.ComponentInteractionCreate, 
 // CheckUserModPermissionsModal checks if a user has permission for mod modal interactions.
 // Returns true if user is Admin OR has the Bot Manager role.
 func CheckUserModPermissionsModal(event *events.ModalSubmitInteractionCreate, botManagerRoleID string) bool {
-	member, err := event.Client().Rest().GetMember(*event.GuildID(), event.User().ID)
+	member, err := event.Client().Rest.GetMember(*event.GuildID(), event.User().ID)
 	if err != nil {
 		return false
 	}
 
 	// Check if user has administrator permissions
-	permissions := event.Client().Caches().MemberPermissions(*member)
+	permissions := event.Client().Caches.MemberPermissions(*member)
 	if permissions.Has(discord.PermissionAdministrator) {
 		return true
 	}

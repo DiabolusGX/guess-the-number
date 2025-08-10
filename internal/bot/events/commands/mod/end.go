@@ -75,7 +75,7 @@ func (c *FinishCommand) Handler(ctx context.Context, event *events.ApplicationCo
 	response.WriteString(fmt.Sprintf("Use %s command with Game ID: `%s` to see the stats.\n", utils.MentionApplicationCommand(event.Client().ID(), utils.CommandGameStats), game.Game.ID))
 
 	// TODO: add some game stats
-	_, err = utils.SendMessage(event.Client().Rest(), utils.MessageRequest{
+	_, err = utils.SendMessage(event.Client().Rest, utils.MessageRequest{
 		ChannelID: channel.ID,
 		Content:   fmt.Sprintf("Game has beed ended by <@%s>", event.User().ID.String()),
 		Emoji:     utils.EmojiSuccess,
@@ -103,7 +103,7 @@ func (c *FinishCommand) Handler(ctx context.Context, event *events.ApplicationCo
 		// Add game id to log
 		logContent.WriteString(fmt.Sprintf("\n\n**Game ID:** `%s`", game.Game.ID))
 
-		utils.LogToChannel(event.Client().Rest(), data.GuildConfig.LogChannel, utils.LogTypeGameActivity, "🔴 Game Force Ended", logContent.String())
+		utils.LogToChannel(event.Client().Rest, data.GuildConfig.LogChannel, utils.LogTypeGameActivity, "🔴 Game Force Ended", logContent.String())
 	}
 
 	return utils.EventReply(event, utils.MessageRequest{

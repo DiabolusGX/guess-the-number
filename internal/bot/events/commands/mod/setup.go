@@ -223,7 +223,7 @@ func (c *SetupCommand) handlePrefix(ctx context.Context, event *events.Applicati
 
 	// Log the configuration change with before/after values
 	logContent := fmt.Sprintf("**Previous:** `%s`\n**New:** `%s`\n**Updated by:** <@%s>", oldPrefix, prefix, event.User().ID.String())
-	utils.LogToChannel(event.Client().Rest(), cfg.LogChannel, utils.LogTypeConfigurationChange, "🔧 Prefix Updated", logContent)
+	utils.LogToChannel(event.Client().Rest, cfg.LogChannel, utils.LogTypeConfigurationChange, "🔧 Prefix Updated", logContent)
 
 	return utils.EventReply(event, utils.MessageRequest{
 		UseEmbed:         true,
@@ -242,7 +242,7 @@ func (c *SetupCommand) handlePrefix(ctx context.Context, event *events.Applicati
 func (c *SetupCommand) handleManager(ctx context.Context, event *events.ApplicationCommandInteractionCreate, data *commands.Data) error {
 	role := event.SlashCommandInteractionData().Role("role")
 
-	role, ok := event.Client().Caches().Role(*event.GuildID(), role.ID)
+	role, ok := event.Client().Caches.Role(*event.GuildID(), role.ID)
 	if !ok {
 		return utils.EventReply(event, utils.MessageRequest{
 			UseEmbed:         true,
@@ -272,7 +272,7 @@ func (c *SetupCommand) handleManager(ctx context.Context, event *events.Applicat
 
 	// Log the configuration change with before/after values
 	logContent := fmt.Sprintf(logFmt, oldManagerRole, role.Mention(), event.User().Mention())
-	utils.LogToChannel(event.Client().Rest(), cfg.LogChannel, utils.LogTypeConfigurationChange, "🔧 Manager Role Updated", logContent)
+	utils.LogToChannel(event.Client().Rest, cfg.LogChannel, utils.LogTypeConfigurationChange, "🔧 Manager Role Updated", logContent)
 
 	return utils.EventReply(event, utils.MessageRequest{
 		UseEmbed:         true,
@@ -310,7 +310,7 @@ func (c *SetupCommand) handleDM(ctx context.Context, event *events.ApplicationCo
 
 	// Log the configuration change with before/after values
 	logContent := fmt.Sprintf(logFmt, oldStatus, newStatus, event.User().Mention())
-	utils.LogToChannel(event.Client().Rest(), cfg.LogChannel, utils.LogTypeConfigurationChange, "🔧 DM Settings Updated", logContent)
+	utils.LogToChannel(event.Client().Rest, cfg.LogChannel, utils.LogTypeConfigurationChange, "🔧 DM Settings Updated", logContent)
 
 	return utils.EventReply(event, utils.MessageRequest{
 		UseEmbed:         true,
@@ -330,7 +330,7 @@ func (c *SetupCommand) handleWinRole(ctx context.Context, event *events.Applicat
 	role := event.SlashCommandInteractionData().Role("role")
 
 	// Validate role exists in server
-	_, ok := event.Client().Caches().Role(*event.GuildID(), role.ID)
+	_, ok := event.Client().Caches.Role(*event.GuildID(), role.ID)
 	if !ok {
 		return utils.EventReply(event, utils.MessageRequest{
 			UseEmbed:         true,
@@ -360,7 +360,7 @@ func (c *SetupCommand) handleWinRole(ctx context.Context, event *events.Applicat
 
 	// Log the configuration change with before/after values
 	logContent := fmt.Sprintf(logFmt, oldWinRole, role.Mention(), event.User().Mention())
-	utils.LogToChannel(event.Client().Rest(), cfg.LogChannel, utils.LogTypeConfigurationChange, "🔧 Win Role Updated", logContent)
+	utils.LogToChannel(event.Client().Rest, cfg.LogChannel, utils.LogTypeConfigurationChange, "🔧 Win Role Updated", logContent)
 
 	return utils.EventReply(event, utils.MessageRequest{
 		UseEmbed:         true,
@@ -380,7 +380,7 @@ func (c *SetupCommand) handleReqRole(ctx context.Context, event *events.Applicat
 	role := event.SlashCommandInteractionData().Role("role")
 
 	// Validate role exists in server
-	_, ok := event.Client().Caches().Role(*event.GuildID(), role.ID)
+	_, ok := event.Client().Caches.Role(*event.GuildID(), role.ID)
 	if !ok {
 		return utils.EventReply(event, utils.MessageRequest{
 			UseEmbed:         true,
@@ -410,7 +410,7 @@ func (c *SetupCommand) handleReqRole(ctx context.Context, event *events.Applicat
 
 	// Log the configuration change with before/after values
 	logContent := fmt.Sprintf(logFmt, oldReqRole, role.Mention(), event.User().Mention())
-	utils.LogToChannel(event.Client().Rest(), cfg.LogChannel, utils.LogTypeConfigurationChange, "🔧 Required Role Updated", logContent)
+	utils.LogToChannel(event.Client().Rest, cfg.LogChannel, utils.LogTypeConfigurationChange, "🔧 Required Role Updated", logContent)
 
 	return utils.EventReply(event, utils.MessageRequest{
 		UseEmbed:         true,
@@ -430,7 +430,7 @@ func (c *SetupCommand) handleLockRole(ctx context.Context, event *events.Applica
 	role := event.SlashCommandInteractionData().Role("role")
 
 	// Validate role exists in server
-	_, ok := event.Client().Caches().Role(*event.GuildID(), role.ID)
+	_, ok := event.Client().Caches.Role(*event.GuildID(), role.ID)
 	if !ok {
 		return utils.EventReply(event, utils.MessageRequest{
 			UseEmbed:         true,
@@ -460,7 +460,7 @@ func (c *SetupCommand) handleLockRole(ctx context.Context, event *events.Applica
 
 	// Log the configuration change with before/after values
 	logContent := fmt.Sprintf(logFmt, oldLockRole, role.Mention(), event.User().Mention())
-	utils.LogToChannel(event.Client().Rest(), cfg.LogChannel, utils.LogTypeConfigurationChange, "🔧 Lock Role Updated", logContent)
+	utils.LogToChannel(event.Client().Rest, cfg.LogChannel, utils.LogTypeConfigurationChange, "🔧 Lock Role Updated", logContent)
 
 	return utils.EventReply(event, utils.MessageRequest{
 		UseEmbed:         true,
@@ -480,7 +480,7 @@ func (c *SetupCommand) handleLogChannel(ctx context.Context, event *events.Appli
 	channel := event.SlashCommandInteractionData().Channel("channel")
 
 	// Validate channel exists in server and bot can access it
-	guildChannel, ok := event.Client().Caches().Channel(channel.ID)
+	guildChannel, ok := event.Client().Caches.Channel(channel.ID)
 	if !ok {
 		return utils.EventReply(event, utils.MessageRequest{
 			UseEmbed:         true,
@@ -523,7 +523,7 @@ func (c *SetupCommand) handleLogChannel(ctx context.Context, event *events.Appli
 
 	// Log the configuration change to the new log channel with before/after values
 	logContent := fmt.Sprintf(logFmt, oldLogChannel, guildChannel.Mention(), event.User().Mention())
-	utils.LogToChannel(event.Client().Rest(), cfg.LogChannel, utils.LogTypeConfigurationChange, "🔧 Log Channel Updated", logContent)
+	utils.LogToChannel(event.Client().Rest, cfg.LogChannel, utils.LogTypeConfigurationChange, "🔧 Log Channel Updated", logContent)
 
 	return utils.EventReply(event, utils.MessageRequest{
 		UseEmbed:         true,
@@ -561,7 +561,7 @@ func (c *SetupCommand) handleAutoReactionHints(ctx context.Context, event *event
 
 	// Log the configuration change with before/after values
 	logContent := fmt.Sprintf(logFmt, oldStatus, newStatus, event.User().Mention())
-	utils.LogToChannel(event.Client().Rest(), cfg.LogChannel, utils.LogTypeConfigurationChange, "🔧 Auto Reaction Hints Updated", logContent)
+	utils.LogToChannel(event.Client().Rest, cfg.LogChannel, utils.LogTypeConfigurationChange, "🔧 Auto Reaction Hints Updated", logContent)
 
 	return utils.EventReply(event, utils.MessageRequest{
 		UseEmbed:         true,
@@ -599,7 +599,7 @@ func (c *SetupCommand) handleAutoRestart(ctx context.Context, event *events.Appl
 
 	// Log the configuration change with before/after values
 	logContent := fmt.Sprintf(logFmt, oldStatus, newStatus, event.User().Mention())
-	utils.LogToChannel(event.Client().Rest(), cfg.LogChannel, utils.LogTypeConfigurationChange, "🔧 Auto Restart Updated", logContent)
+	utils.LogToChannel(event.Client().Rest, cfg.LogChannel, utils.LogTypeConfigurationChange, "🔧 Auto Restart Updated", logContent)
 
 	return utils.EventReply(event, utils.MessageRequest{
 		UseEmbed:         true,
@@ -666,7 +666,7 @@ func formatRoleSetting(event *events.ApplicationCommandInteractionCreate, roleID
 	if roleID == "" {
 		return "❌ Not configured"
 	}
-	if role, ok := event.Client().Caches().Role(*event.GuildID(), snowflake.MustParse(roleID)); ok {
+	if role, ok := event.Client().Caches.Role(*event.GuildID(), snowflake.MustParse(roleID)); ok {
 		return role.Mention()
 	}
 	return fmt.Sprintf("⚠️ <@&%s> (deleted)", roleID)

@@ -11,7 +11,6 @@ import (
 	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/gateway"
 	"github.com/disgoorg/disgo/sharding"
-	"github.com/disgoorg/paginator"
 	"go.uber.org/fx"
 
 	"github.com/diabolusgx/guess-the-number/internal/bot/events"
@@ -30,7 +29,7 @@ import (
 	"github.com/diabolusgx/guess-the-number/pkg/logger"
 )
 
-func NewClient(cfg *config.Configuration) (bot.Client, error) {
+func NewClient(cfg *config.Configuration) (*bot.Client, error) {
 	var gatewayOpts []gateway.ConfigOpt
 
 	// Add intents to gateway options and compression for better performance
@@ -72,7 +71,6 @@ func NewClient(cfg *config.Configuration) (bot.Client, error) {
 			}),
 		),
 		bot.WithLogger(logger),
-		bot.WithEventListeners(paginator.New()),
 	)
 
 	// Configure sharding if enabled
@@ -158,7 +156,7 @@ var Module = fx.Module(
 		NewBotHandler,
 	),
 	fx.Invoke(func(
-		client bot.Client,
+		client *bot.Client,
 		handler BotHandler,
 		eventParams events.EventListenerParams,
 		applicationCommandHandler *commands.ApplicationCommandHandler,
@@ -175,7 +173,7 @@ var Module = fx.Module(
 	}),
 )
 
-func Start(lc fx.Lifecycle, client bot.Client, logger *logger.Logger, cfg *config.Configuration, handler BotHandler, syncService service.SyncService) {
+func Start(lc fx.Lifecycle, client *bot.Client, logger *logger.Logger, cfg *config.Configuration, handler BotHandler, syncService service.SyncService) {
 	lc.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
 			logger.Infow(

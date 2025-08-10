@@ -24,7 +24,7 @@ import (
 
 type ApplicationCommandHandler struct {
 	Config  *config.Configuration
-	Client  bot.Client
+	Client  *bot.Client
 	Logger  *logger.Logger
 	Metrics *metrics.Metrics
 
@@ -98,7 +98,7 @@ func (h *ApplicationCommandHandler) handleCommand(ctx context.Context, event *di
 	res := utils.CheckBotPermissions(appPermissions, discord.PermissionViewChannel, discord.PermissionSendMessages, discord.PermissionEmbedLinks)
 	if !res.HasAllPermissions {
 		h.Logger.FromContext(ctx).Infow("bot is missing permissions", "missing_permissions", strings.Join(res.MissingPermissions, ", "))
-		return ierr.New(ierr.ErrCodeMissingPermissions, "bot is missing permissions")
+		return nil
 	}
 
 	guildConfig, err := h.GuildManagementService.GetGuildConfig(ctx, event.GuildID().String())
@@ -111,7 +111,7 @@ func (h *ApplicationCommandHandler) handleCommand(ctx context.Context, event *di
 	if isModCommand(commandName) {
 		if !utils.CheckUserModPermissions(event, guildConfig.BotManager) {
 			content := "❌ **Access Denied**\nYou need to be an Administrator or have the Bot Manager role to use this command."
-			_, _ = event.Client().Rest().UpdateInteractionResponse(event.ApplicationID(), event.Token(), discord.MessageUpdate{
+			_, _ = event.Client().Rest.UpdateInteractionResponse(event.ApplicationID(), event.Token(), discord.MessageUpdate{
 				Content: &content,
 			})
 			h.Logger.FromContext(ctx).Infow("user is missing permissions for mod command", "command", commandName, "user_id", event.User().ID.String())

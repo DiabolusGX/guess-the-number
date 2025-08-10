@@ -96,7 +96,7 @@ func (h *MessageCreateListener) handleAttempt(ctx context.Context, event *disgoE
 				emoji = "⬇️" // Guess is too high, answer is lower
 			}
 
-			reactionErr := event.Client().Rest().AddReaction(event.ChannelID, event.Message.ID, emoji)
+			reactionErr := event.Client().Rest.AddReaction(event.ChannelID, event.Message.ID, emoji)
 			if reactionErr != nil {
 				h.Logger.FromContext(ctx).Error("failed to add reaction hint", "error", reactionErr.Error(), "emoji", emoji)
 			}
@@ -123,7 +123,7 @@ func (h *MessageCreateListener) handleAttempt(ctx context.Context, event *disgoE
 
 	// lock channel
 	if guildConfig != nil && guildConfig.LockRole != "" {
-		lockRole, ok := event.Client().Caches().Role(*event.GuildID, snowflake.MustParse(guildConfig.LockRole))
+		lockRole, ok := event.Client().Caches.Role(*event.GuildID, snowflake.MustParse(guildConfig.LockRole))
 		if ok {
 			err = utils.LockChannel(ctx, event.Client(), channel, lockRole, "Game completed, locking channel")
 			if err != nil {
@@ -137,9 +137,9 @@ func (h *MessageCreateListener) handleAttempt(ctx context.Context, event *disgoE
 	var winRole discord.Role
 	var winRoleExists bool
 	if guildConfig != nil && guildConfig.WinRole != "" {
-		winRole, winRoleExists = event.Client().Caches().Role(*event.GuildID, snowflake.MustParse(guildConfig.WinRole))
+		winRole, winRoleExists = event.Client().Caches.Role(*event.GuildID, snowflake.MustParse(guildConfig.WinRole))
 		if winRoleExists {
-			winRoleErr = event.Client().Rest().AddMemberRole(*event.GuildID, event.Message.Author.ID, winRole.ID, rest.WithReason("Game winner, awarding win role"))
+			winRoleErr = event.Client().Rest.AddMemberRole(*event.GuildID, event.Message.Author.ID, winRole.ID, rest.WithReason("Game winner, awarding win role"))
 			if winRoleErr != nil {
 				h.Logger.FromContext(ctx).Error("failed to add win role to winner", "error", winRoleErr.Error())
 				winDM.WriteString("\n\n> *Failed to add win role, please contact the admin or bot manager*")
@@ -154,7 +154,7 @@ func (h *MessageCreateListener) handleAttempt(ctx context.Context, event *disgoE
 	// send DM to winner if configured
 	var dmErr error
 	if guildConfig != nil && guildConfig.DM {
-		dmErr = utils.SendDM(event.Client().Rest(), event.Message.Author.ID, utils.MessageRequest{
+		dmErr = utils.SendDM(event.Client().Rest, event.Message.Author.ID, utils.MessageRequest{
 			Emoji:    utils.EmojiSuccess,
 			Content:  winDM.String(),
 			WithVote: true,
@@ -165,7 +165,7 @@ func (h *MessageCreateListener) handleAttempt(ctx context.Context, event *disgoE
 	}
 
 	// send game completion message and pin it
-	_, messageErr := utils.SendMessage(event.Client().Rest(), utils.MessageRequest{
+	_, messageErr := utils.SendMessage(event.Client().Rest, utils.MessageRequest{
 		ChannelID:           event.ChannelID,
 		Emoji:               utils.EmojiSuccess,
 		Content:             winChannelMsg.String(),
@@ -180,7 +180,7 @@ func (h *MessageCreateListener) handleAttempt(ctx context.Context, event *disgoE
 	// TODO: make it configurable
 	var pinErr error
 	// if messageErr == nil {
-	// 	pinErr = event.Client().Rest().PinMessage(event.Message.ChannelID, winMsg.ID, rest.WithReason("Pinning game completion message"))
+	// 	pinErr = event.Client().Rest.PinMessage(event.Message.ChannelID, winMsg.ID, rest.WithReason("Pinning game completion message"))
 	// 	if pinErr != nil {
 	// 		h.Logger.FromContext(ctx).Error("failed to pin game completion message", "error", pinErr.Error())
 	// 	}
@@ -189,13 +189,13 @@ func (h *MessageCreateListener) handleAttempt(ctx context.Context, event *disgoE
 	// un-pin other messages pinned by bot
 	var unpinErr error
 	var unpinCount, unpinFailures int
-	pinnedMessages, unpinErr := event.Client().Rest().GetPinnedMessages(event.Message.ChannelID)
+	pinnedMessages, unpinErr := event.Client().Rest.GetChannelPins(event.Message.ChannelID, 0, 100)
 	if unpinErr != nil {
 		h.Logger.FromContext(ctx).Error("failed to get pinned messages", "error", unpinErr.Error())
 	} else {
-		for _, pinnedMessage := range pinnedMessages {
-			if pinnedMessage.Author.ID == event.Client().ID() && !strings.HasPrefix(pinnedMessage.Content, "<:greentick:768464483009691648> | **Congratulations") {
-				err := event.Client().Rest().UnpinMessage(event.Message.ChannelID, pinnedMessage.ID, rest.WithReason("Un-pinning other messages pinned by bot"))
+		for _, pinnedMessage := range pinnedMessages.Items {
+			if pinnedMessage.Message.Author.ID == event.Client().ID() && !strings.HasPrefix(pinnedMessage.Message.Content, "<:greentick:768464483009691648> | **Congratulations") {
+				err := event.Client().Rest.UnpinMessage(event.Message.ChannelID, pinnedMessage.Message.ID, rest.WithReason("Un-pinning other messages pinned by bot"))
 				if err != nil {
 					h.Logger.FromContext(ctx).Error("failed to un-pin old message after game completion", "error", err.Error())
 					unpinFailures++
@@ -280,7 +280,7 @@ func (h *MessageCreateListener) logGameCompletion(ctx context.Context, event *di
 	// Add game id to log
 	logContent.WriteString(fmt.Sprintf("\n\n**Game ID:** `%s`", response.Game.ID))
 
-	utils.LogToChannel(event.Client().Rest(), guildConfig.LogChannel, utils.LogTypeGameActivity, "🏆 Game Won", logContent.String())
+	utils.LogToChannel(event.Client().Rest, guildConfig.LogChannel, utils.LogTypeGameActivity, "🏆 Game Won", logContent.String())
 }
 
 func (h *MessageCreateListener) handleAutoRestart(ctx context.Context, event *disgoEvents.MessageCreate, response *types.HandleAttemptResponse, guildConfig *domain.GuildConfig) {
@@ -292,14 +292,14 @@ func (h *MessageCreateListener) handleAutoRestart(ctx context.Context, event *di
 	h.Logger.FromContext(ctx).Debugw("auto restarting game")
 
 	// Get the channel where the game was played
-	channel, ok := event.Client().Caches().Channel(snowflake.MustParse(response.Game.ChannelID))
+	channel, ok := event.Client().Caches.Channel(snowflake.MustParse(response.Game.ChannelID))
 	if !ok {
 		h.Logger.FromContext(ctx).Error("failed to get channel for auto restart", "channelID", response.Game.ChannelID)
 		return
 	}
 
 	// fetch discord user from id
-	createdBy, err := event.Client().Rest().GetUser(snowflake.MustParse(response.Game.CreatedBy))
+	createdBy, err := event.Client().Rest.GetUser(snowflake.MustParse(response.Game.CreatedBy))
 	if err != nil {
 		h.Logger.FromContext(ctx).Error("failed to get user for auto restart", "userID", response.Game.CreatedBy)
 		return
@@ -318,12 +318,12 @@ func (h *MessageCreateListener) handleAutoRestart(ctx context.Context, event *di
 	}
 
 	// Start the new game
-	_, err = commons.StartGameCommon(ctx, event.Client().Rest(), h.GameService, gameStartRequest, guildConfig)
+	_, err = commons.StartGameCommon(ctx, event.Client().Rest, h.GameService, gameStartRequest, guildConfig)
 	if err != nil {
 		h.Logger.FromContext(ctx).Error("failed to auto restart game", "error", err.Error(), "channelID", response.Game.ChannelID)
 
 		// Send an error message to the channel
-		_, sendErr := utils.SendMessage(event.Client().Rest(), utils.MessageRequest{
+		_, sendErr := utils.SendMessage(event.Client().Rest, utils.MessageRequest{
 			ChannelID:   event.ChannelID,
 			Emoji:       utils.EmojiError,
 			Content:     "**Auto Restart Failed**\nUnable to automatically start a new game. Please start one manually using `/start`.",

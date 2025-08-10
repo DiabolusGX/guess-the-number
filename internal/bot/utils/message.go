@@ -14,7 +14,7 @@ type ReplyEvent interface {
 	Token() string
 	Channel() discord.InteractionChannel
 	User() discord.User
-	Client() bot.Client
+	Client() *bot.Client
 }
 
 type MessageRequest struct {
@@ -23,7 +23,7 @@ type MessageRequest struct {
 
 	Emoji      Emoji
 	Content    string
-	Components []discord.ContainerComponent
+	Components []discord.LayoutComponent
 
 	UseEmbed         bool
 	EmbedTitle       string
@@ -48,11 +48,11 @@ func EventReply(event ReplyEvent, request MessageRequest) error {
 
 	// send a non-ephemeral response by deleting the ephemeral deferred response and sending a new message to the channel
 	// if !request.IsEphemeral {
-	// 	err := event.Client().Rest().DeleteInteractionResponse(event.ApplicationID(), event.Token())
+	// 	err := event.Client().Rest.DeleteInteractionResponse(event.ApplicationID(), event.Token())
 	// 	if err != nil {
 	// 		return err
 	// 	}
-	// 	_, err = SendMessage(event.Client().Rest(), request)
+	// 	_, err = SendMessage(event.Client().Rest, request)
 	// 	return err
 	// }
 
@@ -61,7 +61,7 @@ func EventReply(event ReplyEvent, request MessageRequest) error {
 		RepliedUser: true,
 	})
 
-	components := make([]discord.ContainerComponent, 0, len(request.Components))
+	components := make([]discord.LayoutComponent, 0, len(request.Components))
 	if len(request.Components) > 0 {
 		components = append(components, request.Components...)
 	}
@@ -82,9 +82,9 @@ func EventReply(event ReplyEvent, request MessageRequest) error {
 		messageUpdateRequest.SetContent(content)
 	}
 
-	messageUpdateRequest.SetContainerComponents(components...)
+	messageUpdateRequest.SetComponents(components...)
 
-	_, err := event.Client().Rest().UpdateInteractionResponse(event.ApplicationID(), event.Token(), messageUpdateRequest.Build())
+	_, err := event.Client().Rest.UpdateInteractionResponse(event.ApplicationID(), event.Token(), messageUpdateRequest.Build())
 	return err
 }
 
@@ -94,7 +94,7 @@ func SendMessage(rest rest.Rest, request MessageRequest) (*discord.Message, erro
 		RepliedUser: true,
 	})
 
-	components := make([]discord.ContainerComponent, 0, len(request.Components))
+	components := make([]discord.LayoutComponent, 0, len(request.Components))
 	if len(request.Components) > 0 {
 		components = append(components, request.Components...)
 	}
@@ -115,7 +115,7 @@ func SendMessage(rest rest.Rest, request MessageRequest) (*discord.Message, erro
 		messageCreateRequest.SetContent(content)
 	}
 
-	messageCreateRequest.SetContainerComponents(components...)
+	messageCreateRequest.SetComponents(components...)
 
 	if request.IsEphemeral {
 		messageCreateRequest.SetFlags(discord.MessageFlagEphemeral)
@@ -196,7 +196,7 @@ func buildEmbeds(request MessageRequest) []discord.Embed {
 	return []discord.Embed{embedBuilder.Build()}
 }
 
-func buildComponents(request MessageRequest) []discord.ContainerComponent {
+func buildComponents(request MessageRequest) []discord.LayoutComponent {
 	buttons := make([]discord.InteractiveComponent, 0)
 
 	if request.WithStartGameButton {
@@ -233,5 +233,5 @@ func buildComponents(request MessageRequest) []discord.ContainerComponent {
 		return nil
 	}
 
-	return []discord.ContainerComponent{discord.ActionRowComponent(buttons)}
+	return []discord.LayoutComponent{discord.NewActionRow(buttons...)}
 }

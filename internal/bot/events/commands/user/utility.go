@@ -152,7 +152,7 @@ func (c *InviteCommand) Definition() discord.ApplicationCommandCreate {
 }
 
 func (c *InviteCommand) Handler(ctx context.Context, event *events.ApplicationCommandInteractionCreate, data *commands.Data) error {
-	inviteURL := utils.GetBotInviteLink(event.Client().ApplicationID())
+	inviteURL := utils.GetBotInviteLink(event.Client().ApplicationID)
 
 	var description strings.Builder
 	description.WriteString(fmt.Sprintf("🔗 **[Click here to invite the bot](%s)**\n\n", inviteURL))

@@ -15,7 +15,7 @@ import (
 type EventListenerParams struct {
 	fx.In
 
-	Client  bot.Client
+	Client  *bot.Client
 	Config  *config.Configuration
 	Logger  *logger.Logger
 	Metrics *metrics.Metrics

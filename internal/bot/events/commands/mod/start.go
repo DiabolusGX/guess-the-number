@@ -62,7 +62,7 @@ func (c *StartCommand) Handler(ctx context.Context, event *events.ApplicationCom
 	min := event.SlashCommandInteractionData().Int("min")
 	max := event.SlashCommandInteractionData().Int("max")
 	channel := event.SlashCommandInteractionData().Channel("channel")
-	targetChannel, ok := event.Client().Caches().Channel(channel.ID)
+	targetChannel, ok := event.Client().Caches.Channel(channel.ID)
 	if !ok {
 		return fmt.Errorf("unknown channel")
 	}
@@ -114,7 +114,7 @@ func (c *StartCommand) Handler(ctx context.Context, event *events.ApplicationCom
 
 	result, err := commons.StartGameCommon(
 		ctx,
-		event.Client().Rest(),
+		event.Client().Rest,
 		c.gameService,
 		gameRequest,
 		data.GuildConfig,

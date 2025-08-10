@@ -67,8 +67,8 @@ func (h *GuildLeaveListener) OnEvent(ctx context.Context, e bot.Event) error {
 
 	// shard info
 	description.WriteString(fmt.Sprintf("Shard ID: %d\n", event.ShardID()))
-	description.WriteString(fmt.Sprintf("Total Guilds on shard: %d\n", event.Client().Caches().GuildsLen()))
-	description.WriteString(fmt.Sprintf("Total Members on shard: %d\n", event.Client().Caches().MembersAllLen()))
+	description.WriteString(fmt.Sprintf("Total Guilds on shard: %d\n", event.Client().Caches.GuildsLen()))
+	description.WriteString(fmt.Sprintf("Total Members on shard: %d\n", event.Client().Caches.MembersAllLen()))
 
 	guildInfoEmbed := discord.NewEmbedBuilder().
 		SetColor(utils.FailureEmbedColor).
@@ -85,7 +85,7 @@ func (h *GuildLeaveListener) OnEvent(ctx context.Context, e bot.Event) error {
 		SetEmbeds(guildInfoEmbed.Build()).
 		Build()
 
-	_, err = event.Client().Rest().CreateMessage(utils.AdminChannelID, messageRequest)
+	_, err = event.Client().Rest.CreateMessage(utils.AdminChannelID, messageRequest)
 	if err != nil {
 		h.Logger.FromContext(ctx).Errorw("Failed to send guild info message", "error", err)
 	}

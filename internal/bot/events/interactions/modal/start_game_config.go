@@ -56,7 +56,7 @@ func (m *StartGameConfigModal) Handler(ctx context.Context, event *disgoEvents.M
 	}
 
 	// Get the target channel
-	targetChannel, ok := event.Client().Caches().Channel(event.Channel().ID())
+	targetChannel, ok := event.Client().Caches.Channel(event.Channel().ID())
 	if !ok {
 		return errors.New(errors.ErrCodeInternalError, "Unable to get channel information")
 	}
@@ -73,7 +73,7 @@ func (m *StartGameConfigModal) Handler(ctx context.Context, event *disgoEvents.M
 
 	result, err := commons.StartGameCommon(
 		ctx,
-		event.Client().Rest(),
+		event.Client().Rest,
 		m.GameService,
 		gameRequest,
 		data.GuildConfig,

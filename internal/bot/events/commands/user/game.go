@@ -263,7 +263,7 @@ func (c *GameCommand) handleHint(ctx context.Context, event *events.ApplicationC
 	}
 
 	// send hint message
-	hintMsg, messageErr := utils.SendMessage(event.Client().Rest(), utils.MessageRequest{
+	hintMsg, messageErr := utils.SendMessage(event.Client().Rest, utils.MessageRequest{
 		ChannelID: channel.ID,
 		Content:   hintContent,
 		Emoji:     utils.EmojiSuccess,
@@ -274,7 +274,7 @@ func (c *GameCommand) handleHint(ctx context.Context, event *events.ApplicationC
 	}
 
 	// pin hint message
-	pinErr := event.Client().Rest().PinMessage(channel.ID, hintMsg.ID)
+	pinErr := event.Client().Rest.PinMessage(channel.ID, hintMsg.ID)
 
 	// prepare user response
 	var embedTitle, embedDescription string
@@ -312,7 +312,7 @@ func (c *GameCommand) handleHint(ctx context.Context, event *events.ApplicationC
 		// Add game id to log
 		logContent.WriteString(fmt.Sprintf("\n\n**Game ID:** `%s`", hint.GameID))
 
-		utils.LogToChannel(event.Client().Rest(), data.GuildConfig.LogChannel, utils.LogTypeGameActivity, "💡 Hint Given", logContent.String())
+		utils.LogToChannel(event.Client().Rest, data.GuildConfig.LogChannel, utils.LogTypeGameActivity, "💡 Hint Given", logContent.String())
 	}
 
 	return utils.EventReply(event, utils.MessageRequest{
@@ -346,7 +346,7 @@ func (c *GameCommand) handleAnswer(ctx context.Context, event *events.Applicatio
 	)
 	dmContent += "\n\n*Please use `/game info` for more information about the game.*"
 
-	dmErr := utils.SendDM(event.Client().Rest(), event.User().ID, utils.MessageRequest{
+	dmErr := utils.SendDM(event.Client().Rest, event.User().ID, utils.MessageRequest{
 		Content:  dmContent,
 		WithVote: true,
 	})
@@ -387,7 +387,7 @@ func (c *GameCommand) handleAnswer(ctx context.Context, event *events.Applicatio
 		// Add game id to log
 		logContent.WriteString(fmt.Sprintf("\n\n**Game ID:** `%s`", gameInfo.Game.ID))
 
-		utils.LogToChannel(event.Client().Rest(), data.GuildConfig.LogChannel, utils.LogTypeGameActivity, "🔍 Game Answer Requested", logContent.String())
+		utils.LogToChannel(event.Client().Rest, data.GuildConfig.LogChannel, utils.LogTypeGameActivity, "🔍 Game Answer Requested", logContent.String())
 	}
 
 	return utils.EventReply(event, utils.MessageRequest{
