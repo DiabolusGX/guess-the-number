@@ -101,11 +101,22 @@ func (l *Logger) Fatalf(template string, args ...any) {
 }
 
 func (l *Logger) FromContext(ctx context.Context) *Logger {
-	loggerArgs := []any{
-		"request_id", lib.GetRequestID(ctx),
-		"user_id", lib.GetUserID(ctx),
-		"guild_id", lib.GetGuildID(ctx),
-		"channel_id", lib.GetChannelID(ctx),
+	loggerArgs := []any{}
+
+	if requestID := lib.GetRequestID(ctx); requestID != "" {
+		loggerArgs = append(loggerArgs, "request_id", requestID)
+	}
+
+	if userID := lib.GetUserID(ctx); userID != "" {
+		loggerArgs = append(loggerArgs, "user_id", userID)
+	}
+
+	if guildID := lib.GetGuildID(ctx); guildID != "" {
+		loggerArgs = append(loggerArgs, "guild_id", guildID)
+	}
+
+	if channelID := lib.GetChannelID(ctx); channelID != "" {
+		loggerArgs = append(loggerArgs, "channel_id", channelID)
 	}
 
 	if shardID := lib.GetShardID(ctx); shardID != 0 {

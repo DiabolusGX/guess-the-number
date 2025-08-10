@@ -41,6 +41,11 @@ func (h *GuildLeaveListener) OnEvent(ctx context.Context, e bot.Event) error {
 		return nil
 	}
 
+	if event.Guild.ID == 0 || event.Guild.ID.String() == "0" {
+		h.Logger.FromContext(ctx).Infow("Guild leave event received", "guild_id", event.Guild.ID.String(), "event", event)
+		return nil
+	}
+
 	ctx = context.WithValue(ctx, lib.CtxShardID, event.ShardID())
 	ctx = context.WithValue(ctx, lib.CtxGuildID, event.Guild.ID.String())
 	ctx = context.WithValue(ctx, lib.CtxPriority, lib.PriorityHigh)
