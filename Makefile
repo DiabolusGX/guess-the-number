@@ -113,7 +113,13 @@ pm2-direct-status: ## Show direct PM2 status
 pm2-direct-logs: ## Show direct PM2 logs
 	pm2 logs gtn-go-bot
 
-pm2-direct-rebuild: pm2-direct-stop pm2-direct ## Stop, rebuild and restart direct PM2
+## Stop, rebuild and restart direct PM2
+pm2-direct-rebuild: env
+	@echo "Building Go binary for Linux..."
+	CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o $(GO_BINARY) $(GO_PACKAGE)
+	chmod +x $(GO_BINARY)
+	@echo "Restarting with PM2..."
+	pm2 restart gtn-go-bot || true
 
 # Database operations
 mongo-shell: ## Connect to MongoDB shell
