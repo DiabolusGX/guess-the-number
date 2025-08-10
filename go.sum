@@ -14,6 +14,8 @@ github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f h1:lO4WD4F/r
 github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f/go.mod h1:cuUVRXasLTGF7a8hSLbxyZXjz+1KgoB3wDUb6vlszIc=
 github.com/disgoorg/disgo v0.19.0-rc.2 h1:nFLvXsJ5ILZeAf2kgLhu/1LOj5GEy6+uMoURO4dywKA=
 github.com/disgoorg/disgo v0.19.0-rc.2/go.mod h1:Gc5o9M0pNcdPd4YhQszhdKMRJwmVVIv3IVlHsvtAwpQ=
+github.com/disgoorg/disgo v0.19.0-rc.2.0.20250810200718-11085c0ba5ab h1:2h1SPBAfOGPfx9jUhMb4q4YxQk/WIX7T0HRwa2yBdxY=
+github.com/disgoorg/disgo v0.19.0-rc.2.0.20250810200718-11085c0ba5ab/go.mod h1:Gc5o9M0pNcdPd4YhQszhdKMRJwmVVIv3IVlHsvtAwpQ=
 github.com/disgoorg/json/v2 v2.0.0 h1:U16yy/ARK7/aEpzjjqK1b/KaqqGHozUdeVw/DViEzQI=
 github.com/disgoorg/json/v2 v2.0.0/go.mod h1:jZTBC0nIE1WeetSEI3/Dka8g+qglb4FPVmp5I5HpEfI=
 github.com/disgoorg/omit v1.0.0 h1:y0LkVUOyUHT8ZlnhIAeOZEA22UYykeysK8bLJ0SfT78=

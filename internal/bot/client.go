@@ -217,6 +217,7 @@ func Start(lc fx.Lifecycle, client *bot.Client, logger *logger.Logger, cfg *conf
 				go func() {
 					// Use context.Background() to avoid Fx's 15-second timeout constraint
 					shardCtx := context.Background()
+					shardCtx = context.WithoutCancel(shardCtx)
 
 					logger.Info("Opening shard manager asynchronously (no timeout)")
 					err := client.OpenShardManager(shardCtx)

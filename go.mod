@@ -4,7 +4,7 @@ go 1.24
 
 require (
 	github.com/TheZeroSlave/zapsentry v1.23.0
-	github.com/disgoorg/disgo v0.19.0-rc.2
+	github.com/disgoorg/disgo v0.19.0-rc.2.0.20250810200718-11085c0ba5ab
 	github.com/disgoorg/omit v1.0.0
 	github.com/disgoorg/snowflake/v2 v2.0.3
 	github.com/getsentry/sentry-go v0.34.1
