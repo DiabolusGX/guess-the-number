@@ -18,8 +18,8 @@ const (
 
 var applicationCommandsByBotID = map[snowflake.ID]map[CommandName]string{
 	defaultBotClientID: {
-		CommandStart:     "",
-		CommandGameStats: "",
+		CommandStart:     "1403827377288511515",
+		CommandGameStats: "1403827377288511516",
 	},
 	testBotClientID: {
 		CommandStart:     "1397690638379651097",
