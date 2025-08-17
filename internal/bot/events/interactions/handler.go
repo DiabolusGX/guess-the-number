@@ -134,7 +134,7 @@ func (h *InteractionHandler) processComponentInteraction(ctx context.Context, ev
 
 	// Check bot permissions
 	appPermissions := event.AppPermissions()
-	res := utils.CheckBotPermissions(appPermissions, discord.PermissionViewChannel, discord.PermissionSendMessages, discord.PermissionEmbedLinks)
+	res := utils.CheckBotPermissions(appPermissions, discord.PermissionViewChannel, discord.PermissionSendMessages, discord.PermissionEmbedLinks, discord.PermissionReadMessageHistory)
 	if !res.HasAllPermissions {
 		h.Logger.FromContext(ctx).Infow("missing permissions", "missing_permissions", strings.Join(res.MissingPermissions, ", "))
 		return ierr.New(ierr.ErrCodeMissingPermissions, "bot is missing permissions")
@@ -181,7 +181,7 @@ func (h *InteractionHandler) processModalInteraction(ctx context.Context, event 
 
 	// Check bot permissions
 	appPermissions := event.AppPermissions()
-	res := utils.CheckBotPermissions(appPermissions, discord.PermissionViewChannel, discord.PermissionSendMessages, discord.PermissionEmbedLinks)
+	res := utils.CheckBotPermissions(appPermissions, discord.PermissionViewChannel, discord.PermissionSendMessages, discord.PermissionEmbedLinks, discord.PermissionReadMessageHistory)
 	if !res.HasAllPermissions {
 		h.Logger.FromContext(ctx).Infow("missing permissions", "missing_permissions", strings.Join(res.MissingPermissions, ", "))
 		return ierr.New(ierr.ErrCodeMissingPermissions, "bot is missing permissions")

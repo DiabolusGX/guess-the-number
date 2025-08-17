@@ -95,7 +95,7 @@ func (h *ApplicationCommandHandler) handleCommand(ctx context.Context, event *di
 	commandName := event.Data.CommandName()
 
 	appPermissions := event.AppPermissions()
-	res := utils.CheckBotPermissions(appPermissions, discord.PermissionViewChannel, discord.PermissionSendMessages, discord.PermissionEmbedLinks)
+	res := utils.CheckBotPermissions(appPermissions, discord.PermissionViewChannel, discord.PermissionSendMessages, discord.PermissionEmbedLinks, discord.PermissionReadMessageHistory)
 	if !res.HasAllPermissions {
 		h.Logger.FromContext(ctx).Infow("bot is missing permissions", "missing_permissions", strings.Join(res.MissingPermissions, ", "))
 		return nil

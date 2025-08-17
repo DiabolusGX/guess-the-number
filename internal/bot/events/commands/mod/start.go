@@ -71,6 +71,7 @@ func (c *StartCommand) Handler(ctx context.Context, event *events.ApplicationCom
 		discord.PermissionViewChannel,
 		discord.PermissionSendMessages,
 		discord.PermissionEmbedLinks,
+		discord.PermissionReadMessageHistory,
 	}
 	if data.GuildConfig != nil && data.GuildConfig.AutoReactionHints {
 		requiredPermissions = append(requiredPermissions, discord.PermissionAddReactions)
