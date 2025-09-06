@@ -4,12 +4,13 @@ import (
 	"context"
 
 	"github.com/TheZeroSlave/zapsentry"
+	"github.com/getsentry/sentry-go"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
 	"github.com/diabolusgx/guess-the-number/internal/config"
 	"github.com/diabolusgx/guess-the-number/internal/lib"
-	"github.com/diabolusgx/guess-the-number/pkg/sentry"
+	sentryPkg "github.com/diabolusgx/guess-the-number/pkg/sentry"
 )
 
 // Logger wraps zap.SugaredLogger to provide logging functionality
@@ -21,7 +22,7 @@ type Logger struct {
 var L *Logger
 
 // NewLogger creates and returns a new Logger instance
-func NewLogger(cfg *config.Configuration, sentry *sentry.Client) (*Logger, error) {
+func NewLogger(cfg *config.Configuration, sentryClient *sentryPkg.Client) (*Logger, error) {
 	config := zap.NewProductionConfig()
 
 	if cfg.Deployment.Mode == lib.ModeLocal {
@@ -42,15 +43,14 @@ func NewLogger(cfg *config.Configuration, sentry *sentry.Client) (*Logger, error
 	}
 
 	// Add Sentry core only if Sentry is enabled and properly initialized
-	if sentry != nil && sentry.GetHub() != nil && sentry.GetHub().Client() != nil {
+	if sentryClient != nil && sentryClient.GetHub() != nil && sentryClient.GetHub().Client() != nil {
 		cfgSentry := zapsentry.Configuration{
-			Hub:               sentry.GetHub(),
 			Level:             zapcore.ErrorLevel, // Only send Error+ logs to Sentry
-			EnableBreadcrumbs: true,
-			BreadcrumbLevel:   zapcore.InfoLevel, // Info+ becomes breadcrumbs
+			EnableBreadcrumbs: false,              // Disable automatic breadcrumbs, we'll handle them manually
+			BreadcrumbLevel:   zapcore.InfoLevel,  // Info+ becomes breadcrumbs
 		}
 
-		sentryCore, err := zapsentry.NewCore(cfgSentry, zapsentry.NewSentryClientFromClient(sentry.GetHub().Client()))
+		sentryCore, err := zapsentry.NewCore(cfgSentry, zapsentry.NewSentryClientFromClient(sentryClient.GetHub().Client()))
 		if err != nil {
 			return nil, err
 		}
@@ -135,8 +135,37 @@ func (l *Logger) FromContext(ctx context.Context) *Logger {
 		loggerArgs = append(loggerArgs, "flow_id", flowID)
 	}
 
+	// Add breadcrumbs to Sentry using context-specific hub
+	l.addSentryBreadcrumb(ctx, loggerArgs)
+
 	return &Logger{
 		SugaredLogger: l.SugaredLogger.With(loggerArgs...),
+	}
+}
+
+// addSentryBreadcrumb adds breadcrumbs to the correct Sentry hub from context
+func (l *Logger) addSentryBreadcrumb(ctx context.Context, loggerArgs []any) {
+	// Get hub from context, fallback to current hub if not available
+	hub := sentry.GetHubFromContext(ctx)
+	if hub == nil {
+		hub = sentry.CurrentHub()
+	}
+
+	// Only add breadcrumbs if we have a valid hub
+	if hub != nil {
+		// Convert logger args to breadcrumb data
+		data := make(map[string]interface{})
+		for i := 0; i < len(loggerArgs)-1; i += 2 {
+			if key, ok := loggerArgs[i].(string); ok {
+				data[key] = loggerArgs[i+1]
+			}
+		}
+
+		hub.AddBreadcrumb(&sentry.Breadcrumb{
+			Message: "Logger context created",
+			Level:   sentry.LevelInfo,
+			Data:    data,
+		}, nil)
 	}
 }
 

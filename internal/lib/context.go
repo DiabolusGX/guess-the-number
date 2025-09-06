@@ -105,10 +105,19 @@ func GetFlowID(ctx context.Context) string {
 	return ""
 }
 
-func CopyContextKeys(ctx context.Context) context.Context {
+// CopyServiceContextKeys copies only service-relevant context keys (excludes user/guild/channel specific data)
+// This is useful for background operations that shouldn't be associated with specific users or guilds
+func CopyServiceContextKeys(ctx context.Context) context.Context {
 	newCtx := context.Background()
-	for _, key := range contextKeys {
-		newCtx = context.WithValue(newCtx, key, ctx.Value(key))
+
+	// Only copy service-level context keys, not user/guild/channel specific ones
+	serviceKeys := []ContextKey{CtxRequestID, CtxPriority, CtxShardID, CtxFlowID}
+
+	for _, key := range serviceKeys {
+		if value := ctx.Value(key); value != nil {
+			newCtx = context.WithValue(newCtx, key, value)
+		}
 	}
+
 	return newCtx
 }

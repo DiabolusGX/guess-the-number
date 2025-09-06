@@ -77,7 +77,10 @@ func (s *syncService) StartPeriodicSync(ctx context.Context) error {
 
 // SyncAllActiveGames syncs all active games across all guilds
 func (s *syncService) SyncAllActiveGames(ctx context.Context) error {
-	ctx = context.WithValue(ctx, lib.CtxRequestID, lib.NewRequestID())
+	// Add request ID if not present
+	if lib.GetRequestID(ctx) == "" {
+		ctx = context.WithValue(ctx, lib.CtxRequestID, lib.NewRequestID())
+	}
 
 	s.logger.FromContext(ctx).Debug("starting sync for all active games")
 
@@ -87,8 +90,12 @@ func (s *syncService) SyncAllActiveGames(ctx context.Context) error {
 	}
 
 	for _, game := range games {
-		if err := s.SyncGameGuesses(ctx, game.ID); err != nil {
-			s.logger.FromContext(ctx).Error("failed to sync game guesses", "error", err)
+		// Create a clean context for each game sync to avoid cross-contamination
+		gameCtx := lib.CopyServiceContextKeys(ctx)
+		gameCtx = context.WithValue(gameCtx, lib.CtxGameID, game.ID)
+
+		if err := s.SyncGameGuesses(gameCtx, game.ID); err != nil {
+			s.logger.FromContext(gameCtx).Error("failed to sync game guesses", "error", err)
 		}
 	}
 
@@ -153,6 +160,6 @@ func (s *syncService) SyncGameOnFinish(ctx context.Context, gameID string) error
 		return nil
 	}
 
-	s.logger.FromContext(ctx).Debug("syncing game on finish")
+	s.logger.FromContext(ctx).Info("syncing game on finish")
 	return s.SyncGameGuesses(ctx, gameID)
 }

@@ -106,7 +106,8 @@ func (h *MessageCreateListener) handleAttempt(ctx context.Context, event *disgoE
 
 	// TODO: remove this and make it event based from the game service
 	go func() {
-		ctx := lib.CopyContextKeys(ctx)
+		// Use clean context for sync operations to avoid user/guild specific logging
+		ctx := lib.CopyServiceContextKeys(ctx)
 		ctx = context.WithValue(ctx, lib.CtxGameID, response.Game.ID)
 		h.SyncService.SyncGameOnFinish(ctx, response.Game.ID)
 	}()
@@ -189,7 +190,7 @@ func (h *MessageCreateListener) handleAttempt(ctx context.Context, event *disgoE
 	// un-pin other messages pinned by bot
 	var unpinErr error
 	var unpinCount, unpinFailures int
-	pinnedMessages, unpinErr := event.Client().Rest.GetChannelPins(event.Message.ChannelID, 0, 100)
+	pinnedMessages, unpinErr := event.Client().Rest.GetChannelPins(event.Message.ChannelID, snowflake.ID(0), 100)
 	if unpinErr != nil {
 		h.Logger.FromContext(ctx).Error("failed to get pinned messages", "error", unpinErr.Error())
 	} else {

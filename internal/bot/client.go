@@ -193,17 +193,18 @@ func Start(lc fx.Lifecycle, client *bot.Client, logger *logger.Logger, cfg *conf
 
 			// Sync all active games stats from redis to mongo periodically
 			go func() {
-				ctx = context.WithValue(ctx, lib.CtxFlowID, "sync_all_active_games")
+				// Create clean context for background sync operations
+				syncCtx := context.WithValue(context.Background(), lib.CtxFlowID, "sync_all_active_games")
 
 				defer func() {
 					if r := recover(); r != nil {
-						logger.FromContext(ctx).Error("Recovered from panic in sync all active games", "error", r)
+						logger.FromContext(syncCtx).Error("Recovered from panic in sync all active games", "error", r)
 					}
 				}()
 
-				err := syncService.SyncAllActiveGames(ctx)
+				err := syncService.SyncAllActiveGames(syncCtx)
 				if err != nil {
-					logger.FromContext(ctx).Error("Failed to sync all active games", "error", err)
+					logger.FromContext(syncCtx).Error("Failed to sync all active games", "error", err)
 				}
 			}()
 

@@ -168,7 +168,7 @@ func (s *gameService) HandleAttempt(ctx context.Context, req *types.HandleAttemp
 
 	// Record guess asynchronously (no latency impact)
 	go func() {
-		ctx := lib.CopyContextKeys(ctx)
+		ctx := lib.CopyServiceContextKeys(ctx)
 
 		// Calculate distance and create lightweight record
 		distance := math.Abs(float64(req.Guess - game.Answer))
