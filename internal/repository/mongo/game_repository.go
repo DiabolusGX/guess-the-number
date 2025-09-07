@@ -91,7 +91,7 @@ func (r *GameRepository) Finish(ctx context.Context, gameID, channelID, messageI
 
 	// TODO: use gameID instead of channelID in future, had to use channelID till legacy games are running
 	// filter := bson.M{"_id": gameID}
-	filter := bson.M{"channelID": channelID, "finished": false}
+	filter := bson.M{"channelID": channelID, "finished": bson.M{"$ne": true}}
 	update := bson.M{
 		"$set": bson.M{
 			"wonBy":        wonBy,
@@ -126,7 +126,7 @@ func (r *GameRepository) GetRunningInChannel(ctx context.Context, channelID stri
 	})
 	defer FinishSpan(span)
 
-	filter := bson.M{"channelID": channelID, "finished": false}
+	filter := bson.M{"channelID": channelID, "finished": bson.M{"$ne": true}}
 
 	var game *domain.Game
 	err := r.collection.FindOne(ctx, filter).Decode(&game)
@@ -270,5 +270,5 @@ func (r *GameRepository) GetAllTimeLeaderboard(ctx context.Context, guildID stri
 }
 
 func getGameGuessesKey(gameID string) string {
-	return fmt.Sprintf("gtn:%s", gameID)
+	return fmt.Sprintf("guesses:%s", gameID)
 }
