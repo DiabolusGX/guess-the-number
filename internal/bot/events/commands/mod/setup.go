@@ -316,7 +316,7 @@ func (c *SetupCommand) handleDM(ctx context.Context, event *events.ApplicationCo
 		UseEmbed:         true,
 		Emoji:            utils.EmojiSuccess,
 		EmbedTitle:       "DM Settings Updated",
-		EmbedDescription: "DMs to winners will be enabled.",
+		EmbedDescription: fmt.Sprintf("DMs to winners will be %s.", newStatus),
 		EmbedColor:       utils.SuccessEmbedColor,
 		IsEphemeral:      false,
 		Fields: []discord.EmbedField{
