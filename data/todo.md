@@ -39,3 +39,10 @@ const (
 - Add permission checking for admin commands
 - Implement audit trail for all score modifications
 - Add configuration for redemption rules per guild
+
+## Dockerize
+
+- one command setup with docker db or remote db options (for both mongo & redis)
+- populate sample data in db for testing
+- cluster mode for transaction support
+- make commands for same

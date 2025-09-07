@@ -1,0 +1,294 @@
+[
+    {
+        "id": "1397690638379651097",
+        "type": 1,
+        "application_id": "686988635999830076",
+        "name": "start",
+        "description": "Starts a new game of guess the number in current channel",
+        "options": [
+            { "type": 4, "name": "min", "description": "The minimum number", "required": true },
+            { "type": 4, "name": "max", "description": "The maximum number", "required": true },
+            { "type": 7, "name": "channel", "description": "The channel to start the game in", "required": true },
+            {
+                "type": 5,
+                "name": "auto-reaction-hints",
+                "description": "Enable automatic reaction hints (⬆/⬇) for wrong guesses"
+            }
+        ],
+        "default_member_permissions": "0",
+        "dm_permission": true,
+        "nsfw": false,
+        "integration_types": [0],
+        "contexts": null,
+        "version": "1401357348051619994"
+    },
+    {
+        "id": "1397690638379651095",
+        "type": 1,
+        "application_id": "686988635999830076",
+        "name": "userinfo",
+        "description": "Shows detailed information about a user including game statistics",
+        "options": [{ "type": 6, "name": "user", "description": "The user to get info for (defaults to yourself)" }],
+        "default_member_permissions": "0",
+        "dm_permission": true,
+        "nsfw": false,
+        "integration_types": [0],
+        "contexts": null,
+        "version": "1401357348051619992"
+    },
+    {
+        "id": "1397690638379651101",
+        "type": 1,
+        "application_id": "686988635999830076",
+        "name": "invite",
+        "description": "Get the bot's invite link to add it to other servers",
+        "default_member_permissions": "0",
+        "dm_permission": true,
+        "nsfw": false,
+        "integration_types": [0],
+        "contexts": null,
+        "version": "1398516282323894430"
+    },
+    {
+        "id": "1403532388365242368",
+        "type": 1,
+        "application_id": "686988635999830076",
+        "name": "help",
+        "description": "Shows all available commands and how to use the bot",
+        "default_member_permissions": "0",
+        "dm_permission": true,
+        "nsfw": false,
+        "integration_types": [0],
+        "contexts": null,
+        "version": "1403532388365242369"
+    },
+    {
+        "id": "1397690638379651096",
+        "type": 1,
+        "application_id": "686988635999830076",
+        "name": "setup",
+        "description": "Setup the bot for your server",
+        "options": [
+            {
+                "type": 1,
+                "name": "prefix",
+                "description": "Set the prefix for the bot",
+                "options": [{ "type": 3, "name": "prefix", "description": "The new prefix", "required": true }]
+            },
+            {
+                "type": 1,
+                "name": "manager",
+                "description": "Set the manager role for the bot",
+                "options": [{ "type": 8, "name": "role", "description": "The manager role", "required": true }]
+            },
+            {
+                "type": 1,
+                "name": "dm",
+                "description": "Enable or disable DMs to the winner of the game",
+                "options": [
+                    {
+                        "type": 5,
+                        "name": "enabled",
+                        "description": "Whether to enable DMs to the winner of the game",
+                        "required": true
+                    }
+                ]
+            },
+            {
+                "type": 1,
+                "name": "win-role",
+                "description": "Set the role to be awarded to the winner of the game",
+                "options": [{ "type": 8, "name": "role", "description": "The role to award", "required": true }]
+            },
+            {
+                "type": 1,
+                "name": "req-role",
+                "description": "Set the role required to play the game",
+                "options": [{ "type": 8, "name": "role", "description": "The role required to play", "required": true }]
+            },
+            {
+                "type": 1,
+                "name": "lock-role",
+                "description": "Set the role to lock the channel for after the game is finished",
+                "options": [
+                    {
+                        "type": 8,
+                        "name": "role",
+                        "description": "The role to lock the channel for after the game is finished",
+                        "required": true
+                    }
+                ]
+            },
+            {
+                "type": 1,
+                "name": "log-channel",
+                "description": "Set the channel where all bot activities will be logged",
+                "options": [
+                    { "type": 7, "name": "channel", "description": "The channel where logs will be sent", "required": true }
+                ]
+            },
+            {
+                "type": 1,
+                "name": "auto-reaction-hints",
+                "description": "Enable or disable automatic reaction hints for all games",
+                "options": [
+                    {
+                        "type": 5,
+                        "name": "enabled",
+                        "description": "Whether to enable automatic reaction hints (⬆/⬇) for wrong guesses"
+                    }
+                ]
+            },
+            {
+                "type": 1,
+                "name": "auto-restart",
+                "description": "Enable or disable automatic game restart after completion",
+                "options": [
+                    {
+                        "type": 5,
+                        "name": "enabled",
+                        "description": "Whether to automatically start a new game with same config after completion",
+                        "required": true
+                    }
+                ]
+            },
+            { "type": 1, "name": "show", "description": "Show all current server configuration settings" },
+            { "type": 1, "name": "info", "description": "Show all current server configuration settings" }
+        ],
+        "default_member_permissions": "0",
+        "dm_permission": true,
+        "nsfw": false,
+        "integration_types": [0],
+        "contexts": null,
+        "version": "1403680123169013833"
+    },
+    {
+        "id": "1398516282323894424",
+        "type": 1,
+        "application_id": "686988635999830076",
+        "name": "finish-game",
+        "description": "Finishs the running game in a channel",
+        "options": [{ "type": 7, "name": "channel", "description": "The channel to finish the game in", "required": true }],
+        "default_member_permissions": "0",
+        "dm_permission": true,
+        "nsfw": false,
+        "integration_types": [0],
+        "contexts": null,
+        "version": "1398516282323894427"
+    },
+    {
+        "id": "1401374278548459592",
+        "type": 1,
+        "application_id": "686988635999830076",
+        "name": "end",
+        "description": "Ends the running game in a channel (alias for finish-game)",
+        "options": [{ "type": 7, "name": "channel", "description": "The channel to end the game in", "required": true }],
+        "default_member_permissions": "0",
+        "dm_permission": true,
+        "nsfw": false,
+        "integration_types": [0],
+        "contexts": null,
+        "version": "1401374278548459593"
+    },
+    {
+        "id": "1401599456654266389",
+        "type": 1,
+        "application_id": "686988635999830076",
+        "name": "game",
+        "description": "Game management commands",
+        "options": [
+            {
+                "type": 1,
+                "name": "info",
+                "description": "Shows information about the current game in a channel",
+                "options": [
+                    { "type": 7, "name": "channel", "description": "The channel to get game info for", "required": true }
+                ]
+            },
+            {
+                "type": 1,
+                "name": "hint",
+                "description": "Get a hint for the current game (Moderator only)",
+                "options": [
+                    {
+                        "type": 3,
+                        "name": "type",
+                        "description": "The type of hint to get",
+                        "required": true,
+                        "choices": [
+                            { "name": "compare-number", "value": "compare-number" },
+                            { "name": "first-digit", "value": "first-digit" },
+                            { "name": "last-digit", "value": "last-digit" }
+                        ]
+                    },
+                    { "type": 7, "name": "channel", "description": "The channel to get the hint for", "required": true },
+                    { "type": 4, "name": "number", "description": "The number to compare to the answer against" }
+                ]
+            },
+            {
+                "type": 1,
+                "name": "answer",
+                "description": "Get the answer for the current game via DM (Moderator only)",
+                "options": [
+                    {
+                        "type": 7,
+                        "name": "channel",
+                        "description": "The channel where the game is running",
+                        "required": true
+                    }
+                ]
+            },
+            {
+                "type": 1,
+                "name": "stats",
+                "description": "View game statistics",
+                "options": [
+                    {
+                        "type": 3,
+                        "name": "type",
+                        "description": "Type of statistics to view",
+                        "required": true,
+                        "choices": [
+                            { "name": "Closest Guesses", "value": "closest-guesses" },
+                            { "name": "Most frequently guessed numbers", "value": "top-numbers" },
+                            { "name": "Guessers with most unique numbers", "value": "top-guessers" },
+                            { "name": "Top Game Winners", "value": "top-game-winners" },
+                            { "name": "Top Points Earners", "value": "top-points" }
+                        ]
+                    },
+                    { "type": 3, "name": "game-id", "description": "Specific game ID (for game-specific stats)" },
+                    {
+                        "type": 3,
+                        "name": "time-range",
+                        "description": "Time range for statistics",
+                        "choices": [
+                            { "name": "Last Day", "value": "last-day" },
+                            { "name": "Last Week", "value": "last-week" },
+                            { "name": "Last Month", "value": "last-month" },
+                            { "name": "All Time", "value": "all-time" }
+                        ]
+                    }
+                ]
+            }
+        ],
+        "default_member_permissions": "0",
+        "dm_permission": true,
+        "nsfw": false,
+        "integration_types": [0],
+        "contexts": null,
+        "version": "1403516083398381631"
+    },
+    {
+        "id": "1397690638379651099",
+        "type": 1,
+        "application_id": "686988635999830076",
+        "name": "ping",
+        "description": "Pings the bot and shows latency information",
+        "default_member_permissions": "0",
+        "dm_permission": true,
+        "nsfw": false,
+        "integration_types": [0],
+        "contexts": null,
+        "version": "1398516282323894428"
+    }
+]
