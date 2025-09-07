@@ -457,7 +457,13 @@ func (c *GameCommand) handleStats(ctx context.Context, event *events.Application
 			noContent = true
 		} else {
 			for i, guess := range stats.Guesses {
-				content.WriteString(fmt.Sprintf("`%d.` <@%s> guessed **%d**\n", i+1, guess.UserID, guess.Guess))
+				var differenceText string
+				if guess.Distance == 0 {
+					differenceText = "🎉 (correct)"
+				} else {
+					differenceText = fmt.Sprintf("(off by **%d**)", guess.Distance)
+				}
+				content.WriteString(fmt.Sprintf("`%d.` <@%s> guessed **%d** %s\n", i+1, guess.UserID, guess.Guess, differenceText))
 			}
 		}
 

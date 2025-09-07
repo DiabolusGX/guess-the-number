@@ -99,12 +99,15 @@ func (s *statsService) GetClosestGuesses(ctx context.Context, req *types.GetClos
 		}
 	}
 
-	// sort guesses by distance and send topLimit
-	sort.Slice(guesses, func(i, j int) bool {
-		return guesses[i].Distance < guesses[j].Distance
+	// sort deduplicatedGuesses by distance (ascending) and timestamp (earliest first for ties)
+	sort.Slice(deduplicatedGuesses, func(i, j int) bool {
+		if deduplicatedGuesses[i].Distance == deduplicatedGuesses[j].Distance {
+			return deduplicatedGuesses[i].Timestamp.Before(deduplicatedGuesses[j].Timestamp)
+		}
+		return deduplicatedGuesses[i].Distance < deduplicatedGuesses[j].Distance
 	})
-	if len(guesses) > topLimit {
-		guesses = guesses[:topLimit]
+	if len(deduplicatedGuesses) > topLimit {
+		deduplicatedGuesses = deduplicatedGuesses[:topLimit]
 	}
 
 	return &types.GetClosestGuessesResponse{
@@ -160,16 +163,16 @@ func (s *statsService) GetTopGuessedNumbers(ctx context.Context, req *types.GetT
 	}
 
 	// sort stats by count
-	sort.Slice(stats, func(i, j int) bool {
-		return stats[i].Count > stats[j].Count
+	sort.Slice(deduplicatedStats, func(i, j int) bool {
+		return deduplicatedStats[i].Count > deduplicatedStats[j].Count
 	})
-	if len(stats) > topLimit {
-		stats = stats[:topLimit]
+	if len(deduplicatedStats) > topLimit {
+		deduplicatedStats = deduplicatedStats[:topLimit]
 	}
 
 	result := &types.GetTopGuessedNumbersResponse{
 		Game:    game,
-		Numbers: stats,
+		Numbers: deduplicatedStats,
 	}
 
 	return result, nil
@@ -222,16 +225,16 @@ func (s *statsService) GetTopGuessers(ctx context.Context, req *types.GetTopGues
 	}
 
 	// sort stats by count
-	sort.Slice(stats, func(i, j int) bool {
-		return stats[i].UniqueGuesses > stats[j].UniqueGuesses
+	sort.Slice(deduplicatedStats, func(i, j int) bool {
+		return deduplicatedStats[i].UniqueGuesses > deduplicatedStats[j].UniqueGuesses
 	})
-	if len(stats) > topLimit {
-		stats = stats[:topLimit]
+	if len(deduplicatedStats) > topLimit {
+		deduplicatedStats = deduplicatedStats[:topLimit]
 	}
 
 	result := &types.GetTopGuessersResponse{
 		Game:        game,
-		TopGuessers: stats,
+		TopGuessers: deduplicatedStats,
 	}
 
 	return result, nil

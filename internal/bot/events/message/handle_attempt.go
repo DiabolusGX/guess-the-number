@@ -115,11 +115,11 @@ func (h *MessageCreateListener) handleAttempt(ctx context.Context, event *disgoE
 	// handle correct guess
 	var winDM, winChannelMsg strings.Builder
 	winDM.WriteString(fmt.Sprintf("**Congratulations %s 🎉**\n", event.Message.Author.Mention()))
-	winDM.WriteString(fmt.Sprintf("You guessed the correct number **%d** after **%d** guesses at %s\n", response.Game.Answer, response.Game.Guesses, event.Message.JumpURL()))
+	winDM.WriteString(fmt.Sprintf("You guessed the correct number **%d** after **%d** guesses for game id `%s` at %s\n", response.Game.Answer, response.Game.Guesses, response.Game.ID, event.Message.JumpURL()))
 	winDM.WriteString(fmt.Sprintf("You have also won **%d points!**", response.Game.Points))
 
 	winChannelMsg.WriteString(fmt.Sprintf("**Congratulations %s 🎉**\n", event.Message.Author.Mention()))
-	winChannelMsg.WriteString(fmt.Sprintf("You guessed the correct number **%d** after **%d** guesses at %s\n", response.Game.Answer, response.Game.Guesses, event.Message.JumpURL()))
+	winChannelMsg.WriteString(fmt.Sprintf("You guessed the correct number **%d** after **%d** guesses for game id `%s` at %s\n", response.Game.Answer, response.Game.Guesses, response.Game.ID, event.Message.JumpURL()))
 	winChannelMsg.WriteString(fmt.Sprintf("You have also won **%d points!**", response.Game.Points))
 
 	// lock channel
