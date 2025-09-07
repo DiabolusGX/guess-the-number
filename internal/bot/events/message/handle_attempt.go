@@ -190,7 +190,7 @@ func (h *MessageCreateListener) handleAttempt(ctx context.Context, event *disgoE
 	// un-pin other messages pinned by bot
 	var unpinErr error
 	var unpinCount, unpinFailures int
-	pinnedMessages, unpinErr := event.Client().Rest.GetChannelPins(event.Message.ChannelID, snowflake.ID(0), 100)
+	pinnedMessages, unpinErr := event.Client().Rest.GetChannelPins(event.Message.ChannelID, 0, 0)
 	if unpinErr != nil {
 		h.Logger.FromContext(ctx).Error("failed to get pinned messages", "error", unpinErr.Error())
 	} else {

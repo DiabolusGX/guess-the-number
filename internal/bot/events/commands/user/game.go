@@ -170,7 +170,8 @@ func (c *GameCommand) handleInfo(ctx context.Context, event *events.ApplicationC
 
 	game, err := c.gameService.GetGameInfo(ctx, &types.GetGameInfoRequest{ChannelID: channel.ID.String()})
 	if err != nil {
-		return err
+		utils.HandleError(ctx, event, err)
+		return nil
 	}
 
 	var gameStatus strings.Builder
