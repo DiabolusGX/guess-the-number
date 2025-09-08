@@ -304,5 +304,10 @@ func (s *gameService) getRunningInChannel(ctx context.Context, channelID string)
 		return nil, nil
 	}
 
+	s.runningGames[channelID] = dbGame
+
+	// keep track of running games
+	s.metrics.GamesRunning.Inc()
+
 	return dbGame, nil
 }
