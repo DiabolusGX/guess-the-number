@@ -4,6 +4,15 @@
 GO_BINARY := bot
 GO_PACKAGE := ./cmd/bot
 
+# Environment setup
+env: ## Copy environment template
+	@if [ ! -f .env ]; then \
+		cp env.example .env; \
+		echo "Created .env file from template. Please edit it with your configuration."; \
+	else \
+		echo ".env file already exists. Skipping copy."; \
+	fi
+
 # Default target
 help: ## Show this help message
 	@echo "Available targets:"
