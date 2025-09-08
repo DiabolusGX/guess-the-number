@@ -6,6 +6,7 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/diabolusgx/guess-the-number/internal/bot/events/commons"
 	"github.com/diabolusgx/guess-the-number/internal/bot/utils"
@@ -190,7 +191,7 @@ func (h *MessageCreateListener) handleAttempt(ctx context.Context, event *disgoE
 	// un-pin other messages pinned by bot
 	var unpinErr error
 	var unpinCount, unpinFailures int
-	pinnedMessages, unpinErr := event.Client().Rest.GetChannelPins(event.Message.ChannelID, 0, 0)
+	pinnedMessages, unpinErr := event.Client().Rest.GetChannelPins(event.Message.ChannelID, time.Now(), 0)
 	if unpinErr != nil {
 		h.Logger.FromContext(ctx).Error("failed to get pinned messages", "error", unpinErr.Error())
 	} else {

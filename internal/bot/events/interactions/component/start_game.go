@@ -32,27 +32,24 @@ func (i *StartGameInteraction) Handler(ctx context.Context, event *disgoEvents.C
 	modal := discord.NewModalCreateBuilder().
 		SetCustomID("start_game_config").
 		SetTitle("Start New Game Configuration").
-		AddActionRow(
-			discord.NewShortTextInput("min", "Minimum Number").
-				WithRequired(true).
-				WithPlaceholder("e.g., 1").
-				WithMinLength(1).
-				WithMaxLength(10),
+		AddLabel("Minimum Number", discord.NewTextInput("min", discord.TextInputStyleShort).
+			WithRequired(true).
+			WithPlaceholder("e.g., 1").
+			WithMinLength(1).
+			WithMaxLength(10),
 		).
-		AddActionRow(
-			discord.NewShortTextInput("max", "Maximum Number").
-				WithRequired(true).
-				WithPlaceholder("e.g., 100").
-				WithMinLength(1).
-				WithMaxLength(10),
+		AddLabel("Maximum Number", discord.NewTextInput("max", discord.TextInputStyleShort).
+			WithRequired(true).
+			WithPlaceholder("e.g., 100").
+			WithMinLength(1).
+			WithMaxLength(10),
 		).
-		AddActionRow(
-			discord.NewShortTextInput("auto_reactions", "Auto Reaction Hints (true/false)").
-				WithRequired(false).
-				WithPlaceholder("true").
-				WithValue("false").
-				WithMinLength(4).
-				WithMaxLength(5),
+		AddLabel("Auto Reaction Hints (true/false)", discord.NewTextInput("auto_reactions", discord.TextInputStyleShort).
+			WithRequired(false).
+			WithPlaceholder("true").
+			WithValue("false").
+			WithMinLength(4).
+			WithMaxLength(5),
 		).
 		Build()
 
