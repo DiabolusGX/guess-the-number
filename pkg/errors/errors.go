@@ -93,7 +93,7 @@ func NewErrorWithContext(ctx context.Context, code ErrorCode, err error) *AppErr
 	}
 
 	_, file, line, _ := runtime.Caller(1)
-	logger.GetLoggerFromContext(ctx).Error(
+	logger.GetLoggerFromContext(ctx).Errorf(
 		"[%s] [%s:%d] error: %w",
 		code,
 		file,
