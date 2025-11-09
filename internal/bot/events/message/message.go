@@ -60,12 +60,12 @@ func (h *MessageCreateListener) OnEvent(ctx context.Context, e bot.Event) error 
 	h.handleAttempt(ctx, event)
 
 	// handle prefix commands
-	if strings.HasPrefix(event.Message.Content, "gg") {
+	if strings.HasPrefix(event.Message.Content, "gg ping") || strings.HasPrefix(event.Message.Content, "gg help") {
 		utils.SendMessage(event.Client().Rest, utils.MessageRequest{
 			ChannelID: event.ChannelID,
 			Emoji:     utils.EmojiError,
 			Content: "Message commands have been migrated to slash commands. Please use the new commands instead.\n\n" +
-				"To get started, use the `/help` command.",
+				"To get started, use the " + utils.MentionApplicationCommand(event.Client().ID(), utils.CommandHelp) + " command.",
 		})
 	}
 
