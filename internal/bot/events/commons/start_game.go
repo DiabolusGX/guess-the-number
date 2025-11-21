@@ -105,11 +105,14 @@ func StartGameCommon(
 	})
 
 	// pin game start message in target channel
-	pinReason := "Pinning game start message"
-	if request.AutoRestarting {
-		pinReason = "Pinning auto-restarted game start message"
+	var pinErr error
+	if msg != nil {
+		pinReason := "Pinning game start message"
+		if request.AutoRestarting {
+			pinReason = "Pinning auto-restarted game start message"
+		}
+		pinErr = request.Client.Rest.PinMessage(request.TargetChannel.ID(), msg.ID, rest.WithReason(pinReason))
 	}
-	pinErr := request.Client.Rest.PinMessage(request.TargetChannel.ID(), msg.ID, rest.WithReason(pinReason))
 
 	// send game start message with answer to user's DM
 	var dmContent strings.Builder
