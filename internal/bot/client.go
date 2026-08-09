@@ -42,7 +42,7 @@ func NewClient(cfg *config.Configuration) (*bot.Client, error) {
 			gateway.IntentMessageContent,
 			gateway.IntentGuildMessageReactions,
 		),
-		gateway.WithCompress(true),
+		gateway.WithCompression(gateway.CompressionZstdStream),
 		gateway.WithPresenceOpts(gateway.WithListeningActivity("your guesses || /help", gateway.WithActivityState("Guess what?")), gateway.WithOnlineStatus(discord.OnlineStatusOnline)),
 	)
 

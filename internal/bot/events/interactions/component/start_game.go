@@ -29,9 +29,7 @@ func (i *StartGameInteraction) CustomID() string {
 
 func (i *StartGameInteraction) Handler(ctx context.Context, event *disgoEvents.ComponentInteractionCreate, data *interactions.Data) error {
 	// Build modal with game configuration (using default values)
-	modal := discord.NewModalCreateBuilder().
-		SetCustomID("start_game_config").
-		SetTitle("Start New Game Configuration").
+	modal := discord.NewModalCreate("start_game_config", "Start New Game Configuration").
 		AddLabel("Minimum Number", discord.NewTextInput("min", discord.TextInputStyleShort).
 			WithRequired(true).
 			WithPlaceholder("e.g., 1").
@@ -50,8 +48,7 @@ func (i *StartGameInteraction) Handler(ctx context.Context, event *disgoEvents.C
 			WithValue("false").
 			WithMinLength(4).
 			WithMaxLength(5),
-		).
-		Build()
+		)
 
 	err := event.Modal(modal)
 	if err != nil {

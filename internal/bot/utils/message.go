@@ -56,7 +56,7 @@ func EventReply(event ReplyEvent, request MessageRequest) error {
 	// 	return err
 	// }
 
-	messageUpdateRequest := discord.NewMessageUpdateBuilder().SetAllowedMentions(&discord.AllowedMentions{
+	messageUpdateRequest := discord.NewMessageUpdate().WithAllowedMentions(&discord.AllowedMentions{
 		Parse:       []discord.AllowedMentionType{discord.AllowedMentionTypeUsers},
 		RepliedUser: true,
 	})
@@ -72,24 +72,24 @@ func EventReply(event ReplyEvent, request MessageRequest) error {
 	if request.UseEmbed {
 		// Create embed
 		embeds := buildEmbeds(request)
-		messageUpdateRequest.SetEmbeds(embeds...)
+		messageUpdateRequest = messageUpdateRequest.WithEmbeds(embeds...)
 	} else {
 		// Original content-based logic
 		content := request.Content
 		if request.Emoji != EmojiUnspecified {
 			content = fmt.Sprintf(emojiContentFormat, request.Emoji.String(), request.Content)
 		}
-		messageUpdateRequest.SetContent(content)
+		messageUpdateRequest = messageUpdateRequest.WithContent(content)
 	}
 
-	messageUpdateRequest.SetComponents(components...)
+	messageUpdateRequest = messageUpdateRequest.WithComponents(components...)
 
-	_, err := event.Client().Rest.UpdateInteractionResponse(event.ApplicationID(), event.Token(), messageUpdateRequest.Build())
+	_, err := event.Client().Rest.UpdateInteractionResponse(event.ApplicationID(), event.Token(), messageUpdateRequest)
 	return err
 }
 
 func SendMessage(rest rest.Rest, request MessageRequest) (*discord.Message, error) {
-	messageCreateRequest := discord.NewMessageCreateBuilder().SetAllowedMentions(&discord.AllowedMentions{
+	messageCreateRequest := discord.NewMessageCreate().WithAllowedMentions(&discord.AllowedMentions{
 		Parse:       []discord.AllowedMentionType{discord.AllowedMentionTypeUsers},
 		RepliedUser: true,
 	})
@@ -105,23 +105,23 @@ func SendMessage(rest rest.Rest, request MessageRequest) (*discord.Message, erro
 	if request.UseEmbed {
 		// Create embed
 		embeds := buildEmbeds(request)
-		messageCreateRequest.SetEmbeds(embeds...)
+		messageCreateRequest = messageCreateRequest.WithEmbeds(embeds...)
 	} else {
 		// Original content-based logic
 		content := request.Content
 		if request.Emoji != EmojiUnspecified {
 			content = fmt.Sprintf(emojiContentFormat, request.Emoji.String(), request.Content)
 		}
-		messageCreateRequest.SetContent(content)
+		messageCreateRequest = messageCreateRequest.WithContent(content)
 	}
 
-	messageCreateRequest.SetComponents(components...)
+	messageCreateRequest = messageCreateRequest.WithComponents(components...)
 
 	if request.IsEphemeral {
-		messageCreateRequest.SetFlags(discord.MessageFlagEphemeral)
+		messageCreateRequest = messageCreateRequest.WithFlags(discord.MessageFlagEphemeral)
 	}
 
-	msg, err := rest.CreateMessage(request.ChannelID, messageCreateRequest.Build())
+	msg, err := rest.CreateMessage(request.ChannelID, messageCreateRequest)
 	return msg, err
 }
 
@@ -148,14 +148,13 @@ func LogToChannel(rest rest.Rest, logChannelID string, logType LogType, title, d
 		return err
 	}
 
-	embed := discord.NewEmbedBuilder().
-		SetTitle(title).
-		SetDescription(description).
-		SetColor(InfoEmbedColor).
-		SetFooterText(logType.String()).
-		Build()
+	embed := discord.NewEmbed().
+		WithTitle(title).
+		WithDescription(description).
+		WithColor(InfoEmbedColor).
+		WithFooterText(logType.String())
 
-	_, err = rest.CreateMessage(channelID, discord.NewMessageCreateBuilder().SetEmbeds(embed).Build())
+	_, err = rest.CreateMessage(channelID, discord.NewMessageCreate().WithEmbeds(embed))
 	return err
 }
 
@@ -168,15 +167,15 @@ func buildEmbeds(request MessageRequest) []discord.Embed {
 		embedColor = request.EmbedColor
 	}
 
-	embedBuilder := discord.NewEmbedBuilder().SetColor(embedColor)
+	embedBuilder := discord.NewEmbed().WithColor(embedColor)
 	if !isError {
-		embedBuilder.SetThumbnail(botAvatarURL)
-		embedBuilder.SetFooterText("Made with ❤️ by DiabolusGX").SetFooterIcon(botAvatarURL) //.SetTimestamp(botCreatedAt)
+		embedBuilder = embedBuilder.WithThumbnail(botAvatarURL)
+		embedBuilder = embedBuilder.WithFooterText("Made with ❤️ by DiabolusGX").WithFooterIcon(botAvatarURL) //.WithTimestamp(botCreatedAt)
 	}
 
 	// Set title and description
 	if request.EmbedTitle != "" {
-		embedBuilder.SetTitle(request.EmbedTitle)
+		embedBuilder = embedBuilder.WithTitle(request.EmbedTitle)
 	}
 
 	// Handle content based on whether we have description or content
@@ -187,13 +186,13 @@ func buildEmbeds(request MessageRequest) []discord.Embed {
 			description = fmt.Sprintf(emojiContentFormat, request.Emoji.String(), description)
 		}
 	}
-	embedBuilder.SetDescription(description)
+	embedBuilder = embedBuilder.WithDescription(description)
 
 	if len(request.Fields) > 0 {
-		embedBuilder.SetFields(request.Fields...)
+		embedBuilder = embedBuilder.WithFields(request.Fields...)
 	}
 
-	return []discord.Embed{embedBuilder.Build()}
+	return []discord.Embed{embedBuilder}
 }
 
 func buildComponents(request MessageRequest) []discord.LayoutComponent {

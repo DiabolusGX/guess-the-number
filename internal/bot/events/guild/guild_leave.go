@@ -75,20 +75,19 @@ func (h *GuildLeaveListener) OnEvent(ctx context.Context, e bot.Event) error {
 	description.WriteString(fmt.Sprintf("Total Guilds on shard: %d\n", event.Client().Caches.GuildsLen()))
 	description.WriteString(fmt.Sprintf("Total Members on shard: %d\n", event.Client().Caches.MembersAllLen()))
 
-	guildInfoEmbed := discord.NewEmbedBuilder().
-		SetColor(utils.FailureEmbedColor).
-		SetAuthor(owner.Username, "", owner.EffectiveAvatarURL()).
-		SetDescription(description.String()).
-		SetFooterText("Guild created at").
-		SetTimestamp(event.Guild.CreatedAt())
+	guildInfoEmbed := discord.NewEmbed().
+		WithColor(utils.FailureEmbedColor).
+		WithAuthor(owner.Username, "", owner.EffectiveAvatarURL()).
+		WithDescription(description.String()).
+		WithFooterText("Guild created at").
+		WithTimestamp(event.Guild.CreatedAt())
 
 	if event.Guild.IconURL() != nil {
-		guildInfoEmbed.SetThumbnail(*event.Guild.IconURL())
+		guildInfoEmbed = guildInfoEmbed.WithThumbnail(*event.Guild.IconURL())
 	}
 
-	messageRequest := discord.NewMessageCreateBuilder().
-		SetEmbeds(guildInfoEmbed.Build()).
-		Build()
+	messageRequest := discord.NewMessageCreate().
+		WithEmbeds(guildInfoEmbed)
 
 	_, err = event.Client().Rest.CreateMessage(utils.AdminChannelID, messageRequest)
 	if err != nil {
