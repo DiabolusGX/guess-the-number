@@ -144,7 +144,7 @@ func (m MongoConfig) GetConnectionURI() string {
 
 	if m.Username != "" && m.Password != "" {
 		if m.Params != "" {
-			return fmt.Sprintf("mongodb+srv://%s:%s@%s/%s?%s", m.Username, m.Password, m.Host, m.Database, m.Params)
+			return fmt.Sprintf("mongodb://%s:%s@%s/%s?%s", m.Username, m.Password, m.Host, m.Database, m.Params)
 		}
 		return fmt.Sprintf("mongodb+srv://%s:%s@%s/%s", m.Username, m.Password, m.Host, m.Database)
 	}
