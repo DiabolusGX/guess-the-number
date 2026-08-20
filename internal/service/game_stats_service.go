@@ -65,6 +65,11 @@ func (s *statsService) GetClosestGuesses(ctx context.Context, req *types.GetClos
 		return nil, ierr.New(ierr.ErrCodeNotFound, "Game not found")
 	}
 
+	// Verify the game belongs to the requesting guild
+	if gameResponse.Game.GuildID != req.GuildID {
+		return nil, ierr.New(ierr.ErrCodePermissionDenied, "Game not found in this guild")
+	}
+
 	game := gameResponse.Game
 	guesses := make([]*domain.GuessAttempt, 0)
 
@@ -137,6 +142,11 @@ func (s *statsService) GetTopGuessedNumbers(ctx context.Context, req *types.GetT
 			return nil, ierr.New(ierr.ErrCodeNotFound, "game not found")
 		}
 
+		// Verify the game belongs to the requesting guild
+		if game.GuildID != req.GuildID {
+			return nil, ierr.New(ierr.ErrCodePermissionDenied, "Game not found in this guild")
+		}
+
 		redisStats, err = s.redisStatsRepo.GetGameTopNumbers(ctx, game, topLimit)
 		if err != nil {
 			return nil, ierr.NewErrorWithContext(ctx, ierr.ErrCodeDatabase, err).WithMessage("Failed to get game top numbers. Please try again later")
@@ -197,6 +207,11 @@ func (s *statsService) GetTopGuessers(ctx context.Context, req *types.GetTopGues
 		}
 		if game == nil {
 			return nil, ierr.New(ierr.ErrCodeNotFound, "game not found")
+		}
+
+		// Verify the game belongs to the requesting guild
+		if game.GuildID != req.GuildID {
+			return nil, ierr.New(ierr.ErrCodePermissionDenied, "Game not found in this guild")
 		}
 
 		redisStats, err = s.redisStatsRepo.GetGameTopGuessers(ctx, game, topLimit)
