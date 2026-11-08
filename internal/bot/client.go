@@ -78,8 +78,18 @@ func NewClient(cfg *config.Configuration) (*bot.Client, error) {
 		var shardOpts []sharding.ConfigOpt
 
 		// Set shard count (0 means auto-detect) & set specific shard IDs
-		if cfg.Bot.Sharding.ShardCount > 0 && len(cfg.Bot.Sharding.ShardIDs) > 0 {
+		if cfg.Bot.Sharding.ShardCount > 0 {
 			shardOpts = append(shardOpts, sharding.WithShardCount(cfg.Bot.Sharding.ShardCount))
+			if len(cfg.Bot.Sharding.ShardIDs) > 0 {
+				shardOpts = append(shardOpts, sharding.WithShardIDs(cfg.Bot.Sharding.ShardIDs...))
+			} else {
+				shardIDs := make([]int, cfg.Bot.Sharding.ShardCount)
+				for i := range cfg.Bot.Sharding.ShardCount {
+					shardIDs[i] = i
+				}
+				shardOpts = append(shardOpts, sharding.WithShardIDs(shardIDs...))
+			}
+		} else if len(cfg.Bot.Sharding.ShardIDs) > 0 {
 			shardOpts = append(shardOpts, sharding.WithShardIDs(cfg.Bot.Sharding.ShardIDs...))
 		}
 
@@ -216,6 +226,12 @@ func Start(lc fx.Lifecycle, client *bot.Client, logger *logger.Logger, cfg *conf
 				// Start shards asynchronously to avoid Discord rate limits and Fx timeout
 				// Discord allows only X shards per minute, so we need to start them in background
 				go func() {
+					defer func() {
+						if r := recover(); r != nil {
+							logger.Errorw("Recovered from panic in shard manager startup", "error", r)
+						}
+					}()
+
 					// Use context.Background() to avoid Fx's 15-second timeout constraint
 					shardCtx := context.Background()
 					shardCtx = context.WithoutCancel(shardCtx)

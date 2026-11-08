@@ -43,7 +43,7 @@ module.exports = {
 
             // Graceful shutdown
             shutdown_with_message: true,
-            wait_ready: true,
+            wait_ready: false,
 
             // Clustering options (for future sharding expansion)
             increment_var: "PORT",

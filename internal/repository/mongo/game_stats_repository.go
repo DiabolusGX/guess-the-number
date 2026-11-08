@@ -137,14 +137,14 @@ func (r *gameStatsRepository) GetTopGuessedNumbers(ctx context.Context, guildID,
 	filter := getFilter(gameID, guildID, timeRange)
 
 	pipeline := mongo.Pipeline{
-		bson.D{{"$match", filter}},
-		bson.D{{"$group", bson.M{
+		bson.D{{Key: "$match", Value: filter}},
+		bson.D{{Key: "$group", Value: bson.M{
 			"_id":   "$guess",
 			"count": bson.M{"$sum": 1},
 		}}},
-		bson.D{{"$sort", bson.M{"count": -1}}},
-		bson.D{{"$limit", limit}},
-		bson.D{{"$project", bson.M{
+		bson.D{{Key: "$sort", Value: bson.M{"count": -1}}},
+		bson.D{{Key: "$limit", Value: limit}},
+		bson.D{{Key: "$project", Value: bson.M{
 			"number": "$_id",
 			"count":  "$count",
 			"_id":    0,
@@ -182,20 +182,20 @@ func (r *gameStatsRepository) GetTopGuessers(ctx context.Context, guildID, gameI
 	filter := getFilter(gameID, guildID, timeRange)
 
 	pipeline := mongo.Pipeline{
-		bson.D{{"$match", filter}},
-		bson.D{{"$group", bson.M{
+		bson.D{{Key: "$match", Value: filter}},
+		bson.D{{Key: "$group", Value: bson.M{
 			"_id":           "$userId",
 			"uniqueGuesses": bson.M{"$addToSet": "$guess"},
 			"totalGuesses":  bson.M{"$sum": 1},
 		}}},
-		bson.D{{"$project", bson.M{
+		bson.D{{Key: "$project", Value: bson.M{
 			"userId":        "$_id",
 			"uniqueGuesses": bson.M{"$size": "$uniqueGuesses"},
 			"totalGuesses":  "$totalGuesses",
 			"_id":           0,
 		}}},
-		bson.D{{"$sort", bson.M{"totalGuesses": -1}}},
-		bson.D{{"$limit", limit}},
+		bson.D{{Key: "$sort", Value: bson.M{"totalGuesses": -1}}},
+		bson.D{{Key: "$limit", Value: limit}},
 	}
 
 	cursor, err := r.collection.Aggregate(ctx, pipeline)
@@ -230,12 +230,12 @@ func (r *gameStatsRepository) GetClosestGuesses(ctx context.Context, guildID, ga
 	})
 
 	pipeline := mongo.Pipeline{
-		bson.D{{"$match", filter}},
-		bson.D{{"$sort", bson.M{
+		bson.D{{Key: "$match", Value: filter}},
+		bson.D{{Key: "$sort", Value: bson.M{
 			"distance":  1,
 			"timestamp": 1, // Earlier guesses first for same distance
 		}}},
-		bson.D{{"$limit", limit}},
+		bson.D{{Key: "$limit", Value: limit}},
 	}
 
 	cursor, err := r.collection.Aggregate(ctx, pipeline)
